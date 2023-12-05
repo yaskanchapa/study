@@ -1,0 +1,844 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="com.kse.wmsv2.oa_et_001.mapper.OAET001ModalMapper">
+    <select id="selectExpCustomer" parameterType="com.kse.wmsv2.oa_et_001.dao.OAET001MECDao" resultType="String">
+        SELECT
+            CHARACTERITEM1
+        FROM
+            AM_NAME
+        WHERE
+            1 = 0
+        <if test=" conditionFlg01 != null and conditionFlg01 != '' ">
+            OR (NAMECLASS = '0025' AND NAMECD = '01')
+        </if>
+        <if test=" conditionFlg02 != null and conditionFlg02 != '' ">
+            OR (NAMECLASS = '0025' AND NAMECD = '02')
+        </if>
+        <if test=" conditionFlg03 != null and conditionFlg03 != '' ">
+            OR (NAMECLASS = '0025' AND NAMECD = '03')
+        </if>
+        <if test=" conditionFlg04 != null and conditionFlg04 != '' ">
+            OR (NAMECLASS = '0025' AND NAMECD = '04')
+        </if>
+        <if test=" conditionFlg05 != null and conditionFlg05 != '' ">
+            OR (NAMECLASS = '0025' AND NAMECD = '05')
+        </if>
+        <if test=" conditionFlg06 != null and conditionFlg06 != '' ">
+            OR (NAMECLASS = '0025' AND NAMECD = '06')
+        </if>
+        <if test=" conditionFlg07 != null and conditionFlg07 != '' ">
+            OR (NAMECLASS = '0025' AND NAMECD = '07')
+        </if>
+        <if test=" conditionFlg08 != null and conditionFlg08 != '' ">
+            OR (NAMECLASS = '0025' AND NAMECD = '08')
+        </if>
+        <if test=" conditionFlg09 != null and conditionFlg09 != '' ">
+            OR (NAMECLASS = '0025' AND NAMECD = '09')
+        </if>
+        <if test=" conditionFlg10 != null and conditionFlg10 != '' ">
+            OR (NAMECLASS = '0025' AND NAMECD = '10')
+        </if>
+        <if test=" conditionFlg11 != null and conditionFlg11 != '' ">
+            OR (NAMECLASS = '0025' AND NAMECD = '11')
+        </if>
+        <if test=" conditionFlg12 != null and conditionFlg12 != '' ">
+            OR (NAMECLASS = '0025' AND NAMECD = '12')
+        </if>
+        <if test=" conditionFlg13 != null and conditionFlg13 != '' ">
+            OR (NAMECLASS = '0025' AND NAMECD = '13')
+        </if>
+        <if test=" conditionFlg14 != null and conditionFlg14 != '' ">
+            OR (NAMECLASS = '0025' AND NAMECD = '14')
+        </if>
+        <if test=" conditionFlg15 != null and conditionFlg15 != '' ">
+            OR (NAMECLASS = '0025' AND NAMECD = '15')
+        </if>
+        <if test=" conditionFlg16 != null and conditionFlg16 != '' ">
+            OR (NAMECLASS = '0025' AND NAMECD = '16')
+        </if>
+        <if test=" conditionFlg17 != null and conditionFlg17 != '' ">
+            OR (NAMECLASS = '0025' AND NAMECD = '17')
+        </if>
+        <if test=" conditionFlg18 != null and conditionFlg18 != '' ">
+            OR (NAMECLASS = '0025' AND NAMECD = '18')
+        </if>
+        <if test=" conditionFlg19 != null and conditionFlg19 != '' ">
+            OR (NAMECLASS = '0025' AND NAMECD = '19')
+        </if>
+        <if test=" conditionFlg20 != null and conditionFlg20 != '' ">
+            OR (NAMECLASS = '0025' AND NAMECD = '20')
+        </if>
+        <if test=" conditionFlg21 != null and conditionFlg21 != '' ">
+            OR (NAMECLASS = '0025' AND NAMECD = '21')
+        </if>
+        <if test=" conditionFlg22 != null and conditionFlg22 != '' ">
+            OR (NAMECLASS = '0025' AND NAMECD = '22')
+        </if>
+        <if test=" conditionFlg23 != null and conditionFlg23 != '' ">
+            OR (NAMECLASS = '0025' AND NAMECD = '23')
+        </if>
+        <if test=" conditionFlg24 != null and conditionFlg24 != '' ">
+            OR (NAMECLASS = '0025' AND NAMECD = '24')
+        </if>
+        <if test=" conditionFlg25 != null and conditionFlg25 != '' ">
+            OR (NAMECLASS = '0025' AND NAMECD = '25')
+        </if>
+    </select>
+    <select id="getInvoiceItem" parameterType="string" resultType="String">
+        SELECT
+            ITEMNM
+        FROM
+            CS_INVOICE_EDIT
+        WHERE
+            CWBNO = #{cwbNo}
+        GROUP BY
+            ITEMNM
+    </select>
+    <select id="getSpecialItem" parameterType="string" resultType="int">
+        SELECT
+            IFNULL(COUNT(*),0)
+        FROM
+            AM_NAME
+        WHERE
+            DEPARTMENTCD = 'ALL'
+            AND NAMECLASS = '0243'
+            AND NAME = #{value}
+    </select>
+    <select id="checkSpecialOrder" parameterType="string" resultType="int">
+        SELECT
+            OPTIONALSERVICECD
+        FROM
+            CS_OPTIONAL_SERVICE
+        WHERE
+            CWBNO = #{value}
+        GROUP BY
+            OPTIONALSERVICECD
+    </select>
+    <select id="getPriority" parameterType="hashMap" resultType="int">
+        SELECT
+            IFNULL(${column},0)
+        FROM
+            AM_NAME
+        WHERE
+            DEPARTMENTCD = #{deptCd}
+            AND NAMECLASS = #{classCd}
+            AND NAMECD = #{nameCd}
+    </select>
+    <select id="checkSpecialExporter" parameterType="hashMap" resultType="hashMap">
+        SELECT
+            (CASE WHEN
+            NULLIF(CONDITIONCOMMENT,'') is null
+            OR NULLIF(DELIVERYDATEEXTCD,'') is null
+            OR NULLIF(PAYMETHODDISC,'') is null
+            OR NULLIF(CONDITIONBANKACCOUNTNO,'') is null
+            OR NULLIF(CONDITIONCOLLATERALNO1,'') is null
+            OR NULLIF(CONDITIONCOLLATERALNO2,'') is null
+            OR NULLIF(ESTIMATIONFLGCD,'') is null
+            OR NULLIF(INCESTREPRENO,'') is null
+            OR NULLIF(INSURANCECLASSCD,'') is null
+            OR NULLIF(INCINSUREGNO,'') is null
+            THEN 0 ELSE 5 END),
+            (CASE WHEN NULLIF(CONDITIONFLG01,'') IS NULL THEN 0 ELSE 5 END),
+            (CASE WHEN NULLIF(CONDITIONFLG02,'') IS NULL THEN 0 ELSE 5 END),
+            (CASE WHEN NULLIF(CONDITIONFLG03,'') IS NULL THEN 0 ELSE 5 END),
+            (CASE WHEN NULLIF(CONDITIONFLG04,'') IS NULL THEN 0 ELSE 5 END),
+            (CASE WHEN NULLIF(CONDITIONFLG05,'') IS NULL THEN 0 ELSE 5 END),
+            (CASE WHEN NULLIF(CONDITIONFLG06,'') IS NULL THEN 0 ELSE 5 END),
+            (CASE WHEN NULLIF(CONDITIONFLG07,'') IS NULL THEN 0 ELSE 5 END),
+            (CASE WHEN NULLIF(CONDITIONFLG08,'') IS NULL THEN 0 ELSE 5 END),
+            (CASE WHEN NULLIF(CONDITIONFLG09,'') IS NULL THEN 0 ELSE 5 END),
+            (CASE WHEN NULLIF(CONDITIONFLG10,'') IS NULL THEN 0 ELSE 5 END),
+            (CASE WHEN NULLIF(CONDITIONFLG11,'') IS NULL THEN 0 ELSE 5 END),
+            (CASE WHEN NULLIF(CONDITIONFLG12,'') IS NULL THEN 0 ELSE 5 END),
+            (CASE WHEN NULLIF(CONDITIONFLG13,'') IS NULL THEN 0 ELSE 5 END),
+            (CASE WHEN NULLIF(CONDITIONFLG14,'') IS NULL THEN 0 ELSE 5 END),
+            (CASE WHEN NULLIF(CONDITIONFLG15,'') IS NULL THEN 0 ELSE 5 END),
+            (CASE WHEN NULLIF(CONDITIONFLG16,'') IS NULL THEN 0 ELSE 5 END),
+            (CASE WHEN NULLIF(CONDITIONFLG17,'') IS NULL THEN 0 ELSE 5 END),
+            (CASE WHEN NULLIF(CONDITIONFLG18,'') IS NULL THEN 0 ELSE 5 END),
+            (CASE WHEN NULLIF(CONDITIONFLG19,'') IS NULL THEN 0 ELSE 5 END),
+            (CASE WHEN NULLIF(CONDITIONFLG20,'') IS NULL THEN 0 ELSE 5 END),
+            (CASE WHEN NULLIF(CONDITIONFLG21,'') IS NULL THEN 0 ELSE 5 END),
+            (CASE WHEN NULLIF(CONDITIONFLG22,'') IS NULL THEN 0 ELSE 5 END),
+            (CASE WHEN NULLIF(CONDITIONFLG23,'') IS NULL THEN 0 ELSE 5 END),
+            (CASE WHEN NULLIF(CONDITIONFLG24,'') IS NULL THEN 0 ELSE 5 END),
+            (CASE WHEN NULLIF(CONDITIONFLG25,'') IS NULL THEN 0 ELSE 5 END)
+        FROM
+            AM_CUSTOMER_NUMBER
+        WHERE
+            1 = 1
+            AND CUSTOMERNO = #{expCustomerNo}
+            AND DEPTCD = #{expCustomerDeptCd}
+            AND OCSDEPTCD = #{expCustomerOcsDeptCd}
+        LIMIT 1
+    </select>
+    <select id="countInvoiceDetailData" parameterType="hashMap" resultType="int">
+        SELECT
+            IFNULL(COUNT(*),0)
+        FROM
+            (SELECT
+            COUNT(CWBNO) AS CNTCWB
+            FROM
+            CS_INVOICE_EDIT
+            WHERE
+            1 = 1
+            AND CWBNO = #{cwbNo}
+            GROUP BY
+            CWBNO
+            LIMIT 1) AS OCIE
+        WHERE
+            1 = 1
+            AND 999999999999999 <![CDATA[ < ]]> OCIE.CNTCWB
+    </select>
+    <select id="checkInvoiceAmount" parameterType="hashMap" resultType="int">
+    SELECT
+        IFNULL(COUNT(*),0)
+    FROM
+        (
+        SELECT
+            *
+        FROM
+            CM_RATE
+        WHERE
+            1 = 1
+            AND STARTDATE <![CDATA[ <= ]]> #{date}
+            AND CURRENCYCD = #{currencyCd}
+        ORDER BY
+            STARTDATE DESC
+        LIMIT 1
+        ) AS CMRA
+    WHERE
+        1 = 1
+        AND 999999999999999  <![CDATA[ < ]]> FLOOR(CMRA.RATE * #{invoiceValue})
+    </select>
+    <update id="updateMecData" parameterType="com.kse.wmsv2.oa_et_001.dao.OAET001MECDao">
+        UPDATE
+            AE_DATA
+        SET
+            CWBNO = #{cwbNo},
+            AWBNO = #{awbNo},
+            PROCNO = #{procNo},
+            TRUCKNODATE = #{truckNoDate},
+            LINKCONNECTFLG = #{linkConnectFlg},
+            REPORTCONDITION = #{reportCondition},
+            CUSTOMSKINDCD_1 = #{customsKindCd1},
+            REPORTDEPCD = #{reportDepCd},
+            REPORTDIVISIONCD = #{reportDivisionCd},
+            EXPREPORTPLANDATE = #{expReportPlanDate},
+            EXPCUSTOMERNO = #{expCustomerNo},
+            EXPCUSTOMERDEPTCD = #{expCustomerDeptCd},
+            EXPCUSTOMEROCSDEPTCD = #{expCustomerOcsDeptCd},
+            EXPCUSTOMERNAME = #{expCustomerName},
+            EXPCUSTOMERPOSTCODE = #{expCustomerPostcode},
+            EXPCUSTOMERADD_1 = #{expCustomerAdd1},
+            EXPCUSTOMERADD_2 = #{expCustomerAdd2},
+            EXPCUSTOMERADD_3 = #{expCustomerAdd3},
+            EXPCUSTOMERADD_4 = #{expCustomerAdd4},
+            EXPCUSTOMERADD_LUMP = #{expCustomerAddLump},
+            EXPCUSTOMERTELNO = #{expCustomerTelNo},
+            EXPCUSTOMERADD = #{expCustomerAdd},
+            CONSIGNEENO = #{consigneeNo},
+            CONSIGNEEDEPTCD = #{consigneeDeptCd},
+            CONSIGNEEOCSDEPTCD = #{consigneeOcsDeptCd},
+            CONSIGNEENAME = #{consigneeName},
+            CONSIGNEEPOSTCODE = #{consigneePostcode},
+            CONSIGNEEADD_1 = #{consigneeAdd1},
+            CONSIGNEEADD_2 = #{consigneeAdd2},
+            CONSIGNEEADD_3 = #{consigneeAdd3},
+            CONSIGNEEADD_4 = #{consigneeAdd4},
+            CONSIGNEEADD_LUMP = #{consigneeAddLump},
+            CONSIGNEEADD = #{consigneeAdd},
+            CONSIGNEECOUNTRY = #{consigneeCountry},
+            CUSTOMSOFFICEJANITORCD = #{customsOfficeJanitorCd},
+            CUSTOMSOFFICEJANITORNAME = #{customsOfficeJanitorName},
+            CUSTOMSOFFICEJANITORRENO = #{customsOfficeJanitorReNo},
+            CUSTOMSCHECKCLASS = #{customsCheckClass},
+            EDITGROUP = #{editGroup},
+            DEFAULTSET = #{defaultSet},
+            BONDEDWAREHOUSECD = #{bondedWarehouseCd},
+            CARRYINGPIECE = #{carryingPiece},
+            CARRYINGWEIGHT = #{carryingWeight},
+            SHIPPERSSECCD = #{shippersSecCd},
+            SHIPPERSREFNO = #{shippersRefNo},
+            LASTDESTINATIONCD = #{lastDestinationCd},
+            DEPPORT = #{depPort},
+            DISCERNMENTMARK = #{discernmentMark},
+            INSPECTIONWITNESS = #{inspectionWitness},
+            FOBCURRENCYCD = #{fobCurrencyCd},
+            FOBAMO = #{fobAmo},
+            REPORTVALUE = #{reportValue},
+            ITEM = #{item},
+            NEWS_2 = #{news2},
+            INVOICEVALCLASSCD = #{invoiceValClassCd},
+            INVOICEVALCONCD = #{invoiceValConCd},
+            INVOICECURCD = #{invoiceCurCd},
+            INVOICEVALUE = #{invoiceValue},
+            LARGESMALLFLG = #{largeSmallFlg},
+            IF_FARECURRENCYCD = #{ifFareCurrencyCd},
+            IF_FARE = #{ifFare},
+            IF_INSURANCECURCD = #{ifInsuranceCurCd},
+            IF_INSURANCEAMOUNT = #{ifInsuranceAmount},
+            BASICPRICETOTAL = #{basicPriceTotal},
+            INHOUSEREFNUMBER = #{inHouseRefNumber},
+            CUSTOMSCHECKPRIORITY = #{customsCheckPriority},
+            EDITFLG = '1',
+            ESAFLG = '1',
+            CURRENTCUSTOMSSTATUSCD = 'EC00500'
+        WHERE
+            CWBNO = #{cwbNo}
+    </update>
+    <update id="updateEdaHeaderData" parameterType="com.kse.wmsv2.oa_et_001.dao.OAET001EDAHeaderDao">
+        UPDATE
+            AE_DATA
+        SET
+            CWBNO = #{cwbNo},
+            AWBNO = #{awbNo},
+            PROCNO = #{procNo},
+            EDITFLG = #{editFlg},
+            ESAFLG = #{esaFlg},
+            TRUCKNODATE = #{truckNoDate},
+            LINKCONNECTFLG = #{linkConnectFlg},
+            LARGESMALLFLG = #{largeSmallFlg},
+            REPORTKINDCD = #{reportKindCd},
+            CUSTOMSKINDCD_1 = #{customsKindCd1},
+            CUSTOMSKINDCD_2 = #{customsKindCd2},
+            REPORTDEPCD = #{reportDepCd},
+            REPORTDIVISIONCD = #{reportDivisionCd},
+            EXPREPORTPLANDATE = #{expReportPlanDate},
+            EXPCUSTOMERNO = #{expCustomerNo},
+            EXPCUSTOMERDEPTCD = #{expCustomerDeptCd},
+            EXPCUSTOMEROCSDEPTCD = #{expCustomerOcsDeptCd},
+            EXPCUSTOMERNAME = #{expCustomerName},
+            EXPCUSTOMERPOSTCODE = #{expCustomerPostcode},
+            EXPCUSTOMERADD_1 = #{expCustomerAdd1},
+            EXPCUSTOMERADD_2 = #{expCustomerAdd2},
+            EXPCUSTOMERADD_3 = #{expCustomerAdd3},
+            EXPCUSTOMERADD_4 = #{expCustomerAdd4},
+            EXPCUSTOMERTELNO = #{expCustomerTelNo},
+            EXPCUSTOMERADD = #{expCustomerAdd},
+            CONSIGNEENO = #{consigneeNo},
+            CONSIGNEEDEPTCD = #{consigneeDeptCd},
+            CONSIGNEEOCSDEPTCD = #{consigneeOcsDeptCd},
+            CONSIGNEENAME = #{consigneeName},
+            CONSIGNEEPOSTCODE = #{consigneePostcode},
+            CONSIGNEEADD_1 = #{consigneeAdd1},
+            CONSIGNEEADD_2 = #{consigneeAdd2},
+            CONSIGNEEADD_3 = #{consigneeAdd3},
+            CONSIGNEEADD_4 = #{consigneeAdd4},
+            CONSIGNEECOUNTRY = #{consigneeCountry},
+            CONSIGNEEADD = #{consigneeAdd},
+            REPORTPLANPERSONCD = #{reportPlanPersonCd},
+            CUSTOMSOFFICEJANITORCD = #{customsOfficeJanitorCd},
+            CUSTOMSOFFICEJANITORNAME = #{customsOfficeJanitorName},
+            CUSTOMSOFFICEJANITORRENO = #{customsOfficeJanitorReNo},
+            BONDEDWAREHOUSECD = #{bondedWarehouseCd},
+            CARRYINGPIECE = #{carryingPiece},
+            SHIPPERSSECCD = #{shippersSecCd},
+            SHIPPERSREFNO = #{shippersRefNo},
+            LASTDESTINATIONCD = #{lastDestinationCd},
+            LASTDESTNAME = #{lastDestName},
+            DEPPORT = #{depPort},
+            TRADETYPEMARK = #{tradeTypeMark},
+            DEPPLANINGDATE = #{depPlaningDate},
+            PREEXAMCARGODISC = #{preExamCargoDisc},
+            DISCERNMENTMARK = #{discernmentMark},
+            INSPECTIONWITNESS = #{inspectionWitness},
+            INVOICEDISCERNMENT = #{invoiceDiscernment},
+            ELEINVOICERENO = #{eleInvoiceReNo},
+            INVOICENO = #{invoiceNo},
+            INVOICEVALCONCD = #{invoiceValConCd},
+            INVOICECURCD = #{invoiceCurCd},
+            <choose>
+                <when test=" invoiceValue != '' and invoiceValue != null ">
+                    INVOICEVALUE = #{invoiceValue},
+                </when>
+                <otherwise>
+                    INVOICEVALUE = NULL,
+                </otherwise>
+            </choose>
+            INVOICEVALCLASSCD = #{invoiceValClassCd},
+            FOBCURRENCYCD = #{fobCurrencyCd},
+            <choose>
+                <when test=" fobAmo != '' and fobAmo != null ">
+                    FOBAMO = #{fobAmo},
+                </when>
+                <otherwise>
+                    FOBAMO = NULL,
+                </otherwise>
+            </choose>
+            ITEM = #{item},
+            EXPSTATITEMNO = #{expStatItemNo},
+            <choose>
+                <when test=" basicPriceTotal != '' and basicPriceTotal != null ">
+                    BASICPRICETOTAL = #{basicPriceTotal},
+                </when>
+                <otherwise>
+                    BASICPRICETOTAL = NULL,
+                </otherwise>
+            </choose>
+            NEEDLOADINGRECDISC = #{needLoadingRecDisc},
+            NEWS_1 = #{news1},
+            NEWS_2 = #{news2},
+            NEWSSHIPPER = #{newsShipper},
+            INHOUSEREFNUMBER = #{inHouseRefNumber},
+            CUSTOMSCHECKCLASS = #{customsCheckClass},
+            EDITGROUP = #{editGroup},
+            DEFAULTSET = #{defaultSet},
+            CUSTOMSEXAMMARK = #{customsExamMark},
+            EXPRECOFLG = #{expRecoFlg},
+            EXPRECDISC_1 = #{expRecDisc1},
+            EXPRECNO_1 = #{expRecNo1},
+            EXPRECDISC_2 = #{expRecDisc2},
+            EXPRECNO_2 = #{expRecNo2},
+            EXPRECDISC_3 = #{expRecDisc3},
+            EXPRECNO_3 = #{expRecNo3},
+            EXPRECDISC_4 = #{expRecDisc4},
+            EXPRECNO_4 = #{expRecNo4},
+            EXPRECDISC_5 = #{expRecDisc5},
+            EXPRECNO_5 = #{expRecNo5},
+            EXPRECDISC_6 = #{expRecDisc6},
+            EXPRECNO_6 = #{expRecNo6},
+            EXPRECDISC_7 = #{expRecDisc7},
+            EXPRECNO_7 = #{expRecNo7},
+            EXPRECDISC_8 = #{expRecDisc8},
+            EXPRECNO_8 = #{expRecNo8},
+            EXPRECDISC_9 = #{expRecDisc9},
+            EXPRECNO_9 = #{expRecNo9},
+            EXPRECDISC_10 = #{expRecDisc10},
+            EXPRECNO_10 = #{expRecNo10},
+            EXPRECDISC_11 = #{expRecDisc11},
+            EXPRECNO_11 = #{expRecNo11},
+            EXPRECDISC_12 = #{expRecDisc12},
+            EXPRECNO_12 = #{expRecNo12},
+            EXPRECDISC_13 = #{expRecDisc13},
+            EXPRECNO_13 = #{expRecNo13},
+            EXPRECDISC_14 = #{expRecDisc14},
+            EXPRECNO_14 = #{expRecNo14},
+            EXPRECDISC_15 = #{expRecDisc15},
+            EXPRECNO_15 = #{expRecNo15},
+            IF_FARECURRENCYCD = #{ifFareCurrencyCd},
+            IF_FARE = #{ifFare},
+            IF_INSURANCECURCD = #{ifInsuranceCurCd},
+            IF_INSURANCEAMOUNT = #{ifInsuranceAmount},
+            CUSTOMSCHECKPRIORITY = #{customsCheckPriority},
+            EDITFLG = '1',
+            ESAFLG = '2',
+            CURRENTCUSTOMSSTATUSCD = 'EC00400'
+        WHERE
+            CWBNO = #{cwbNo}
+    </update>
+    <update id="updateEdaDetailData" parameterType="com.kse.wmsv2.oa_et_001.dao.OAET001EDADetailDao">
+        INSERT INTO
+            AE_DATA_DETAIL
+            (CWBNO,
+            SEQ,
+            EXPSTATITEMNO,
+            NACCSCD,
+            ITEMNOOCSDEPTCD,
+            ITEM,
+            AMO_1,
+            AMOUNIT_1,
+            AMO_2,
+            AMOUNIT_2,
+            BASICPRICEDIVCOEF,
+            BASICPRICECURCD,
+            BASICPRICEAMO,
+            OTHERLAWCD_1,
+            OTHERLAWCD_2,
+            OTHERLAWCD_3,
+            OTHERLAWCD_4,
+            OTHERLAWCD_5,
+            EXPTRADECONTCD,
+            FOREXCHLOW48,
+            CUSTOMSEXEMPTCD,
+            INCONSTAXEXEMPCD,
+            INCONSTAXEXEMPDISC,
+            REGUSERCD,
+            REGDATE,
+            UPDATEUSERCD,
+            UPDATEDATE,
+            TAXRATE,
+            JPYAMOUNT)
+        VALUES
+            (#{cwbNo}
+            ,#{seq}
+            ,#{expStatItemNo}
+            ,#{naccsCd}
+            ,#{itemNoOcsDeptCd}
+            ,#{item}
+            <choose>
+                <when test=" amo1 != '' and amo1 != null ">
+                    ,#{amo1}
+                </when>
+                <otherwise>
+                    ,NULL
+                </otherwise>
+            </choose>
+            ,#{amoUnit1}
+            <choose>
+                <when test=" amo2 != '' and amo2 != null ">
+                    ,#{amo2}
+                </when>
+                <otherwise>
+                    ,NULL
+                </otherwise>
+            </choose>
+            ,#{amoUnit2}
+            <choose>
+                <when test=" basicPriceDivCoef != '' and basicPriceDivCoef != null ">
+                    ,#{basicPriceDivCoef}
+                </when>
+                <otherwise>
+                    ,NULL
+                </otherwise>
+            </choose>
+            ,#{basicPriceCurCd}
+            <choose>
+                <when test=" basicPriceAmo != '' and basicPriceAmo != null ">
+                    ,#{basicPriceAmo}
+                </when>
+                <otherwise>
+                    ,NULL
+                </otherwise>
+            </choose>
+            ,#{otherLawCd1}
+            ,#{otherLawCd2}
+            ,#{otherLawCd3}
+            ,#{otherLawCd4}
+            ,#{otherLawCd5}
+            ,#{expTradeContCd}
+            ,#{forexchLow48}
+            ,#{customsExemptCd}
+            ,#{inconsTaxExempCd}
+            ,#{inconsTaxExempDisc}
+            ,#{user}
+            ,#{date}
+            ,#{user}
+            ,#{date}
+            ,#{taxRate}
+            ,#{jpyAmount}
+            )
+        ON DUPLICATE KEY
+        UPDATE
+            EXPSTATITEMNO = #{expStatItemNo},
+            NACCSCD = #{naccsCd},
+            ITEM = #{item},
+            AMO_1 = #{amo1},
+            AMOUNIT_1 = #{amoUnit1},
+            AMO_2 = #{amo2},
+            AMOUNIT_2 = #{amoUnit2},
+            BASICPRICEDIVCOEF = #{basicPriceDivCoef},
+            BASICPRICECURCD = #{basicPriceCurCd},
+            BASICPRICEAMO = #{basicPriceAmo},
+            OTHERLAWCD_1 = #{otherLawCd1},
+            OTHERLAWCD_2 = #{otherLawCd2},
+            OTHERLAWCD_3 = #{otherLawCd3},
+            OTHERLAWCD_4 = #{otherLawCd4},
+            OTHERLAWCD_5 = #{otherLawCd5},
+            EXPTRADECONTCD = #{expTradeContCd},
+            FOREXCHLOW48 = #{forexchLow48},
+            CUSTOMSEXEMPTCD = #{customsExemptCd},
+            INCONSTAXEXEMPCD = #{inconsTaxExempCd},
+            INCONSTAXEXEMPDISC = #{inconsTaxExempDisc},
+            UPDATEUSERCD = #{user},
+            UPDATEDATE = #{date}
+    </update>
+    <select id="getErrorMessage">
+        SELECT
+            SEQ,ERRORCD,ERRORMESSAGE
+        FROM
+            CS_MESSAGE_ERROR
+        WHERE
+            IMPORTEXPORTCLASS = '2'
+            AND MESSAGETYPE = #{type}
+            AND CWBNO = #{cwbNo}
+    </select>
+    <select id="searchErrorReport" parameterType="hashMap" resultType="com.kse.wmsv2.oa_et_001.dto.OAET001ErrorReportDto">
+        SELECT
+            SEQ,ERRORCD,ERRORMESSAGE
+        FROM
+            CS_MESSAGE_ERROR
+        WHERE
+            IMPORTEXPORTCLASS = '2'
+            AND MESSAGETYPE = #{type}
+            AND AWBNO = #{awbNo}
+            AND CWBNO = #{cwbNo}
+    </select>
+    <update id="saveEdaHeaderData" parameterType="com.kse.wmsv2.oa_et_001.dao.OAET001EDAHeaderDao">
+        UPDATE
+            AE_DATA
+        SET
+            PROCNO = #{procNo},
+            ESAFLG = #{esaFlg},
+            TRUCKNODATE = #{truckNoDate},
+            LINKCONNECTFLG = #{linkConnectFlg},
+            LARGESMALLFLG = #{largeSmallFlg},
+            REPORTKINDCD = #{reportKindCd},
+            CUSTOMSKINDCD_1 = #{customsKindCd1},
+            CUSTOMSKINDCD_2 = #{customsKindCd2},
+            REPORTDEPCD = #{reportDepCd},
+            REPORTDIVISIONCD = #{reportDivisionCd},
+            EXPREPORTPLANDATE = #{expReportPlanDate},
+            EXPCUSTOMERNO = #{expCustomerNo},
+            EXPCUSTOMERDEPTCD = #{expCustomerDeptCd},
+            EXPCUSTOMEROCSDEPTCD = #{expCustomerOcsDeptCd},
+            EXPCUSTOMERNAME = #{expCustomerName},
+            EXPCUSTOMERPOSTCODE = #{expCustomerPostcode},
+            EXPCUSTOMERADD_1 = #{expCustomerAdd1},
+            EXPCUSTOMERADD_2 = #{expCustomerAdd2},
+            EXPCUSTOMERADD_3 = #{expCustomerAdd3},
+            EXPCUSTOMERADD_4 = #{expCustomerAdd4},
+            EXPCUSTOMERTELNO = #{expCustomerTelNo},
+            EXPCUSTOMERADD = #{expCustomerAdd},
+            CONSIGNEENO = #{consigneeNo},
+            CONSIGNEEDEPTCD = #{consigneeDeptCd},
+            CONSIGNEEOCSDEPTCD = #{consigneeOcsDeptCd},
+            CONSIGNEENAME = #{consigneeName},
+            CONSIGNEEPOSTCODE = #{consigneePostcode},
+            CONSIGNEEADD_1 = #{consigneeAdd1},
+            CONSIGNEEADD_2 = #{consigneeAdd2},
+            CONSIGNEEADD_3 = #{consigneeAdd3},
+            CONSIGNEEADD_4 = #{consigneeAdd4},
+            CONSIGNEECOUNTRY = #{consigneeCountry},
+            CONSIGNEEADD = #{consigneeAdd},
+            REPORTPLANPERSONCD = #{reportPlanPersonCd},
+            CUSTOMSOFFICEJANITORCD = #{customsOfficeJanitorCd},
+            CUSTOMSOFFICEJANITORNAME = #{customsOfficeJanitorName},
+            CUSTOMSOFFICEJANITORRENO = #{customsOfficeJanitorReNo},
+            BONDEDWAREHOUSECD = #{bondedWarehouseCd},
+            CARRYINGPIECE = #{carryingPiece},
+            SHIPPERSSECCD = #{shippersSecCd},
+            SHIPPERSREFNO = #{shippersRefNo},
+            LASTDESTINATIONCD = #{lastDestinationCd},
+            LASTDESTNAME = #{lastDestName},
+            DEPPORT = #{depPort},
+            TRADETYPEMARK = #{tradeTypeMark},
+            DEPPLANINGDATE = #{depPlaningDate},
+            PREEXAMCARGODISC = #{preExamCargoDisc},
+            DISCERNMENTMARK = #{discernmentMark},
+            INSPECTIONWITNESS = #{inspectionWitness},
+            INVOICEDISCERNMENT = #{invoiceDiscernment},
+            ELEINVOICERENO = #{eleInvoiceReNo},
+            INVOICENO = #{invoiceNo},
+            INVOICEVALCONCD = #{invoiceValConCd},
+            INVOICECURCD = #{invoiceCurCd},
+            INVOICEVALUE = #{invoiceValue},
+            INVOICEVALCLASSCD = #{invoiceValClassCd},
+            FOBCURRENCYCD = #{fobCurrencyCd},
+            FOBAMO = #{fobAmo},
+            ITEM = #{item},
+            EXPSTATITEMNO = #{expStatItemNo},
+            BASICPRICETOTAL = #{basicPriceTotal},
+            NEEDLOADINGRECDISC = #{needLoadingRecDisc},
+            NEWS_1 = #{news1},
+            NEWS_2 = #{news2},
+            NEWSSHIPPER = #{newsShipper},
+            INHOUSEREFNUMBER = #{inHouseRefNumber},
+            CUSTOMSCHECKCLASS = #{customsCheckClass},
+            EDITGROUP = #{editGroup},
+            DEFAULTSET = #{defaultSet},
+            CUSTOMSEXAMMARK = #{customsExamMark},
+            EXPRECOFLG = #{expRecoFlg},
+            EXPRECDISC_1 = #{expRecDisc1},
+            EXPRECNO_1 = #{expRecNo1},
+            EXPRECDISC_2 = #{expRecDisc2},
+            EXPRECNO_2 = #{expRecNo2},
+            EXPRECDISC_3 = #{expRecDisc3},
+            EXPRECNO_3 = #{expRecNo3},
+            EXPRECDISC_4 = #{expRecDisc4},
+            EXPRECNO_4 = #{expRecNo4},
+            EXPRECDISC_5 = #{expRecDisc5},
+            EXPRECNO_5 = #{expRecNo5},
+            EXPRECDISC_6 = #{expRecDisc6},
+            EXPRECNO_6 = #{expRecNo6},
+            EXPRECDISC_7 = #{expRecDisc7},
+            EXPRECNO_7 = #{expRecNo7},
+            EXPRECDISC_8 = #{expRecDisc8},
+            EXPRECNO_8 = #{expRecNo8},
+            EXPRECDISC_9 = #{expRecDisc9},
+            EXPRECNO_9 = #{expRecNo9},
+            EXPRECDISC_10 = #{expRecDisc10},
+            EXPRECNO_10 = #{expRecNo10},
+            EXPRECDISC_11 = #{expRecDisc11},
+            EXPRECNO_11 = #{expRecNo11},
+            EXPRECDISC_12 = #{expRecDisc12},
+            EXPRECNO_12 = #{expRecNo12},
+            EXPRECDISC_13 = #{expRecDisc13},
+            EXPRECNO_13 = #{expRecNo13},
+            EXPRECDISC_14 = #{expRecDisc14},
+            EXPRECNO_14 = #{expRecNo14},
+            EXPRECDISC_15 = #{expRecDisc15},
+            EXPRECNO_15 = #{expRecNo15},
+            IF_FARECURRENCYCD = #{ifFareCurrencyCd},
+            IF_FARE = #{ifFare},
+            IF_INSURANCECURCD = #{ifInsuranceCurCd},
+            IF_INSURANCEAMOUNT = #{ifInsuranceAmount},
+            CUSTOMSCHECKPRIORITY = #{customsCheckPriority},
+            ESAFLG = '2'
+        WHERE
+            CWBNO = #{cwbNo}
+    </update>
+    <update id="saveEdaDetailData" parameterType="com.kse.wmsv2.oa_et_001.dao.OAET001EDADetailDao">
+        INSERT INTO
+        AE_DATA_DETAIL
+        (CWBNO,
+        SEQ,
+        EXPSTATITEMNO,
+        NACCSCD,
+        ITEMNOOCSDEPTCD,
+        ITEM,
+        AMO_1,
+        AMOUNIT_1,
+        AMO_2,
+        AMOUNIT_2,
+        BASICPRICEDIVCOEF,
+        BASICPRICECURCD,
+        BASICPRICEAMO,
+        OTHERLAWCD_1,
+        OTHERLAWCD_2,
+        OTHERLAWCD_3,
+        OTHERLAWCD_4,
+        OTHERLAWCD_5,
+        EXPTRADECONTCD,
+        FOREXCHLOW48,
+        CUSTOMSEXEMPTCD,
+        INCONSTAXEXEMPCD,
+        INCONSTAXEXEMPDISC,
+        REGUSERCD,
+        REGDATE,
+        UPDATEUSERCD,
+        UPDATEDATE,
+        TAXRATE,
+        JPYAMOUNT)
+        VALUES
+        (#{cwbNo}
+        ,#{seq}
+        ,#{expStatItemNo}
+        ,#{naccsCd}
+        ,#{itemNoOcsDeptCd}
+        ,#{item}
+        ,#{amo1}
+        ,#{amoUnit1}
+        ,#{amo2}
+        ,#{amoUnit2}
+        ,#{basicPriceDivCoef}
+        ,#{basicPriceCurCd}
+        ,#{basicPriceAmo}
+        ,#{otherLawCd1}
+        ,#{otherLawCd2}
+        ,#{otherLawCd3}
+        ,#{otherLawCd4}
+        ,#{otherLawCd5}
+        ,#{expTradeContCd}
+        ,#{forexchLow48}
+        ,#{customsExemptCd}
+        ,#{inconsTaxExempCd}
+        ,#{inconsTaxExempDisc}
+        ,#{user}
+        ,#{date}
+        ,#{user}
+        ,#{date}
+        ,#{taxRate}
+        ,#{jpyAmount}
+        )
+        ON DUPLICATE KEY
+        UPDATE
+        EXPSTATITEMNO = #{expStatItemNo},
+        NACCSCD = #{naccsCd},
+        ITEM = #{item},
+        AMO_1 = #{amo1},
+        AMOUNIT_1 = #{amoUnit1},
+        AMO_2 = #{amo2},
+        AMOUNIT_2 = #{amoUnit2},
+        BASICPRICEDIVCOEF = #{basicPriceDivCoef},
+        BASICPRICECURCD = #{basicPriceCurCd},
+        BASICPRICEAMO = #{basicPriceAmo},
+        OTHERLAWCD_1 = #{otherLawCd1},
+        OTHERLAWCD_2 = #{otherLawCd2},
+        OTHERLAWCD_3 = #{otherLawCd3},
+        OTHERLAWCD_4 = #{otherLawCd4},
+        OTHERLAWCD_5 = #{otherLawCd5},
+        EXPTRADECONTCD = #{expTradeContCd},
+        FOREXCHLOW48 = #{forexchLow48},
+        CUSTOMSEXEMPTCD = #{customsExemptCd},
+        INCONSTAXEXEMPCD = #{inconsTaxExempCd},
+        INCONSTAXEXEMPDISC = #{inconsTaxExempDisc},
+        UPDATEUSERCD = #{user},
+        UPDATEDATE = #{date}
+    </update>
+    <update id="saveMecData" parameterType="com.kse.wmsv2.oa_et_001.dao.OAET001MECDao">
+        UPDATE
+            AE_DATA
+        SET
+            PROCNO = #{procNo},
+            TRUCKNODATE = #{truckNoDate},
+            LINKCONNECTFLG = #{linkConnectFlg},
+            REPORTCONDITION = #{reportCondition},
+            CUSTOMSKINDCD_1 = #{customsKindCd1},
+            REPORTDEPCD = #{reportDepCd},
+            REPORTDIVISIONCD = #{reportDivisionCd},
+            EXPREPORTPLANDATE = #{expReportPlanDate},
+            EXPCUSTOMERNO = #{expCustomerNo},
+            EXPCUSTOMERDEPTCD = #{expCustomerDeptCd},
+            EXPCUSTOMEROCSDEPTCD = #{expCustomerOcsDeptCd},
+            EXPCUSTOMERNAME = #{expCustomerName},
+            EXPCUSTOMERPOSTCODE = #{expCustomerPostcode},
+            EXPCUSTOMERADD_1 = #{expCustomerAdd1},
+            EXPCUSTOMERADD_2 = #{expCustomerAdd2},
+            EXPCUSTOMERADD_3 = #{expCustomerAdd3},
+            EXPCUSTOMERADD_4 = #{expCustomerAdd4},
+            EXPCUSTOMERADD_LUMP = #{expCustomerAddLump},
+            EXPCUSTOMERTELNO = #{expCustomerTelNo},
+            EXPCUSTOMERADD = #{expCustomerAdd},
+            CONSIGNEENO = #{consigneeNo},
+            CONSIGNEEDEPTCD = #{consigneeDeptCd},
+            CONSIGNEEOCSDEPTCD = #{consigneeOcsDeptCd},
+            CONSIGNEENAME = #{consigneeName},
+            CONSIGNEEPOSTCODE = #{consigneePostcode},
+            CONSIGNEEADD_1 = #{consigneeAdd1},
+            CONSIGNEEADD_2 = #{consigneeAdd2},
+            CONSIGNEEADD_3 = #{consigneeAdd3},
+            CONSIGNEEADD_4 = #{consigneeAdd4},
+            CONSIGNEEADD_LUMP = #{consigneeAddLump},
+            CONSIGNEEADD = #{consigneeAdd},
+            CONSIGNEECOUNTRY = #{consigneeCountry},
+            CUSTOMSOFFICEJANITORCD = #{customsOfficeJanitorCd},
+            CUSTOMSOFFICEJANITORNAME = #{customsOfficeJanitorName},
+            CUSTOMSOFFICEJANITORRENO = #{customsOfficeJanitorReNo},
+            CUSTOMSCHECKCLASS = #{customsCheckClass},
+            EDITGROUP = #{editGroup},
+            DEFAULTSET = #{defaultSet},
+            BONDEDWAREHOUSECD = #{bondedWarehouseCd},
+            CARRYINGPIECE = #{carryingPiece},
+            CARRYINGWEIGHT = #{carryingWeight},
+            SHIPPERSSECCD = #{shippersSecCd},
+            SHIPPERSREFNO = #{shippersRefNo},
+            LASTDESTINATIONCD = #{lastDestinationCd},
+            DEPPORT = #{depPort},
+            DISCERNMENTMARK = #{discernmentMark},
+            INSPECTIONWITNESS = #{inspectionWitness},
+            FOBCURRENCYCD = #{fobCurrencyCd},
+            FOBAMO = #{fobAmo},
+            REPORTVALUE = #{reportValue},
+            ITEM = #{item},
+            NEWS_2 = #{news2},
+            INVOICEVALCLASSCD = #{invoiceValClassCd},
+            INVOICEVALCONCD = #{invoiceValConCd},
+            INVOICECURCD = #{invoiceCurCd},
+            INVOICEVALUE = #{invoiceValue},
+            LARGESMALLFLG = #{largeSmallFlg},
+            IF_FARECURRENCYCD = #{ifFareCurrencyCd},
+            IF_FARE = #{ifFare},
+            IF_INSURANCECURCD = #{ifInsuranceCurCd},
+            IF_INSURANCEAMOUNT = #{ifInsuranceAmount},
+            BASICPRICETOTAL = #{basicPriceTotal},
+            INHOUSEREFNUMBER = #{inHouseRefNumber},
+            CUSTOMSCHECKPRIORITY = #{customsCheckPriority},
+            ESAFLG = '1'
+        WHERE
+            CWBNO = #{cwbNo}
+    </update>
+</mapper>

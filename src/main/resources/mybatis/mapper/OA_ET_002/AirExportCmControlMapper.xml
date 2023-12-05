@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="com.kse.wmsv2.oa_et_002.mapper.AirExportCmControlMapper">
+  <select id="getListcontrolDate" parameterType="java.lang.String" resultType="string">
+    SELECT 
+      CONTROLDATE 
+    FROM CM_CONTROL 
+    WHERE
+    CONTROLCD = #{controlCd}
+  </select>
+</mapper>
+
+ 

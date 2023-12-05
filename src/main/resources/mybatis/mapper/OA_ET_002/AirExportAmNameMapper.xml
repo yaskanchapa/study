@@ -1,0 +1,83 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="com.kse.wmsv2.oa_et_002.mapper.AirExportAmNameMapper">
+  <select id="getListAmName" parameterType="java.lang.String" resultType="string">
+    SELECT 
+      NAME 
+    FROM AM_NAME 
+    WHERE NAMECLASS = #{nameClass}
+  </select>
+
+  <select id="getListCodeAndAmName" parameterType="java.lang.String" resultMap="listCodeAndAmName">
+            SELECT 
+              NAMECD,
+              NAME 
+            FROM AM_NAME 
+            WHERE NAMECLASS = #{nameClass}
+  </select>
+
+
+  <select id="getListNameClassAndDepartmentCd" parameterType="java.lang.String" resultMap="listCodeAndAmName">
+            SELECT 
+              NAMECD,
+              NAME 
+            FROM AM_NAME 
+            WHERE NAMECLASS = #{nameClass}
+            AND DEPARTMENTCD = #{departmentCd}
+  </select>
+
+  <select id="getOperator" resultType="string">
+    SELECT
+      DISTINCT CONCAT(CHARACTERITEM1 , ' ' , CHARACTERITEM2)
+    FROM AM_NAME 
+    WHERE NAMECLASS = #{nameClass}
+    AND NAMECD = #{nameCd}
+  </select>
+  
+  <resultMap id="listCodeAndAmName" type="com.kse.wmsv2.oa_et_002.dto.ComBoBoxDto">
+    <result column="NAMECD" jdbcType="VARCHAR" property="value" />
+    <result column="NAME" jdbcType="VARCHAR" property="name" />
+  </resultMap>
+
+  <select id="getDataAmNameData" parameterType="java.lang.String" resultMap="amNameData">
+      SELECT 
+        NAMECD, 
+        CHARACTERITEM1, 
+        CHARACTERITEM2, 
+        CHARACTERITEM3, 
+        CHARACTERITEM4, 
+        CHARACTERITEM5, 
+        CHARACTERITEM6, 
+        CHARACTERITEM7, 
+        CHARACTERITEM8, 
+        CHARACTERITEM9, 
+        CHARACTERITEM10 
+      FROM 
+        AM_NAME 
+      WHERE 
+        1 = 1 
+        AND DEPARTMENTCD = 'ALL' 
+        AND NAMECLASS = '0172' 
+        AND NAMECD= #{nameCd}
+          
+  </select>
+  
+   <resultMap id="amNameData" type="com.kse.wmsv2.oa_et_002.dto.AMNameDto">
+    <result column="NAMECD" jdbcType="VARCHAR" property="nameCd" />
+    <result column="CHARACTERITEM1" jdbcType="VARCHAR" property="characterItem1" />
+    <result column="CHARACTERITEM2" jdbcType="VARCHAR" property="characterItem2" />
+    <result column="CHARACTERITEM3" jdbcType="VARCHAR" property="characterItem3" />
+    <result column="CHARACTERITEM4" jdbcType="VARCHAR" property="characterItem4" />
+    <result column="CHARACTERITEM5" jdbcType="VARCHAR" property="characterItem5" />
+    <result column="CHARACTERITEM6" jdbcType="VARCHAR" property="characterItem6" />
+    <result column="CHARACTERITEM7" jdbcType="VARCHAR" property="characterItem7" />
+    <result column="CHARACTERITEM8" jdbcType="VARCHAR" property="characterItem8" />
+    <result column="CHARACTERITEM9" jdbcType="VARCHAR" property="characterItem9" />
+    <result column="CHARACTERITEM10" jdbcType="VARCHAR" property="characterItem10" />
+  </resultMap>
+</mapper>
+
+ 

@@ -1,0 +1,50 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="com.kse.wmsv2.oc_cs_007.mapper.OCCS007ScreenMapper">
+    <!--CS_IMAGE_MANAGEMENT更新-->
+    <insert id="insertCsImageManagement" parameterType="com.kse.wmsv2.oc_cs_007.dao.OCCS007InsertCsImageManagementDao">
+        REPLACE INTO CS_IMAGE_MANAGEMENT
+            (
+                IMPORTEXPORTCLASS  ,
+                AWBNO  ,
+                CWBNO  ,
+                CWBNODEPTCD  ,
+                IMAGECLASS  ,
+                SEQ  ,
+                IMAGEPATH  ,
+                REGUSERCD  ,
+                REGDATE  ,
+                UPDATEUSERCD  ,
+                UPDATEDATE
+            )
+        VALUES
+            (
+                #{importExportClass},
+                #{awbNo},
+                #{cwbNo},
+                #{cwbNoDeptCd},
+                #{imageClass},
+                #{seq},
+                #{imagePath},
+                #{regUserCd},
+                #{regDate},
+                #{updateUserCd},
+                #{updateDate}
+             );
+    </insert>
+
+    <select id="selectCsImageManagement" parameterType="com.kse.wmsv2.oc_cs_007.dao.OCCS007SelectCsImageManagementDao" resultType="String">
+        SELECT
+            SEQ
+        FROM
+            CS_IMAGE_MANAGEMENT
+        WHERE
+            IMPORTEXPORTCLASS = #{importExportClass}
+            AND CWBNO = #{cwbNo}
+        ORDER BY SEQ DESC
+        LIMIT 1
+    </select>
+</mapper>

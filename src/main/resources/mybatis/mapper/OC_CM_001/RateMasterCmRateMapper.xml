@@ -1,0 +1,35 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="com.kse.wmsv2.oc_cm_001.mapper.RateMasterCmRateMapper">
+
+  <delete id="deleteCmRateByStartDate" parameterType="com.kse.wmsv2.oc_cm_001.dto.request.RateMasterRequest">
+     DELETE FROM CM_RATE
+     WHERE 
+          DATE_FORMAT(STARTDATE, '%Y/%m/%d') = #{startDate} 
+ </delete>
+
+<insert id="insertCmRateByStartDateAndNameCd" parameterType="com.kse.wmsv2.oc_cm_001.dto.RateMasterDto">
+     INSERT INTO CM_RATE 
+               (STARTDATE,
+               CURRENCYCD,
+               RATE,
+               REGUSERCD,
+               REGDATE,
+               UPDATEUSERCD,
+               UPDATEDATE)
+          VALUES 
+               (
+               #{startDate},
+               #{nameCd},
+               #{rate},
+               #{regUserCd},
+               #{regDate},
+               #{updUserCd},
+               #{updateDate})
+  </insert>
+</mapper>
+
+ 

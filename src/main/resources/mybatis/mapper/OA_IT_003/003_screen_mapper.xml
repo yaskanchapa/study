@@ -1,0 +1,698 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="com.kse.wmsv2.oa_it_003.mapper.OAIT003ScreenMapper">
+    <select id="selectSearchResult" parameterType="com.kse.wmsv2.oa_it_003.dto.OAIT003SearchDto" resultType="com.kse.wmsv2.oa_it_003.dao.OAIT003SearchResultDao">
+        SELECT
+            REP.AWBNO,                                                            --    MAWBNo
+
+            -- HAWBNo
+            CASE
+                WHEN REP.`CWBNODEPTCD` = '000'
+                THEN REP.`CWBNO`
+                ELSE CONCAT(REP.`CWBNODEPTCD`, ' / ', REP.`CWBNO`)
+            END AS CWBNO,
+
+            REP.`CWBNODEPTCD`,
+            REP.IMPCUSTOMERNO,                                                  --    輸入者番号
+            REP.IMPCUSTOMERNAME,                                                --    輸入者名
+            IFNULL(                                                             --    輸入者住所
+                REP.IMPCUSTOMERADD, CONCAT(
+                    IFNULL(DATA.IMPCUSTOMERADD_1, ''), ' ',
+                    IFNULL(DATA.IMPCUSTOMERADD_2, ''), ' ',
+                    IFNULL(DATA.IMPCUSTOMERADD_3, ''), ' ',
+                    IFNULL(DATA.IMPCUSTOMERADD_4, '')
+                )
+            ) AS IMPCUSTOMERADD,
+            REP.IMPCUSTOMERTELNO,                                                --    電話番号
+            REP.EXPCUSTOMERNAME,                                                 --    会社名
+            REP.REPORTNO,                                                        --    申告番号
+            REP.PERMITDATE2,                                                     --    許可日時
+            DATE_FORMAT(REP.PERMITDATE2, '%Y-%m-%d' ) AS PERMITDATE2YMD,
+            DATE_FORMAT(REP.PERMITDATE2, '%T' ) AS PERMITDATE2HM,
+
+            REP.EXAMINATIONFLGDISC,                                              --    審査区分
+
+
+            -- インボイス価格
+            CASE
+                WHEN
+                    REP.INVOICECURCD = 'JPY'
+                THEN
+                    REP.INVOICEVALUE
+                ELSE
+                    (CASE
+                        WHEN
+                            REP.INVOICECURCD = REP.EXCHANGERATECURRENCYCD_1
+                        THEN
+                            IFNULL(CAST(REP.INVOICEVALUE AS SIGNED),0) * IFNULL(CAST(REP.EXCHANGERATECURRENCYCD_1 AS SIGNED),0)
+                        WHEN
+                            REP.INVOICECURCD = REP.EXCHANGERATECURRENCYCD_2
+                        THEN
+                            IFNULL(CAST(REP.INVOICEVALUE AS SIGNED),0) *  IFNULL(CAST(REP.EXCHANGERATECURRENCYCD_2 AS SIGNED),0)
+                        WHEN
+                            REP.INVOICECURCD = REP.EXCHANGERATECURRENCYCD_3
+                        THEN
+                            IFNULL(CAST(REP.INVOICEVALUE AS SIGNED),0) *  IFNULL(CAST(REP.EXCHANGERATECURRENCYCD_3 AS SIGNED),0)
+                    END)
+                END AS INVOICEVALUE,
+
+            -- 審査価格処理
+            IFNULL(CAST
+            (
+                (CASE
+                    WHEN
+                        REP.INVOICECURCD = 'JPY'
+                    THEN
+                        REP.INVOICEVALUE
+                    ELSE
+                        CASE
+                            WHEN
+                                REP.INVOICECURCD = REP.EXCHANGERATECURRENCYCD_1
+                            THEN
+                                IFNULL(CAST(REP.INVOICEVALUE AS SIGNED),0) * IFNULL(CAST(REP.EXCHANGERATECURRENCYCD_1 AS SIGNED),0)
+                            WHEN
+                                REP.INVOICECURCD = REP.EXCHANGERATECURRENCYCD_2
+                            THEN
+                                IFNULL(CAST(REP.INVOICEVALUE AS SIGNED),0) *  IFNULL(CAST(REP.EXCHANGERATECURRENCYCD_2 AS SIGNED),0)
+                            WHEN
+                                REP.INVOICECURCD = REP.EXCHANGERATECURRENCYCD_3
+                            THEN
+                                IFNULL(CAST(REP.INVOICEVALUE AS SIGNED),0) *  IFNULL(CAST(REP.EXCHANGERATECURRENCYCD_3 AS SIGNED),0)
+                        END
+                END) AS SIGNED
+            ),0) +
+            IFNULL(CAST
+            (
+                (CASE
+                    WHEN
+                        REP.INVOICECURCD = 'JPY'
+                    THEN
+                        REP.FARE
+                    ELSE
+                        CASE
+                            WHEN
+                                REP.INVOICECURCD = REP.EXCHANGERATECURRENCYCD_1
+                            THEN
+                                IFNULL(CAST(REP.FARE AS SIGNED),0) * IFNULL(CAST(REP.EXCHANGERATECURRENCYCD_1 AS SIGNED),0)
+                            WHEN
+                                REP.INVOICECURCD = REP.EXCHANGERATECURRENCYCD_2
+                            THEN
+                                IFNULL(CAST(REP.FARE AS SIGNED),0) *  IFNULL(CAST(REP.EXCHANGERATECURRENCYCD_2 AS SIGNED),0)
+                            WHEN
+                                REP.INVOICECURCD = REP.EXCHANGERATECURRENCYCD_3
+                            THEN
+                                IFNULL(CAST(REP.FARE AS SIGNED),0) *  IFNULL(CAST(REP.EXCHANGERATECURRENCYCD_3 AS SIGNED),0)
+                        END
+                END) AS SIGNED
+            ),0) +
+            IFNULL(CAST
+            (
+                (CASE
+                    WHEN
+                        REP.INVOICECURCD = 'JPY'
+                    THEN
+                        REP.INSURANCEAMOUNT
+                    ELSE
+                        CASE
+                            WHEN
+                                REP.INVOICECURCD = REP.EXCHANGERATECURRENCYCD_1
+                            THEN
+                                IFNULL(CAST(REP.INSURANCEAMOUNT AS SIGNED),0) * IFNULL(CAST(REP.EXCHANGERATECURRENCYCD_1 AS SIGNED),0)
+                            WHEN
+                                REP.INVOICECURCD = REP.EXCHANGERATECURRENCYCD_2
+                            THEN
+                                IFNULL(CAST(REP.INSURANCEAMOUNT AS SIGNED),0) *  IFNULL(CAST(REP.EXCHANGERATECURRENCYCD_2 AS SIGNED),0)
+                            WHEN
+                                REP.INVOICECURCD = REP.EXCHANGERATECURRENCYCD_3
+                            THEN
+                                IFNULL(CAST(REP.INSURANCEAMOUNT AS SIGNED),0) *  IFNULL(CAST(REP.EXCHANGERATECURRENCYCD_3 AS SIGNED),0)
+                    END
+                END) AS SIGNED
+            ),0) AS AMO,
+
+            REP.ITEM,                                                            --    品名
+            REP.CARGOPIECE,                                                      --    個数
+
+            -- 関税処理A
+            IFNULL
+                (CAST(
+                    (CASE
+                        WHEN
+                            REP.TAXKIND_1_2 = '関税'
+                        THEN
+                            REP.TAXKIND_1_3
+                        ELSE
+                            0
+                    END)
+                AS SIGNED),
+            0) +
+            -- 関税処理B
+            IFNULL
+                (CAST(
+                    (CASE
+                        WHEN
+                            REP.TAXKIND_2_2 = '関税'
+                        THEN
+                            REP.TAXKIND_2_3
+                        ELSE
+                            0
+                    END)
+                AS SIGNED),
+            0) +
+            -- 関税処理C
+            IFNULL
+                (CAST(
+                    (CASE
+                        WHEN
+                            REP.TAXKIND_3_2 = '関税'
+                        THEN
+                            REP.TAXKIND_3_3
+                        ELSE
+                            0
+                    END)
+                AS SIGNED),
+            0) +
+             -- 関税処理D
+            IFNULL
+                (CAST(
+                    (CASE
+                        WHEN
+                            REP.TAXKIND_4_2 = '関税'
+                        THEN
+                            REP.TAXKIND_4_3
+                        ELSE
+                            0
+                    END)
+                AS SIGNED),
+            0) +
+            -- 関税処理E
+            IFNULL
+                (CAST(
+                    (CASE
+                        WHEN
+                            REP.TAXKIND_5_2 = '関税'
+                        THEN
+                            REP.TAXKIND_5_3
+                        ELSE
+                            0
+                    END)
+                AS SIGNED),
+            0) +
+            -- 関税処理F
+            IFNULL
+                (CAST(
+                    (CASE
+                        WHEN
+                            REP.TAXKIND_6_2 = '関税'
+                        THEN
+                            REP.TAXKIND_6_3
+                        ELSE
+                            0
+                    END)
+                AS SIGNED),
+            0) +
+            -- 関税処理G
+            IFNULL
+                (CAST(
+                    (CASE
+                        WHEN
+                            REP.TAXKIND_7_2 = '関税'
+                        THEN
+                            REP.TAXKIND_7_3
+                        ELSE
+                            0
+                    END)
+                AS SIGNED),
+            0) AS KANZEI,
+
+            -- 消費税処理A
+            IFNULL
+                (CAST(
+                    (CASE
+                        WHEN
+                            REP.TAXKIND_1_2 = '消費税'
+                        THEN
+                            REP.TAXKIND_1_3
+                        ELSE
+                            0
+                    END)
+                AS SIGNED),
+            0) +
+            -- 消費税処理B
+            IFNULL
+                (CAST(
+                    (CASE
+                        WHEN
+                            REP.TAXKIND_2_2 = '消費税'
+                        THEN
+                            REP.TAXKIND_2_3
+                        ELSE
+                            0
+                    END)
+                AS SIGNED),
+            0) +
+            -- 消費税処理C
+            IFNULL
+                (CAST(
+                    (CASE
+                        WHEN
+                            REP.TAXKIND_3_2 = '消費税'
+                        THEN
+                            REP.TAXKIND_3_3
+                        ELSE
+                            0
+                    END)
+                AS SIGNED),
+            0) +
+             -- 消費税処理D
+            IFNULL
+                (CAST(
+                    (CASE
+                        WHEN
+                            REP.TAXKIND_4_2 = '消費税'
+                        THEN
+                            REP.TAXKIND_4_3
+                        ELSE
+                            0
+                    END)
+                AS SIGNED),
+            0) +
+            -- 消費税処理E
+            IFNULL
+                (CAST(
+                    (CASE
+                        WHEN
+                            REP.TAXKIND_5_2 = '消費税'
+                        THEN
+                            REP.TAXKIND_5_3
+                        ELSE
+                            0
+                    END)
+                AS SIGNED),
+            0) +
+            -- 消費税処理F
+            IFNULL
+                (CAST(
+                    (CASE
+                        WHEN
+                            REP.TAXKIND_6_2 = '消費税'
+                        THEN
+                            REP.TAXKIND_6_3
+                        ELSE
+                            0
+                    END)
+                AS SIGNED),
+            0) +
+            -- 消費税処理G
+            IFNULL
+                (CAST(
+                    (CASE
+                        WHEN
+                            REP.TAXKIND_7_2 = '消費税'
+                        THEN
+                            REP.TAXKIND_7_3
+                        ELSE
+                            0
+                    END)
+                AS SIGNED),
+            0) AS SHOUHIZEI,
+
+            -- 地方消費税処理A
+            IFNULL
+                (CAST(
+                    (CASE
+                        WHEN
+                            REP.TAXKIND_1_2 = '地方消費税'
+                        THEN
+                            REP.TAXKIND_1_3
+                        ELSE
+                            0
+                    END)
+                AS SIGNED),
+            0) +
+            -- 地方消費税処理B
+            IFNULL
+                (CAST(
+                    (CASE
+                        WHEN
+                            REP.TAXKIND_2_2 = '地方消費税'
+                        THEN
+                            REP.TAXKIND_2_3
+                        ELSE
+                            0
+                    END)
+                AS SIGNED),
+            0) +
+            -- 地方消費税処理C
+            IFNULL
+                (CAST(
+                    (CASE
+                        WHEN
+                            REP.TAXKIND_3_2 = '地方消費税'
+                        THEN
+                            REP.TAXKIND_3_3
+                        ELSE
+                            0
+                    END)
+                AS SIGNED),
+            0) +
+             -- 地方消費税処理D
+            IFNULL
+                (CAST(
+                    (CASE
+                        WHEN
+                            REP.TAXKIND_4_2 = '地方消費税'
+                        THEN
+                            REP.TAXKIND_4_3
+                        ELSE
+                            0
+                    END)
+                AS SIGNED),
+            0) +
+            -- 地方消費税処理E
+            IFNULL
+                (CAST(
+                    (CASE
+                        WHEN
+                            REP.TAXKIND_5_2 = '地方消費税'
+                        THEN
+                            REP.TAXKIND_5_3
+                        ELSE
+                            0
+                    END)
+                AS SIGNED),
+            0) +
+            -- 地方消費税処理F
+            IFNULL
+                (CAST(
+                    (CASE
+                        WHEN
+                            REP.TAXKIND_6_2 = '地方消費税'
+                        THEN
+                            REP.TAXKIND_6_3
+                        ELSE
+                            0
+                    END)
+                AS SIGNED),
+            0) +
+            -- 地方消費税処理G
+            IFNULL
+                (CAST(
+                    (CASE
+                        WHEN
+                            REP.TAXKIND_7_2 = '地方消費税'
+                        THEN
+                            REP.TAXKIND_7_3
+                        ELSE
+                            0
+                    END)
+                AS SIGNED),
+            0) AS CHIHOSHOUHIZEI,
+
+            IFNULL(REP.TAXAMO, '0') AS TAXAMO,                                  --    税額合計
+            REP.IMPCUSTOMERPOSTCODE,                                            --    郵便番号
+            IFNULL(NULL,NULL) AS AREA,                                          --    エリア(NULL出力)
+            IFNULL(NULL,NULL) AS DESTADD,                                       --    送り先住所(NULL出力)
+            REP.CARGOWEIGHT,                                                    --    重量
+            REP.LOADINGFLT_1 AS LOADINGFLT1,                                    --    FLTNo
+            REP.ARRPORTDATE,                                                    --    FLTDate
+            IFNULL(NULL,NULL) AS PAYMENT,                                       --    Payment(NULL出力)
+            0 AS FREIGHT,                                                       --    Freight(0出力)
+            IFNULL(NULL,NULL) AS CONTACTPERSON,                                 --    Contact Person(NULL出力)
+            REP.CONSIGNORCOUNTRY,                                               --    原産地
+            REP.CONSIGNORNAME,                                                  --    荷送人名
+            IFNULL(REP.CONSIGNORADD_LUMP,
+                CONCAT(
+                    IFNULL(REP.CONSIGNORADD_1, ''), ' ',                        --    荷送人住所
+                    IFNULL(REP.CONSIGNORADD_2, ''), ' ',
+                    IFNULL(REP.CONSIGNORADD_3, ''), ' ',
+                    IFNULL(REP.CONSIGNORADD_4, '')
+                )
+            ) AS CONSIGNORADD,
+            IFNULL(REP.`FARECURRENCYCD`, DATA.INVOICECURCD) AS FARECURRENCYCD,  --    通貨
+            REP.REPORTDATE,                                                     --    申告日
+            CONCAT(
+                CASE
+                    WHEN
+                        REP.NEWS_1 IS NOT NULL
+                    THEN
+                        REP.NEWS_1
+                    ELSE
+                        IFNULL(DATA.NEWS_1, '')
+                    END,
+                CASE
+                    WHEN
+                        REP.NEWS_2 IS NOT NULL
+                    THEN
+                        REP.NEWS_2
+                    ELSE
+                        IFNULL(DATA.NEWS_2, '')
+                    END
+            ) AS NEWS,
+
+            --    識別
+            CASE
+                WHEN
+                    REP.LARGESMALLFLG = 'S'
+                THEN
+                    '一般(小額)'
+                WHEN
+                    REP.LARGESMALLFLG = 'L'
+                THEN
+                    '一般(大額)'
+                ELSE
+                    'マニフェスト'
+            END AS SHIKIBETSU,
+
+            REP.LARGESMALLFLG,                                                  --    L/S
+            REP.INHOUSEREFNUMBER,                                               --    会社名
+            REP.REPRESENTATIVECD,                                               --    通関コード
+            REP.CLEARPLACECD,                                                   --    上屋コード
+            REP.PRELIMINARYREPORT,                                              --    口座識別
+            DATA.PAYMETHODDISC,                                                 --    納付方法
+            DATA.REPORTDIVCD,                                                   --    官署
+            IFNULL(REP.REPORTDEPCD, DATA.REPORTDEPCD) as REPORTDEPCD,           --    部門
+            REP.INPUTIMPCUSTOMERNO,                                             --    輸入者(入力)
+            REP.DELIVERYDATEEXTCD                                               -- 納期限延長コード
+
+        FROM AI_DETAIL_PERMIT_DATA AS REP
+        LEFT JOIN AI_DATA AS DATA
+            ON REP.CWBNO = DATA.CWBNO
+                AND REP.CWBNODEPTCD = DATA.CWBNODEPTCD
+                AND REP.AWBNO = DATA.AWBNO
+            INNER JOIN (
+                SELECT
+                    CWBNO,AWBNO,ITEMCD,NACCSCD
+                FROM
+                    AI_DATA_DETAIL
+                <where>
+                    1 = 1
+                    <if test="itemNo != ''">
+                        AND ITEMCD LIKE CONCAT('%', #{itemNo}, '%')
+                    </if>
+                    <if test="naccsCode != ''">
+                        AND NACCSCD LIKE CONCAT('%', #{naccsCode} '%')
+                    </if>
+                </where>
+
+            ) DTREP
+                ON REP.CWBNO = DTREP.CWBNO
+                AND REP.AWBNO = DTREP.AWBNO
+        LEFT JOIN (
+            SELECT DISTINCT
+                CWBNO, AWBNO,ITEMCD,NACCSCD
+            FROM
+                AI_DATA_DETAIL
+            <where>
+                1 = 1
+                <if test="consignorCountryName != ''">
+                    AND COUNTRYOFORIGINCD LIKE CONCAT('%', #{consignorCountryName}, '%')
+                </if>
+                <if test="consignCertifiDisc != ''">
+                    AND ORIGINCERTIFIDISC LIKE CONCAT('%', #{consignCertifiDisc}, '%')
+                </if>
+            </where>
+        ) DTREP2
+            ON REP.CWBNO = DTREP2.CWBNO
+            AND REP.AWBNO = DTREP2.AWBNO
+        <where>
+            1 = 1
+            -- AND REP.項目ID = 検索条件項目(入力)
+            <if test="mawbNo != ''">
+                AND REP.AWBNO LIKE CONCAT('%', #{mawbNo}, '%')
+            </if>
+            <if test="hawbNo != ''">
+                AND REP.CWBNO LIKE CONCAT('%', #{hawbNo}, '%')
+            </if>
+            <if test="flt1 != ''">
+                AND REP.LOADINGFLT_1 LIKE CONCAT('%', #{flt1}, '%')
+            </if>
+            <if test="flt2 != ''">
+                AND REP.LOADINGFLT_2 LIKE CONCAT('%', #{flt2}, '%')
+            </if>
+            <if test="companyName != ''">
+                AND REP.EXPCUSTOMERNAME LIKE CONCAT('%', #{companyName}, '%')
+            </if>
+            <if test="importCustomerName != ''">
+                AND REP.IMPCUSTOMERNAME LIKE CONCAT('%', #{importCustomerName}, '%')
+            </if>
+            <if test="consignorName != ''">
+                AND REP.CONSIGNORNAME LIKE CONCAT('%', #{consignorName}, '%')
+            </if>
+            <if test="itemName != ''">
+                AND REP.ITEM LIKE CONCAT('%', #{itemName}, '%')
+            </if>
+
+            <if test="customsCode != ''">
+                AND REP.REPRESENTATIVECD LIKE CONCAT('%', #{customsCode}, '%')
+            </if>
+            <if test="clearPlaceCode != ''">
+                AND REP.CLEARPLACECD LIKE CONCAT('%', #{clearPlaceCode}, '%')
+            </if>
+            <if test="importCustomerAdd != ''">
+                AND (DATA.IMPCUSTOMERADD_1 LIKE CONCAT('%', #{importCustomerAdd}, '%')
+                    OR DATA.IMPCUSTOMERADD_2 LIKE CONCAT('%', #{importCustomerAdd}, '%')
+                    OR DATA.IMPCUSTOMERADD_3 LIKE CONCAT('%', #{importCustomerAdd}, '%')
+                    OR DATA.IMPCUSTOMERADD_4 LIKE CONCAT('%', #{importCustomerAdd}, '%')
+                    OR DATA.IMPCUSTOMERADD_LUMP LIKE CONCAT('%', #{importCustomerAdd}, '%')
+                    OR DATA.IMPCUSTOMERADD LIKE CONCAT('%', #{importCustomerAdd}, '%')
+                )
+            </if>
+            <if test="exportCustomerAdd != ''">
+                AND (DATA.EXPCUSTOMERADD_1 LIKE CONCAT('%', #{exportCustomerAdd}, '%')
+                    OR DATA.EXPCUSTOMERADD_2 LIKE CONCAT('%', #{exportCustomerAdd}, '%')
+                    OR DATA.EXPCUSTOMERADD_3 LIKE CONCAT('%', #{exportCustomerAdd}, '%')
+                    OR DATA.EXPCUSTOMERADD_4 LIKE CONCAT('%', #{exportCustomerAdd}, '%')
+                    OR DATA.EXPCUSTOMERADD_LUMP LIKE CONCAT('%', #{exportCustomerAdd}, '%')
+                    OR DATA.EXPCUSTOMERADD LIKE CONCAT('%', #{exportCustomerAdd}, '%')
+                )
+            </if>
+
+            <if test="inHouseNo != ''">
+                AND REP.INHOUSEREFNUMBER LIKE CONCAT('%', #{inHouseNo}, '%')
+            </if>
+            <if test="inHouseCd != ''">
+                AND DATA.INHOUSEREFNUMBER LIKE CONCAT('%', #{inHouseCd}, '%')
+            </if>
+
+            <if test="news1 != ''">
+                AND (
+                    REP.NEWS_1 LIKE CONCAT('%', #{news1}, '%')
+                    OR DATA.NEWS_1 LIKE CONCAT('%', #{news1}, '%')
+                )
+            </if>
+            <if test="news2 != ''">
+                AND (
+                    REP.NEWS_2 LIKE CONCAT('%', #{news2}, '%')
+                    OR DATA.NEWS_2 LIKE CONCAT('%', #{news2}, '%')
+                )
+            </if>
+            <if test="unloadPlace != ''">
+                AND AI_DATA.GETPORT LIKE CONCAT('%', #{unloadPlace}, '%')
+            </if>
+            <if test="clearPlaceName != ''">
+                AND REP.CLEARPLACENAME LIKE CONCAT('%', #{clearPlaceName}, '%')
+            </if>
+
+
+            <!--申告日条件設定-->
+            <if test="declareDate1 != null">
+                AND (
+                    DATE_FORMAT(REP.REPORTDATE, '%Y-%m-%d') &gt;= #{declareDate1}
+                    <if test="declareDate2 != null">
+                        AND DATE_FORMAT(REP.REPORTDATE, '%Y-%m-%d') BETWEEN #{declareDate1} AND #{declareDate2}
+                    </if>
+                )
+            </if>
+
+            <if test="declareDate2 != null">
+                AND (
+                    DATE_FORMAT(REP.REPORTDATE, '%Y-%m-%d') &lt;= #{declareDate2}
+                    <if test="declareDate1 != null">
+                        AND DATE_FORMAT(REP.REPORTDATE, '%Y-%m-%d') BETWEEN #{declareDate1} AND #{declareDate2}
+                    </if>
+                )
+            </if>
+
+            <!--許可日条件設定-->
+            <if test="permitDate1 != null">
+                AND (
+                    DATE_FORMAT(REP.PERMITDATE2, '%Y-%m-%d') &gt;= #{permitDate1}
+                    <if test="permitDate2 != null">
+                        AND DATE_FORMAT(REP.PERMITDATE2, '%Y-%m-%d') BETWEEN #{permitDate1} AND #{permitDate2}
+                    </if>
+                )
+            </if>
+            <if test="permitDate2 != null">
+                AND (
+                    DATE_FORMAT(REP.PERMITDATE2, '%Y-%m-%d') &lt;= #{permitDate2}
+                    <if test="permitDate1 != null">
+                        AND DATE_FORMAT(REP.PERMITDATE2, '%Y-%m-%d') BETWEEN #{permitDate1} AND #{permitDate2}
+                    </if>
+                )
+            </if>
+
+
+
+            AND (
+                DATA.CWBNO IS NOT NULL
+                OR DTREP2.CWBNO IS NOT NULL
+                <if test="consignorCountryName != ''">
+                    OR REP.CONSIGNORCOUNTRY LIKE CONCAT('%', #{consignorCountryName}, '%')
+                </if>
+            )
+            AND DTREP2.CWBNO IS NOT NULL
+        </where>
+    </select>
+    <select id="inHouseList" resultType="com.kse.wmsv2.oa_it_003.dao.OAIT003InHouseListDao">
+        SELECT
+            AM_NAME.`NAMECD` AS NAMECD,
+            AM_NAME.`NAME` AS NAME
+        FROM
+            AM_NAME
+        WHERE
+            NAMECLASS = '0403'
+            AND (NAME != '' AND NAME IS NOT NULL)
+    </select>
+    <select id="printType" resultType = "com.kse.wmsv2.oa_it_003.dao.OAIT003PrintDao" parameterType="com.kse.wmsv2.oa_it_003.dto.OAIT003PrintDto">
+        SELECT DISTINCT
+            NM.`NAME` AS IMAGETYPE,
+            IM.`IMAGECLASS` AS IMAGETYPECD
+        FROM
+            CS_IMAGE_MANAGEMENT IM
+            INNER JOIN AM_NAME NM
+                ON IM.IMAGECLASS = NM.NAMECD
+        WHERE
+            NM.DEPARTMENTCD = 'ALL'
+            AND NM.NAMECLASS = '0111'
+            AND IM.IMPORTEXPORTCLASS = '1'
+            <!--
+              AND IM.CWBNO LIKE CONCAT('%', #{hawbNo}, '%')
+              AND IM.CWBNODEPTCD = #{cwbNoDeptCd}
+             -->
+
+    </select>
+    <select id="printTypeMultiple" resultType="com.kse.wmsv2.oa_it_003.dao.OAIT003PrintDao">
+        SELECT
+            AM_NAME.`NAME` AS IMAGETYPE,
+            AM_NAME.`NAMECD` AS IMAGETYPECD
+        FROM
+            AM_NAME
+        WHERE
+            DEPARTMENTCD = 'ALL'
+            AND NAMECLASS = '0111'
+    </select>
+    <select id="getImagePath" resultType="com.kse.wmsv2.oa_it_003.dao.OAIT003PrintDao" parameterType="com.kse.wmsv2.oa_it_003.dto.OAIT003PrintDto">
+        SELECT
+            IMAGEPATH
+        FROM
+            CS_IMAGE_MANAGEMENT
+        WHERE
+            AWBNO = #{mawbNo}
+            AND CWBNO = #{hawbNo}
+            AND IMAGECLASS = #{imageClass}
+    </select>
+</mapper>

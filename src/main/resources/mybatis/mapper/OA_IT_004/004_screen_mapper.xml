@@ -1,0 +1,141 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="com.kse.wmsv2.oa_it_004.mapper.OAIT004ScreenMapper">
+    <select id="getDefaultValueList" parameterType="hashMap" resultType="hashMap">
+        SELECT
+        NAMECD AS VALUE , NAME AS OPTION
+        FROM
+        AM_NAME
+        WHERE
+            NAMECLASS = #{class}
+        <if test ="deptCd != '' and deptCd != null " >
+            AND DEPARTMENTCD IN (#{deptCd},'ALL')
+        </if>
+    </select>
+    <insert id="insertOneShot" parameterType="hashMap">
+        INSERT INTO
+            AI_CONDITION(
+                CWBNO
+                ,CWBNODEPTCD
+                ,SEQ
+                ,DOCSTATUSCD
+                ,COMMENT
+                ,REGUSERCD
+                ,REGDATE
+                ,UPDATEUSERCD
+                ,UPDATEDATE
+            )
+        SELECT
+            #{cwbNo}
+            ,#{cwbNoDeptCd}
+            ,IFNULL(MAX(SEQ),0)+1
+            ,#{condition}
+            ,#{comment}
+            ,#{user}
+            ,#{date}
+            ,#{user}
+            ,#{date}
+        FROM
+            AI_CONDITION
+        WHERE
+            CWBNO = #{cwbNo}
+            AND CWBNODEPTCD = #{cwbNoDeptCd}
+    </insert>
+    <update id="updateOneShot" parameterType="hashMap">
+        UPDATE
+            AI_DATA
+        SET
+            CURRENTCUSTOMSSTATUSCD = #{condition}
+            ,UPDATEUSERCD = #{user}
+            ,UPDATEDATE = #{date}
+        WHERE
+            CWBNO = #{cwbNo}
+            AND CWBNODEPTCD = #{cwbNoDeptCd}
+            AND CUSTOMSPLACECD = #{customsCd}
+            AND CUSTOMSTRADERCD = #{trader}
+    </update>
+    <delete id="deleteOneShot" parameterType="hashMap">
+        DELETE
+        FROM
+            AI_CONDITION
+        WHERE
+            CWBNO = #{cwbNo}
+            AND CWBNODEPTCD = #{cwbNoDeptCd}
+            AND DOCSTATUSCD = #{condition}
+    </delete>
+    <update id="updateDocStatusMaster" parameterType="hashMap">
+        INSERT INTO
+            AI_STATUS(
+            BUSINESSCLASS,
+            AWBNO,
+            BWBNO,
+            CWBNO,
+            CWBNODEPTCD,
+            CUSTOMSTATUSCD,
+            BONDEDSTATUSCD,
+            PERMITFLG,
+            REGUSERCD,
+            REGDATE,
+            UPDATEUSERCD,
+            UPDATEDATE
+            )
+        VALUES
+            (
+            '03',
+            '00',
+            '00000000000',
+            #{cwbNo},
+            #{cwbNoDeptCd},
+            #{statusCd},
+            '0000000',
+            '0',
+            #{user},
+            #{date},
+            #{user},
+            #{date}
+        )
+        ON DUPLICATE KEY
+        UPDATE
+            CUSTOMSTATUSCD = #{statusCd}
+            ,UPDATEUSERCD = #{user}
+            ,UPDATEDATE = #{date}
+    </update>
+    <update id="updateDocStatusHistory" parameterType="hashMap">
+        INSERT INTO
+            AI_STATUS_HISTORY(
+            BUSINESSCLASS,
+            AWBNO,
+            BWBNO,
+            CWBNO,
+            CWBNODEPTCD,
+            STATUSCD,
+            PERMITFLG,
+            REGUSERCD,
+            REGDATE,
+            UPDATEUSERCD,
+            UPDATEDATE
+            )
+        VALUES
+            (
+            '03',
+            '00',
+            '00000000000',
+            #{cwbNo},
+            #{cwbNoDeptCd},
+            #{statusCd},
+            '0',
+            #{user},
+            #{date},
+            #{user},
+            #{date}
+        )
+        ON DUPLICATE KEY
+            UPDATE
+                STATUSCD = #{statusCd}
+                ,UPDATEUSERCD = #{user}
+                ,UPDATEDATE = #{date}
+    </update>
+</mapper>

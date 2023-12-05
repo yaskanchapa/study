@@ -1,0 +1,57 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--各appenderことにログパターンを設定します-->
+
+<configuration scan="true" scanPeriod="60 seconds">
+    <!--property設定-->
+    <property name="LOG_PATH" value="log"/>
+    <property name="LOG_FILE_NAME" value="Dev"/>
+    <property name="LOG_PATTERN" value="%d{yyyy-MM-dd HH:mm:ss.SSS} %-5level [%thread] [%logger{40}] - %msg%n"/>
+    <property name="LOG_LEVEL" value="info"/>
+
+<!--Appenders-->
+    <!--consoleLogのログパターン設定-->
+    <appender name="CONSOLE" class="ch.qos.logback.core.ConsoleAppender">
+        <!--encoderの基本設定：PatternLayoutEncoder-->
+        <encoder class="ch.qos.logback.classic.encoder.PatternLayoutEncoder">
+            <!--loggingのパターン設定-->
+            <Pattern>${LOG_PATTERN}</Pattern>
+        </encoder>
+    </appender>
+
+    <!--fileLogのログパターン設定(「RollingPolicyの設定、TimeBasedRollingPolicyの設定」が必要)-->
+    <appender name="FILE" class="ch.qos.logback.core.rolling.RollingFileAppender">
+        <!--encoderの基本設定：PatternLayoutEncoder-->
+        <encoder class="ch.qos.logback.classic.encoder.PatternLayoutEncoder">
+            <!--loggingのパターン設定-->
+            <pattern>${LOG_PATTERN}</pattern>
+        </encoder>
+        <!--Loggingの出力先-->
+<!--        <file>./${LOG_PATH}/${LOG_FILE_NAME}.log</file>-->
+        <file>./${LOG_PATH}/${LOG_FILE_NAME}.log</file>
+        <!--RollingPolicyの設定-->
+<!--        <rollingPolicy class="ch.qos.logback.core.rolling.TimeBasedRollingPolicy">-->
+        <rollingPolicy class="ch.qos.logback.core.rolling.SizeAndTimeBasedRollingPolicy">
+            <!--TimeBasedRollingPolicyの設定-->
+            <fileNamePattern>${LOG_PATH}/%d{yyyy-MM, aux}/${LOG_FILE_NAME}.%d{yyyy-MM-dd}%i.log</fileNamePattern>
+            <!--50MB以上の場合%iが増加してRollingされる-->
+            <maxFileSize>50MB</maxFileSize>
+            <!--保存期間:30日-->
+            <maxHistory>30</maxHistory>
+            <!--ログファイル全体が20GB超えると古い順で削除-->
+            <totalSizeCap>20GB</totalSizeCap>
+        </rollingPolicy>
+    </appender>
+
+    <logger name="jdbc" level="OFF"/>
+    <logger name="jdbc.sqlonly" level="CONSOLE"/>
+    <logger name="jdbc.sqltiming" level="OFF"/>
+    <logger name="jdbc.audit" level="OFF"/>
+    <logger name="jdbc.resultset" level="OFF"/>
+    <logger name="jdbc.resultsettable" level="OFF"/>
+    <logger name="jdbc.connection" level="OFF"/>
+
+    <root level="${LOG_LEVEL}">
+        <appender-ref ref="CONSOLE"/>
+        <appender-ref ref="FILE"/>
+    </root>
+</configuration>

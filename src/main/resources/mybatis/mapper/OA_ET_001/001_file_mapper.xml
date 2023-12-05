@@ -1,0 +1,443 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="com.kse.wmsv2.oa_et_001.mapper.OAET001FileMapper">
+    <select id="searchData"  parameterType="hashMap" resultType="com.kse.wmsv2.oa_et_001.dao.OAET001SearchResultDao">
+        SELECT DISTINCT
+        CASE
+        WHEN IFNULL(AD.EDITFLG,'0') = '0' THEN '0'
+        WHEN IFNULL(AD.EDITFLG,'0') = '1' THEN '1'
+        ELSE '0'
+        END AS MISUMI,
+        CASE
+        WHEN IFNULL(AD.EXPREPORTNO,'') != '' THEN '〇'
+        WHEN IFNULL(AD.EXPREPORTNO,'') = ''
+        AND (IFNULL(AD.REMARKS,'') != '' AND AD.REMARKS != AD.CUSTOMSPLACECD ) THEN AD.REMARKS
+        ELSE ''
+        END AS HARD,
+        CASE
+        WHEN CONCAT(IFNULL(ACN2.JOUKEN01,''),IFNULL(ACN2.JOUKEN02,''),IFNULL(ACN2.JOUKEN03,''),IFNULL(ACN2.JOUKEN04,''),IFNULL(ACN2.JOUKEN05,'')
+        ,IFNULL(ACN2.JOUKEN06,''),IFNULL(ACN2.JOUKEN07,''),IFNULL(ACN2.JOUKEN08,''),IFNULL(ACN2.JOUKEN09,''),IFNULL(ACN2.JOUKEN10,''),IFNULL(ACN2.JOUKEN11,'')
+        ,IFNULL(ACN2.JOUKEN12,''),IFNULL(ACN2.JOUKEN13,''),IFNULL(ACN2.JOUKEN14,''),IFNULL(ACN2.JOUKEN15,''),IFNULL(ACN2.JOUKEN16,''),IFNULL(ACN2.JOUKEN17,'')
+        ,IFNULL(ACN2.JOUKEN18,''),IFNULL(ACN2.JOUKEN19,''),IFNULL(ACN2.JOUKEN20,''),IFNULL(ACN2.JOUKEN21,''),IFNULL(ACN2.JOUKEN22,''),IFNULL(ACN2.JOUKEN23,'')
+        ,IFNULL(ACN2.JOUKEN24,''),IFNULL(ACN2.JOUKEN25,'')) != '' THEN '1' ELSE '0'
+        END AS MANIHUKA,
+        IFNULL(ACN1.REMARKS,'') AS COMMENTTOOLTIP,
+        CASE
+        WHEN IFNULL(ACN1.REMARKS,'') = '' THEN '0' ELSE '1' END AS COMMENT,
+        AD.REPORTNAYCLASSCD,
+        CASE
+        WHEN AD.REPORTNAYCLASSCD != '00' THEN AN.NAME ELSE '' END AS SINKOKUHUKA,
+        AD.ESAFLG,
+        CASE
+        WHEN AD.ESAFLG = '1' THEN '0' ELSE '1' END AS EDA,
+        CASE
+        WHEN AD.ESAFLG = '2' AND IFNULL(AD.FOBAMO,AD.INVOICEVALUE) != AD.LINKFOBAMO THEN '1'
+        WHEN AD.ESAFLG = '1' AND AD.FOBAMO != AD.LINKFOBAMO THEN '1'
+        WHEN AD.CARRYINGPIECE != AD.LINKPIECE THEN '1'
+        ELSE '0'
+        END AS SAI,
+        CASE
+        WHEN AD.AUTOESAFLG = '2' AND AD.ESAFLG = '1' THEN '1' ELSE '0' END AS EHANDAN,
+        AD.CWBNO,AD.EXPCUSTOMERNO,AD.EXPCUSTOMERDEPTCD,AD.EXPCUSTOMEROCSDEPTCD,
+        CONCAT(IFNULL(AD.EXPCUSTOMERNO,''),'-',IFNULL(AD.EXPCUSTOMERDEPTCD,''),'-',IFNULL(AD.EXPCUSTOMEROCSDEPTCD,'')) AS EXPCUSTOMER,
+        AD.EXPCUSTOMERNAME,AD.EXPCUSTOMERADD_1,AD.EXPCUSTOMERADD_2,AD.EXPCUSTOMERADD_3,AD.EXPCUSTOMERADD_4,AD.EXPCUSTOMERADD_LUMP,
+        AD.EXPCUSTOMERPOSTCODE,AD.EXPCUSTOMERTELNO,AD.CARRYINGPIECE,AD.CARRYINGWEIGHT,AD.LINKPIECE,AD.LINKWEIGHT,AD.CONSIGNEENO,
+        AD.CONSIGNEEDEPTCD,AD.CONSIGNEEOCSDEPTCD,
+        CONCAT(IFNULL(AD.CONSIGNEENO,''),'-',IFNULL(AD.CONSIGNEEDEPTCD,''),'-',IFNULL(AD.CONSIGNEEOCSDEPTCD,'')) AS CONSIGNEE,
+        AD.CONSIGNEENAME,AD.CONSIGNEEADD_1,AD.CONSIGNEEADD_2,AD.CONSIGNEEADD_3,AD.CONSIGNEEADD_4,AD.CONSIGNEEADD_LUMP,AD.CONSIGNEECOUNTRY,
+        AD.CONSIGNEEPOSTCODE,AD.INVOICEVALCLASSCD,AD.INVOICEVALCONCD,AD.INVOICECURCD,AD.INVOICEVALUE,AD.FOBCURRENCYCD,AD.FOBAMO,AD.LINKFOBAMO,
+        AD.ITEM,AD.REPORTVALUE,AD.LINKLASTDESTINATIONCD,AD.LASTDESTINATIONCD,AD.NEWS_2,AD.REPORTCONDITION AS DATAREPORTCONDITION,AD.CUSTOMSKINDCD_1,AD.REPORTDEPCD,AD.REPORTDIVISIONCD,
+        AD.EXPREPORTPLANDATE,AD.INHOUSEREFNUMBER,AD.AWBNO DATAAWBNO,AD.BWBNO,AD.DIRECTIONSTRUCKNO,AD.LINKTRUCKNO,AD.CUSTOMSPLACECD,AD.DESTINATION,
+        AD.BONDEDWAREHOUSECD AS DATABONDEDWAREHOUSECD,AD.DEPPORT,AH.AWBNO HEADAWBNO,AH.REPORTCONDITION HEADREPORTCONDITION,AH.LOADINGPLANFLT_1,AH.LOADINGPLANFLT_2,AH.DEPPORTCD,AH.BONDEDWAREHOUSECD AS HEADBONDEDWAREHOUSECD,
+        AH.FLTDESTINATION,AH.CONSOLIDATIONFLAG,ACN2.JOUKEN01, ACN2.JOUKEN02, ACN2.JOUKEN03, ACN2.JOUKEN04, ACN2.JOUKEN05, ACN2.JOUKEN06, ACN2.JOUKEN07,
+        ACN2.JOUKEN08, ACN2.JOUKEN09, ACN2.JOUKEN10, ACN2.JOUKEN11, ACN2.JOUKEN12, ACN2.JOUKEN13, ACN2.JOUKEN14, ACN2.JOUKEN15,ACN2.JOUKEN16,
+        ACN2.JOUKEN17, ACN2.JOUKEN18, ACN2.JOUKEN19, ACN2.JOUKEN20,ACN2.JOUKEN21, ACN2.JOUKEN22, ACN2.JOUKEN23, ACN2.JOUKEN24, ACN2.JOUKEN25,
+        AD.EXPREPORTNO,AD.REGDATE,CU.USERNAME,AD.EDITREGDATE,AD.EDAMESSAGEMAKEFLAG,AD.BONWAREHOCURDATE,AD.REPORTDATE,AD.PERMITDATE
+        FROM
+        AE_DATA AS AD
+        LEFT JOIN
+        AE_HEAD AS AH
+        ON
+        AD.AWBNO = AH.AWBNO
+        LEFT JOIN
+        AM_NAME AS AN
+        ON
+        AD.REPORTNAYCLASSCD = AN.NAMECD
+        AND AN.NAMECLASS = '0033'
+        AND AN.DEPARTMENTCD = 'ALL'
+        LEFT JOIN
+        AM_CUSTOMER_NUMBER AS ACN1
+        ON
+        AD.EXPCUSTOMERNO = ACN1.CUSTOMERNO
+        AND AD.EXPCUSTOMERDEPTCD = ACN1.DEPTCD
+        AND AD.EXPCUSTOMEROCSDEPTCD = ACN1.OCSDEPTCD
+        LEFT JOIN
+        (SELECT
+        CUSTOMERNO,DEPTCD,OCSDEPTCD,
+        CASE WHEN CONDITIONFLG01 = '1' THEN IFNULL((SELECT NAME FROM AM_NAME WHERE DEPARTMENTCD = 'ALL' AND NAMECLASS = '0025' AND NAMECD ='01'AND CHARACTERITEM1 = '1'),'') END AS JOUKEN01
+        ,CASE WHEN CONDITIONFLG02 = '1' THEN IFNULL((SELECT NAME FROM AM_NAME WHERE DEPARTMENTCD = 'ALL' AND NAMECLASS = '0025' AND NAMECD ='02'AND CHARACTERITEM1 = '1'),'') END AS JOUKEN02
+        ,CASE WHEN CONDITIONFLG03 = '1' THEN IFNULL((SELECT NAME FROM AM_NAME WHERE DEPARTMENTCD = 'ALL' AND NAMECLASS = '0025' AND NAMECD ='03'AND CHARACTERITEM1 = '1'),'') END AS JOUKEN03
+        ,CASE WHEN CONDITIONFLG04 = '1' THEN IFNULL((SELECT NAME FROM AM_NAME WHERE DEPARTMENTCD = 'ALL' AND NAMECLASS = '0025' AND NAMECD ='04'AND CHARACTERITEM1 = '1'),'') END AS JOUKEN04
+        ,CASE WHEN CONDITIONFLG05 = '1' THEN IFNULL((SELECT NAME FROM AM_NAME WHERE DEPARTMENTCD = 'ALL' AND NAMECLASS = '0025' AND NAMECD ='05'AND CHARACTERITEM1 = '1'),'') END AS JOUKEN05
+        ,CASE WHEN CONDITIONFLG06 = '1' THEN IFNULL((SELECT NAME FROM AM_NAME WHERE DEPARTMENTCD = 'ALL' AND NAMECLASS = '0025' AND NAMECD ='06'AND CHARACTERITEM1 = '1'),'') END AS JOUKEN06
+        ,CASE WHEN CONDITIONFLG07 = '1' THEN IFNULL((SELECT NAME FROM AM_NAME WHERE DEPARTMENTCD = 'ALL' AND NAMECLASS = '0025' AND NAMECD ='07'AND CHARACTERITEM1 = '1'),'') END AS JOUKEN07
+        ,CASE WHEN CONDITIONFLG08 = '1' THEN IFNULL((SELECT NAME FROM AM_NAME WHERE DEPARTMENTCD = 'ALL' AND NAMECLASS = '0025' AND NAMECD ='08'AND CHARACTERITEM1 = '1'),'') END AS JOUKEN08
+        ,CASE WHEN CONDITIONFLG09 = '1' THEN IFNULL((SELECT NAME FROM AM_NAME WHERE DEPARTMENTCD = 'ALL' AND NAMECLASS = '0025' AND NAMECD ='09'AND CHARACTERITEM1 = '1'),'') END AS JOUKEN09
+        ,CASE WHEN CONDITIONFLG10 = '1' THEN IFNULL((SELECT NAME FROM AM_NAME WHERE DEPARTMENTCD = 'ALL' AND NAMECLASS = '0025' AND NAMECD ='10'AND CHARACTERITEM1 = '1'),'') END AS JOUKEN10
+        ,CASE WHEN CONDITIONFLG11 = '1' THEN IFNULL((SELECT NAME FROM AM_NAME WHERE DEPARTMENTCD = 'ALL' AND NAMECLASS = '0025' AND NAMECD ='11'AND CHARACTERITEM1 = '1'),'') END AS JOUKEN11
+        ,CASE WHEN CONDITIONFLG12 = '1' THEN IFNULL((SELECT NAME FROM AM_NAME WHERE DEPARTMENTCD = 'ALL' AND NAMECLASS = '0025' AND NAMECD ='12'AND CHARACTERITEM1 = '1'),'') END AS JOUKEN12
+        ,CASE WHEN CONDITIONFLG13 = '1' THEN IFNULL((SELECT NAME FROM AM_NAME WHERE DEPARTMENTCD = 'ALL' AND NAMECLASS = '0025' AND NAMECD ='13'AND CHARACTERITEM1 = '1'),'') END AS JOUKEN13
+        ,CASE WHEN CONDITIONFLG14 = '1' THEN IFNULL((SELECT NAME FROM AM_NAME WHERE DEPARTMENTCD = 'ALL' AND NAMECLASS = '0025' AND NAMECD ='14'AND CHARACTERITEM1 = '1'),'') END AS JOUKEN14
+        ,CASE WHEN CONDITIONFLG15 = '1' THEN IFNULL((SELECT NAME FROM AM_NAME WHERE DEPARTMENTCD = 'ALL' AND NAMECLASS = '0025' AND NAMECD ='15'AND CHARACTERITEM1 = '1'),'') END AS JOUKEN15
+        ,CASE WHEN CONDITIONFLG16 = '1' THEN IFNULL((SELECT NAME FROM AM_NAME WHERE DEPARTMENTCD = 'ALL' AND NAMECLASS = '0025' AND NAMECD ='16'AND CHARACTERITEM1 = '1'),'') END AS JOUKEN16
+        ,CASE WHEN CONDITIONFLG17 = '1' THEN IFNULL((SELECT NAME FROM AM_NAME WHERE DEPARTMENTCD = 'ALL' AND NAMECLASS = '0025' AND NAMECD ='17'AND CHARACTERITEM1 = '1'),'') END AS JOUKEN17
+        ,CASE WHEN CONDITIONFLG18 = '1' THEN IFNULL((SELECT NAME FROM AM_NAME WHERE DEPARTMENTCD = 'ALL' AND NAMECLASS = '0025' AND NAMECD ='18'AND CHARACTERITEM1 = '1'),'') END AS JOUKEN18
+        ,CASE WHEN CONDITIONFLG19 = '1' THEN IFNULL((SELECT NAME FROM AM_NAME WHERE DEPARTMENTCD = 'ALL' AND NAMECLASS = '0025' AND NAMECD ='19'AND CHARACTERITEM1 = '1'),'') END AS JOUKEN19
+        ,CASE WHEN CONDITIONFLG20 = '1' THEN IFNULL((SELECT NAME FROM AM_NAME WHERE DEPARTMENTCD = 'ALL' AND NAMECLASS = '0025' AND NAMECD ='20'AND CHARACTERITEM1 = '1'),'') END AS JOUKEN20
+        ,CASE WHEN CONDITIONFLG21 = '1' THEN IFNULL((SELECT NAME FROM AM_NAME WHERE DEPARTMENTCD = 'ALL' AND NAMECLASS = '0025' AND NAMECD ='21'AND CHARACTERITEM1 = '1'),'') END AS JOUKEN21
+        ,CASE WHEN CONDITIONFLG22 = '1' THEN IFNULL((SELECT NAME FROM AM_NAME WHERE DEPARTMENTCD = 'ALL' AND NAMECLASS = '0025' AND NAMECD ='22'AND CHARACTERITEM1 = '1'),'') END AS JOUKEN22
+        ,CASE WHEN CONDITIONFLG23 = '1' THEN IFNULL((SELECT NAME FROM AM_NAME WHERE DEPARTMENTCD = 'ALL' AND NAMECLASS = '0025' AND NAMECD ='23'AND CHARACTERITEM1 = '1'),'') END AS JOUKEN23
+        ,CASE WHEN CONDITIONFLG24 = '1' THEN IFNULL((SELECT NAME FROM AM_NAME WHERE DEPARTMENTCD = 'ALL' AND NAMECLASS = '0025' AND NAMECD ='24'AND CHARACTERITEM1 = '1'),'') END AS JOUKEN24
+        ,CASE WHEN CONDITIONFLG25 = '1' THEN IFNULL((SELECT NAME FROM AM_NAME WHERE DEPARTMENTCD = 'ALL' AND NAMECLASS = '0025' AND NAMECD ='25'AND CHARACTERITEM1 = '1'),'') END AS JOUKEN25
+        FROM
+            AM_CUSTOMER_NUMBER) AS ACN2
+        ON
+            AD.EXPCUSTOMERNO = ACN2.CUSTOMERNO
+            AND AD.EXPCUSTOMERDEPTCD = ACN2.DEPTCD
+            AND AD.EXPCUSTOMEROCSDEPTCD = ACN2.OCSDEPTCD
+        LEFT JOIN
+            CM_USER AS CU
+        ON
+            AD.EDITREGUSERCD = CU.USERCD
+        WHERE
+            1 = 1
+            AND AD.AWBNO = #{awbNo}
+            AND AD.CUSTOMSPLACECD = #{deptCd}
+        ORDER BY
+            AD.REPORTNAYCLASSCD ASC,
+            MISUMI ASC,
+            EDA DESC,
+            MANIHUKA DESC,
+            EHANDAN DESC,
+            COMMENT DESC,
+            SAI DESC,
+            AD.EXPCUSTOMERNAME
+    </select>
+    <select id="customerMapping" parameterType="com.kse.wmsv2.oa_et_001.dao.OAET001FileDetailDao" resultType="hashMap">
+        SELECT
+            A.CUSTOMERNO AS CUSTOMERNO,A.DEPTCD AS DEPTCD,A.OCSDEPTCD AS OCSDEPTCD,A.CUSTOMERNAMEE AS CUSTOMERNAMEE
+            ,A.ZIPCD AS ZIPCD,A.CUSTOMERADDE1 AS CUSTOMERADDE1,A.CUSTOMERADDE2 AS CUSTOMERADDE2
+            ,A.CUSTOMERADDE3 AS CUSTOMERADDE3,A.CUSTOMERADDE4 AS CUSTOMERADDE4,A.CUSTOMERADDEBLANKET AS CUSTOMERADDEBLANKET
+            ,A.CONDITIONCOMMENT AS CONDITIONCOMMENT,
+        CASE
+            WHEN A.CONDITIONFLG01 = '1' THEN '01'
+            WHEN A.CONDITIONFLG02 = '1' THEN '02'
+            WHEN A.CONDITIONFLG03 = '1' THEN '03'
+            WHEN A.CONDITIONFLG04 = '1' THEN '04'
+            WHEN A.CONDITIONFLG05 = '1' THEN '05'
+            WHEN A.CONDITIONFLG06 = '1' THEN '06'
+            WHEN A.CONDITIONFLG07 = '1' THEN '07'
+            WHEN A.CONDITIONFLG08 = '1' THEN '08'
+            WHEN A.CONDITIONFLG09 = '1' THEN '09'
+            WHEN A.CONDITIONFLG10 = '1' THEN '10'
+            WHEN A.CONDITIONFLG11 = '1' THEN '11'
+            WHEN A.CONDITIONFLG12 = '1' THEN '12'
+            WHEN A.CONDITIONFLG13 = '1' THEN '13'
+            WHEN A.CONDITIONFLG14 = '1' THEN '14'
+            WHEN A.CONDITIONFLG15 = '1' THEN '15'
+            WHEN A.CONDITIONFLG16 = '1' THEN '16'
+            WHEN A.CONDITIONFLG17 = '1' THEN '17'
+            WHEN A.CONDITIONFLG18 = '1' THEN '18'
+            WHEN A.CONDITIONFLG19 = '1' THEN '19'
+            WHEN A.CONDITIONFLG20 = '1' THEN '20'
+            WHEN A.CONDITIONFLG21 = '1' THEN '21'
+            WHEN A.CONDITIONFLG22 = '1' THEN '22'
+            WHEN A.CONDITIONFLG23 = '1' THEN '23'
+            WHEN A.CONDITIONFLG24 = '1' THEN '24'
+            WHEN A.CONDITIONFLG25 = '1' THEN '25'
+        END AS CONDITIONFLG
+        FROM
+            ( SELECT
+                *, '1' AS TYPE
+            FROM
+                AM_CUSTOMER_NUMBER
+            WHERE
+                CUSTOMERNO = #{expCustomerNo}
+                AND DEPTCD = #{expCustomerDeptCd}
+                AND SUBSTRING(OCSDEPTCD, 1,1) = '2'
+                AND TELNO = #{expCustomerTelNo}
+            UNION
+                SELECT
+                    *, '2' AS TYPE
+                FROM
+                    AM_CUSTOMER_NUMBER
+                WHERE
+                    CUSTOMERNO = #{expCustomerNo}
+                    AND DEPTCD = #{expCustomerDeptCd}
+                    AND SUBSTRING(OCSDEPTCD, 1,1) = '2'
+            UNION
+                SELECT
+                    *, '3' AS TYPE
+                FROM
+                    AM_CUSTOMER_NUMBER
+                WHERE
+                    SUBSTRING(OCSDEPTCD, 1,1) = '2'
+                    AND TELNO = #{expCustomerTelNo}  ) AS A
+        ORDER BY
+            A.TYPE,A.CUSTOMERNO ASC
+        LIMIT 1
+    </select>
+    <select id="getMaximumExportValue" resultType="String">
+        SELECT
+            IFNULL(NUMERICITEM1,0)
+        FROM
+            AM_NAME
+        WHERE
+            DEPARTMENTCD = 'ALL'
+            AND NAMECLASS = '0056'
+            AND NAMECD = '001'
+    </select>
+    <select id="getRate" parameterType="com.kse.wmsv2.oa_et_001.dao.OAET001FileDetailDao" resultType="String">
+        SELECT
+            RATE
+        FROM
+            CM_RATE
+        WHERE
+            STARTDATE =
+                ( SELECT
+                    MAX(STARTDATE)
+                FROM
+                    CM_RATE
+                WHERE
+                    STARTDATE <![CDATA[ <= ]]> (SELECT CONTROLDATE FROM CM_CONTROL WHERE CONTROLCD='1' )
+                    AND CURRENCYCD = #{invoiceCurCd}
+                )
+        AND CURRENCYCD = #{invoiceCurCd}
+    </select>
+    <select id="checkProhibitionItem" parameterType="com.kse.wmsv2.oa_et_001.dao.OAET001FileDetailDao" resultType="Integer">
+        SELECT
+            COUNT(*)
+        FROM
+            AM_NAME
+        WHERE
+            DEPARTMENTCD = 'ALL'
+            AND NAMECLASS = '0053'
+            AND NAME LIKE CONCAT('%',#{item},'%')
+    </select>
+    <select id="getMaximumPiece" parameterType="com.kse.wmsv2.oa_et_001.dao.OAET001FileDetailDao" resultType="Integer">
+        SELECT
+            IFNULL(NUMERICITEM1,0)
+        FROM
+            AM_NAME
+        WHERE
+            DEPARTMENTCD = 'ALL'
+            AND NAMECLASS = '0054'
+            AND NAMECD = '001'
+    </select>
+    <select id="getMaximumWeight" parameterType="com.kse.wmsv2.oa_et_001.dao.OAET001FileDetailDao" resultType="Integer">
+        SELECT
+            IFNULL(NUMERICITEM1,0)
+        FROM
+            AM_NAME
+        WHERE
+            DEPARTMENTCD = 'ALL'
+            AND NAMECLASS = '0055'
+            AND NAMECD = '001'
+    </select>
+    <select id="checkProhibitionCountry" parameterType="com.kse.wmsv2.oa_et_001.dao.OAET001FileDetailDao" resultType="Integer">
+        SELECT
+            IFNULL(CHARACTERITEM2,0)
+        FROM
+            AM_NAME
+        WHERE
+            DEPARTMENTCD = 'ALL'
+            AND NAMECD = (
+                SELECT
+                    CHARACTERITEM2
+                FROM
+                    AM_NAME
+                WHERE
+                    DEPARTMENTCD = 'ALL'
+                    AND NAMECLASS = '0018'
+                    AND NAMECD = #{destination}
+                )
+    </select>
+    <select id="checkExporterCondition" parameterType="com.kse.wmsv2.oa_et_001.dao.OAET001FileDetailDao" resultType="String">
+        SELECT
+            IFNULL(NUMERICITEM1,0)
+        FROM
+            AM_NAME
+        WHERE
+            DEPARTMENTCD = 'ALL'
+            AND NAMECLASS = '0025'
+            AND NAMECD = #{conditionFlg}
+    </select>
+    <select id="checkReShipping" parameterType="com.kse.wmsv2.oa_et_001.dao.OAET001FileDetailDao" resultType="Integer">
+        SELECT
+            COUNT(*)
+        FROM
+            AM_NAME
+        WHERE
+            DEPARTMENTCD = 'ALL'
+            AND NAMECLASS = '0004'
+            AND NAMECD IN (#{origin})
+    </select>
+    <select id="getConsigneeCountry" parameterType="com.kse.wmsv2.oa_et_001.dto.OAET001ExcelHead" resultType="String">
+        SELECT
+            CHARACTERITEM1
+        FROM
+            AM_NAME
+        WHERE
+            DEPARTMENTCD = 'ALL'
+            AND NAMECLASS = '0018'
+            AND NAMECD = #{destination}
+        LIMIT 1
+    </select>
+    <insert id="insertHeadData" parameterType="com.kse.wmsv2.oa_et_001.dao.OAET001FileHeadDao">
+        INSERT INTO
+            AE_HEAD
+            (AWBNO,STEPSDATE,TRACKSERVICE,BONWAREHOCURDATE,CARSLIPMAKEFLG,AGENT,CARRYINGSLIPNO,REPORTCONDITION
+            ,LOADINGPLANFLT_1,LOADINGPLANFLT_2,AIRLINE,DEPPORTCD,BONDEDWAREHOUSECD,FLTDESTINATION,JOINT,LOADINGWORKER
+            ,CARRYINGCONPERSON,REPORTDEPCD,REGUSERCD,REGDATE,UPDATEUSERCD,UPDATEDATE
+            )
+        VALUES
+            (#{awbNo},#{stepsDate},#{trackService},#{bonWareHoCurDate},#{carSlipMakeFlg},#{agent},#{carryingSlipNo}
+            ,#{reportCondition},#{loadingPlanFlt1},#{loadingPlanFlt2},#{airline},#{depPortCd},#{bondedWarehouseCd}
+            ,#{fltDestination},#{joint},#{loadingWorker},#{carryingConPerson},#{reportDepCd},#{userCd},#{date},#{userCd},#{date}
+            )
+    </insert>
+    <insert id="insertDetailData" parameterType="com.kse.wmsv2.oa_et_001.dao.OAET001FileDetailDao">
+        INSERT INTO
+            AE_DATA
+        (
+            CWBNO, AWBNO, BWBNO, DATAORIGIN, TRUCKNODATE, INPUTBASSCD, CUSTOMSPLACECD,
+            DIRECTIONSTRUCKNO, DIRECTIONSREMARKS, REPORTNAYCLASSCD, PROCNO, IMAGEOUTPUTFLG,
+            IMAGEOUTPUTPLACE, EDITFLG, LINKCONNECTFLG, AUTOESAFLG, LINKTRUCKNO,
+            ORIGIN, PERMITCLASSCD, CURRENTCUSTOMSSTATUSCD, CURRENTCARGOSTATUSCD,
+            ESAFLG, REPORTCONDITION, EXPREPORTNO, LARGESMALLFLG,
+            REPORTKINDCD, CUSTOMSKINDCD_1, CUSTOMSKINDCD_2, REPORTDEPCD, REPORTDIVISIONCD,
+            EXPREPORTPLANDATE, EXPCUSTOMERNO, EXPCUSTOMERDEPTCD, EXPCUSTOMEROCSDEPTCD,
+            EXPCUSTOMERNAME, EXPCUSTOMERPOSTCODE, EXPCUSTOMERADD_1, EXPCUSTOMERADD_2,
+            EXPCUSTOMERADD_3, EXPCUSTOMERADD_4, EXPCUSTOMERADD_LUMP, EXPCUSTOMERADD,
+            EXPCUSTOMERTELNO, REPORTPLANPERSONCD, BONDEDWAREHOUSECD, CONSIGNEENO,
+            CONSIGNEEDEPTCD, CONSIGNEEOCSDEPTCD, CONSIGNEENAME, CONSIGNEEADD_1, CONSIGNEEADD_2,
+            CONSIGNEEADD_3, CONSIGNEEADD_4, CONSIGNEEADD_LUMP, CONSIGNEEADD, CONSIGNEEPOSTCODE,
+            CONSIGNEECOUNTRY, CARRYINGPIECE, CARRYINGWEIGHT, TOTALPIECE, TOTALWEIGHT,
+            LINKPIECE, LINKWEIGHT, ARRIVALPIECE, LASTDESTINATIONCD, LINKLASTDESTINATIONCD, LASTDESTNAME,
+            DEPPORT, TRADETYPEMARK, DEPPLANINGDATE, CUSTOMSEXAMMARK, EXPRECOFLG,
+            PREEXAMCARGODISC, EXPRECDISC_1, EXPRECNO_1, EXPRECDISC_2, EXPRECNO_2,
+            EXPRECDISC_3, EXPRECNO_3, EXPRECDISC_4, EXPRECNO_4, EXPRECDISC_5,
+            EXPRECNO_5, INVOICEDISCERNMENT, ELEINVOICERENO, INVOICENO, INVOICEVALCONCD,
+            INVOICECURCD, INVOICEVALUE, INVOICEVALCLASSCD, FOBCURRENCYCD, FOBAMO,
+            LINKFOBAMO, REPORTVALUE, BASICPRICETOTAL, NEEDLOADINGRECDISC, NEWS_1,
+            NEWS_2, NEWSSHIPPER, INHOUSEREFNUMBER, EXPSTATITEMNO, ITEM,
+            CARGODISC, DESTINATION, AIRLINE, MIXEDFORWARDER, AGENTDIV, CUSTOMSREQUEST,
+            PERMRECOGNITIONNO, CARGOTYPE, SPECIALCARGOSIGN, DESCLASSDISC, ULDNO,
+            CONTAINERCLASSCD, DISCERNMENTMARK, HANDRINGWHOUSECD, CARRINGAIRLINE, EXPTRADECONTLOW4,
+            INCESTREPRENO, CORRECTKINDCD, CORRECTREASONCD, REMARKS, OTHERLAWCD_1, OTHERLAWCD_2,
+            OTHERLAWCD_3, OTHERLAWCD_4, OTHERLAWCD_5, EXPTRADECONTCD, FOREXCHLOW48,
+            CUSTOMSEXEMPTCD, INCONSTAXEXEMPCD, INCONSTAXEXEMPDISC,
+            ORIGIN5, DESTINATION5, DEFAULTSET, DUMMYCWBNO, REPORTISSUEDATE, DOCREPORTNO,
+            DOCCLASS, BONDINBILLNO, BONDINBILLISSUEDATE, EDITGROUP, EDITGROUPMAKEUSERCD,
+            EDITGROUPMAKEDATE, EDITDIFFICULTY, EDITSEVERITY, EDITHOLD, EDITREGUSERCD,
+            EDITREGDATE, EDITUPDATEUSERCD, EDITUPDATEDATE,
+            CUSTOMSCHECKGROUPMAKEDATE, CUSTOMSCHECKPRIORITY, CUSTOMSCHECKPRIORITYEDIT, CUSTOMSCHECKCLASS,
+            CUSTOMSCHECKHOLD, CUSTOMSCHECKCORRECT, CUSTOMSCHECKUSERCD, CUSTOMSCHECKDATE,
+            REPORTCUSTOMSSPECIALISTUSERCD, EDAMESSAGEMAKEFLAG, SPSDOCCLASSCD, CUSTOMSMEMO,
+            FLT1, FLT2, AGENT, BONWAREHOCURDATE, CARSLIPMAKEFLG, FLTDESTINATION, JOINT,
+            LOADINGWORKER, HARDRECVFLAG, IF_FARECURRENCYCD, IF_FARE, IF_INSURANCECURCD, IF_INSURANCEAMOUNT,
+            CUSTOMSOFFICEJANITORCD, CUSTOMSOFFICEJANITORRENO, CUSTOMSOFFICEJANITORNAME,
+            INSPECTIONWITNESS, SHIPPERSSECCD, SHIPPERSREFNO,
+            EXPRECDISC_6, EXPRECDISC_7, EXPRECDISC_8, EXPRECDISC_9, EXPRECDISC_10,
+            EXPRECDISC_11, EXPRECDISC_12, EXPRECDISC_13, EXPRECDISC_14, EXPRECDISC_15,
+            EXPRECNO_6, EXPRECNO_7, EXPRECNO_8, EXPRECNO_9, EXPRECNO_10,
+            EXPRECNO_11, EXPRECNO_12, EXPRECNO_13, EXPRECNO_14, EXPRECNO_15,REGUSERCD,REGDATE,UPDATEUSERCD,UPDATEDATE
+        )
+        VALUES
+            (
+            #{cwbNo}, #{awbNo}, #{bwbNo}, #{dataOrigin}, #{truckNoDate}, #{inputBassCd}, #{customsPlaceCd}
+            , #{directionsTruckNo}, #{directionsRemarks}, #{reportNayClassCd}, #{procNo}, #{imageOutputFlg}
+            , #{imageOutputPlace}, #{editFlg}, #{linkConnectFlg}, #{autoEsaFlg}, #{linkTruckNo}, #{origin}
+            , #{permitClassCd}, #{currentCustomsStatusCd}, #{currentCargoStatusCd}, #{esaFlg}, #{reportCondition}
+            , #{expReportNo}, #{largeSmallFlg}, #{reportKindCd}, #{customsKindCd1}, #{customsKindCd2}, #{reportDepCd}
+            , #{reportDivisionCd}, #{expReportPlanDate}, #{expCustomerNo}, #{expCustomerDeptCd}
+            , #{expCustomerOcsDeptCd}, #{expCustomerName}, #{expCustomerPostcode}, #{expCustomerAdd1}
+            , #{expCustomerAdd2}, #{expCustomerAdd3}, #{expCustomerAdd4}, #{expCustomerAddLump}, #{expCustomerAdd}
+            , #{expCustomerTelNo}, #{reportPlanPersonCd}, #{bondedWarehouseCd}, #{consigneeNo}, #{consigneeDeptDd}
+            , #{consigneeOcsDeptCd}, #{consigneeName}, #{consigneeAdd1}, #{consigneeAdd2}, #{consigneeAdd3}
+            , #{consigneeAdd4}, #{consigneeAddLump}, #{consigneeAdd}, #{consigneePostcode}, #{consigneeCountry}
+            , #{carryingPiece}, #{carryingWeight}, #{totalPiece}, #{totalWeight}, #{linkPiece}, #{linkWeight}
+            , #{arrivalPiece}, #{lastDestinationCd}, #{linkLastDestinationCd}, #{lastDestName}, #{depPort}
+            , #{tradeTypeMark}, #{depPlaningDate}, #{customsExamMark}, #{expRecoFlg}, #{preExamCargoDisc}
+            , #{expRecDisc1}, #{expRecNo1}, #{expRecDisc2}, #{expRecNo2}, #{expRecDisc3}, #{expRecNo3}, #{expRecDisc4}
+            , #{expRecNo4}, #{expRecDisc5}, #{expRecNo5}, #{invoiceDiscernment}, #{eleIn1voiceReNo}, #{invoiceNo}
+            , #{invoiceValConCd}, #{invoiceCurCd}, #{invoiceValue}, #{invoiceValClassCd}, #{fobCurrencyCd}, #{fobAmo}
+            , #{linkFobAmo}, #{reportValue}, #{basicPriceTotal}, #{needLoadingRecDisc}, #{news1}, #{news2}
+            , #{newsShipper}, #{inHouseRefNumber}, #{expStatItemNo}, #{item}, #{cargoDisc}, #{destination}, #{airline}
+            , #{mixedForwarder}, #{agentDiv}, #{customsRequest}, #{permRecognitionNo}, #{cargoType}, #{specialCargoSign}
+            , #{desClassDisc}, #{uldNo}, #{containerClassCd}, #{discernmentMark}, #{handringWhouseCd}, #{carringAirline}
+            , #{expTradeContLow4}, #{incEstRePreNo}, #{correctKindCd}, #{correctReasonCd}, #{remarks}, #{otherLawCd1}
+            , #{otherLawCd2}, #{otherLawCd3}, #{otherLawCd4}, #{otherLawCd5}, #{expTradeContCd}, #{forExchLow48}
+            , #{customsExemptCd}, #{inconsTaxExempCd}, #{inconsTaxExempDisc}, #{origin5}, #{destination5}, #{defaultSet}
+            , #{dummyCwbNo}, #{reportIssueDate}, #{docReportNo}, #{docClass}, #{bondInBillNo}, #{bondInBillIssueDate}
+            , #{editGroup}, #{editGroupMakeUserCd}, #{editGroupMakeDate}, #{editDifficulty}, #{editSeverity}
+            , #{editHold}, #{editRegUserCd}, #{editRegDate}, #{editUpdateUserCd}, #{editUpdateDate}
+            , #{customsCheckGroupMakeDate}, #{customsCheckPriority}, #{customsCheckPriorityEdit}, #{customsCheckClass}
+            , #{customsCheckHold}, #{customsCheckCorrect}, #{customsCheckUserCd}, #{customsCheckDate}
+            , #{reportCustomsSpecialistUserCd}, #{edaMessageMakeFlag}, #{spsDocClassCd}, #{customsMemo}, #{flt1}
+            , #{flt2}, #{agent}, #{bonWarehoCurDate}, #{carSlipmakeFlg}, #{fltDestination}, #{joint}, #{loadingWorker}
+            , #{hardRecvFlag}, #{ifFareCurrencyCd}, #{ifFare}, #{ifInsuranceCurCd}, #{ifInsuranceAmount}
+            , #{customsOfficeJanitorCd}, #{customsOfficeJanitorReNo}, #{customsOfficeJanitorName}, #{inspectionWitness}
+            , #{shippersSecCd}, #{shippersRefNo}, #{expRecDisc6}, #{expRecDisc7}, #{expRecDisc8}, #{expRecDisc9}
+            , #{expRecDisc10}, #{expRecDisc11}, #{expRecDisc12}, #{expRecDisc13}, #{expRecDisc14}, #{expRecDisc15}
+            , #{expRecNo6}, #{expRecNo7}, #{expRecNo8}, #{expRecNo9}, #{expRecNo10}, #{expRecNo11}, #{expRecNo12}
+            , #{expRecNo13}, #{expRecNo14}, #{expRecNo15},#{userCd},#{date},#{userCd},#{date}
+            )
+    </insert>
+    <insert id="insertRepData" parameterType="com.kse.wmsv2.oa_et_001.dao.OAET001FileDetailDao">
+        INSERT INTO
+            AE_DATA_DETAIL
+            (CWBNO, SEQ, ITEM, AMO_1,REGUSERCD,REGDATE,UPDATEUSERCD,UPDATEDATE)
+        VALUES
+            (#{cwbNo},'1',#{item},#{invoiceValue},#{userCd},#{date},#{userCd},#{date})
+    </insert>
+    <delete id="deleteOldData" parameterType="com.kse.wmsv2.oa_et_001.dto.OAET001UploadDto">
+        DELETE
+            H,D,R,S,SH
+        FROM
+            AE_HEAD AS H
+        LEFT JOIN
+            AE_DATA AS D
+        ON
+            H.AWBNO = D.AWBNO
+        LEFT JOIN
+            AE_DATA_DETAIL AS R
+        ON
+            D.CWBNO = R.CWBNO
+        LEFT JOIN
+            AE_STATUS AS S
+        ON
+            H.AWBNO = S.AWBNO
+        LEFT JOIN
+            AE_STATUS_HISTORY AS SH
+        ON
+            H.AWBNO = SH.AWBNO
+        WHERE
+            H.AWBNO = #{awbNo}
+    </delete>
+    <select id="getCommonRate" parameterType="hashMap" resultType="String">
+        SELECT
+            RATE
+        FROM
+            CM_RATE
+        WHERE
+            STARTDATE <![CDATA[ <= ]]> #{date}
+            AND CURRENCYCD = #{currencyCd}
+        ORDER BY
+            STARTDATE DESC
+        LIMIT 1
+    </select>
+</mapper>

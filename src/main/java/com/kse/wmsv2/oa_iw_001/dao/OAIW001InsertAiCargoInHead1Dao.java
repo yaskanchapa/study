@@ -1,0 +1,14 @@
+package com.kse.wmsv2.oa_iw_001.dao;
+
+import lombok.Data;
+
+@Data
+public class OAIW001InsertAiCargoInHead1Dao {
+
+    String awbNo;
+    String bondedWarehouseCd;
+    String arrFtl1;
+    String arrFtl2;
+    String userCd;
+    String updateDate;
+}

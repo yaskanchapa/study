@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<!--parameterTypeが多数の場合はHashMap使用-->
+<mapper namespace="com.kse.wmsv2.oc_cs_003.mapper.AuthPermissionMapper">
+<select id="selectAll"  resultType="com.kse.wmsv2.oc_cs_003.dto.AuthPermissionDto">
+    SELECT AUTH_ID,
+        USERMANAGEMENTAUTHORITYCD_INFO,
+        USERAUTHORITYCD_INFO,
+        USERAUTHORITYGROUPCD
+    FROM CM_AUTH_PERMISSION
+    WHERE 1=1
+</select>
+</mapper>

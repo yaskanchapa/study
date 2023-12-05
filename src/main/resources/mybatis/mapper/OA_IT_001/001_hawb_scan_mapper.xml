@@ -1,0 +1,495 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="com.kse.wmsv2.oa_it_001.mapper.OAIT001HAWBScanMapper">
+    
+    <select id="getListCodeAndAmName" parameterType="java.lang.String" resultMap="listCodeAndAmName">
+        SELECT 
+        NAMECD,
+        NAME 
+        FROM AM_NAME 
+        WHERE NAMECLASS = #{nameClass}
+    </select>
+
+    <select id="getListByNameClassAndDepartmentCd" resultMap="listCodeAndAmName">
+        SELECT 
+        NAMECD,
+        NAME 
+        FROM AM_NAME 
+        WHERE NAMECLASS = #{nameClass}
+        AND (DEPARTMENTCD = 'ALL' OR DEPARTMENTCD = #{departmentCd})
+    </select>
+
+    <select id="getListByNameClassAndNameCd" resultMap="listCodeAndAmName">
+        SELECT 
+        NAMECD,
+        NAME 
+        FROM AM_NAME 
+        WHERE NAMECLASS = #{nameClass}
+        AND NAMECD LIKE #{nameCd}
+    </select>
+
+    <resultMap id="listCodeAndAmName" type="com.kse.wmsv2.oa_it_001.dto.OAIT001ItemTextDto">
+        <result column="NAMECD" jdbcType="VARCHAR" property="value" />
+        <result column="NAME" jdbcType="VARCHAR" property="name" />
+    </resultMap>
+
+    <select id="getTextCustomsClearanceSituation" resultType="string">
+        SELECT 
+            CHARACTERITEM2 
+        FROM 
+            AM_NAME 
+        WHERE 
+            NAMECLASS = '0007' 
+            AND NAMECD = #{customBroker}
+            AND (
+                DEPARTMENTCD = 'ALL' 
+                OR DEPARTMENTCD = #{CustomsClearancePlace} )
+    </select>
+
+    <select id="getListAIDataByCondition" resultMap="listAIData">
+        SELECT T1.AWBNO, T1.CURRENTARRFLT_1, T1.CURRENTARRFLT_2,
+            CASE T1.REMODELINGFLG
+                WHEN '0' THEN T1.CWBNO
+                WHEN '2' THEN T1.CWBNO + '/' + T1.CWBNODEPTCD
+            END AS CWBNO,
+            T1.DOCUMENTCHECK, T1.EDITFLG, T1.IDAFLG
+        FROM AI_DATA T1
+        WHERE 1 = 1
+            AND T1.CWBNO = #{cwbNo}
+            AND T1.CWBNODEPTCD = #{cwbNoDeptCd}
+            AND T1.SPSDOCCLASSCD = '0'
+            AND T1.IDAFLG != '2'
+            AND T1.DELETEDATE IS NULL
+    </select>
+
+    <resultMap id="listAIData" type="com.kse.wmsv2.oa_it_001.dto.OAIT001AIDataDto">
+        <result column="AWBNO" jdbcType="VARCHAR" property="awbNo" />
+        <result column="CURRENTARRFLT_1" jdbcType="VARCHAR" property="currentarrFlt_1" />
+        <result column="CURRENTARRFLT_2" jdbcType="VARCHAR" property="currentarrFlt_2" />
+        <result column="CWBNO" jdbcType="VARCHAR" property="cwbNo" />
+        <result column="DOCUMENTCHECK" jdbcType="VARCHAR" property="documentCheck" />
+        <result column="EDITFLG" jdbcType="VARCHAR" property="editFlg" />
+        <result column="IDAFLG" jdbcType="VARCHAR" property="idaFlg" />
+    </resultMap>
+
+    <select id="getDataCompareList2" resultMap="listAIData2">
+        SELECT T1.AWBNO, T1.BWBNO, T1.CWBNO, T1.CWBNODEPTCD, T1.CURRENTARRFLT_1, T1.CURRENTARRFLT_2, '0' AS OBJECTFLG
+        FROM AI_DATA T1
+        WHERE 1 = 1
+            AND T1.AWBNO = #{awbNo}
+            AND T1.CURRENTARRFLT_1 = #{currFlt1}
+            AND T1.CURRENTARRFLT_2 = #{currFlt2}
+            AND T1.SPSDOCCLASSCD = '0'
+            AND T1.IDAFLG != '2'
+            AND T1.DELETEDATE IS NULL
+    </select>
+
+    <resultMap id="listAIData2" type="com.kse.wmsv2.oa_it_001.dto.OAIT001AIDataDto">
+        <result column="AWBNO" jdbcType="VARCHAR" property="awbNo" />
+        <result column="BWBNO" jdbcType="VARCHAR" property="bwbNo" />
+        <result column="CWBNO" jdbcType="VARCHAR" property="cwbNo" />
+        <result column="CWBNODEPTCD" jdbcType="VARCHAR" property="cwbNoDeptCD" />
+        <result column="CURRENTARRFLT_1" jdbcType="VARCHAR" property="currentarrFlt_1" />
+        <result column="CURRENTARRFLT_2" jdbcType="VARCHAR" property="currentarrFlt_2" />
+        <result column="OBJECTFLG" jdbcType="VARCHAR" property="objectFlg" />
+    </resultMap>
+
+    <select id="getValueByNameCD" resultType="string">
+        SELECT T1.CHARACTERITEM1
+        FROM AM_NAME T1
+        WHERE 1 = 1
+            AND T1.NAMECLASS = '0047'
+            AND T1.NAMECD = #{nameCD}
+            AND T1.DEPARTMENTCD = #{deptCD}
+    </select>
+
+    <select id="getDataQuery4" resultMap="listAIHeader4">
+        SELECT																															
+            TH.AWBNO, TH.ARRFLT_1, TH.ARRFLT_2, TH.GETPORT, TH.SHIPMENTCD, TH.ARRPORTDATE, TH.CLEARPLANPLACECD, TH.CATERERINGPLACE,																															
+            TH.BONDEDWARECLASS, TH.ENTRYTYPE, TH.REPORTCONDITION, TH.CUSTOMSDIV, TH.PRESENT, TH.BONDEDWAREHOUSE, TH.DEFAULTCLASS,																															
+            TH.DEFAULTKEY																															
+        FROM AI_HEAD TH																															
+        WHERE 1 = 1																															
+            AND TH.AWBNO = #{awbNo}
+            AND TH.ARRFLT_1 = #{arrFlt1}
+            AND TH.ARRFLT_2 = #{arrFlt2}	
+    </select>
+    <resultMap id="listAIHeader4" type="com.kse.wmsv2.oa_it_001.dto.OAIT001AIHeaderDto">
+        <result column="AWBNO" jdbcType="VARCHAR" property="awbNo" />
+        <result column="ARRFLT_1" jdbcType="VARCHAR" property="arrFlt1" />
+        <result column="ARRFLT_2" jdbcType="VARCHAR" property="arrFlt2" />
+        <result column="GETPORT" jdbcType="VARCHAR" property="getport" />
+        <result column="SHIPMENTCD" jdbcType="VARCHAR" property="shipmentCD" />
+        <result column="ARRPORTDATE" jdbcType="VARCHAR" property="arrportDate" />
+        <result column="CLEARPLANPLACECD" jdbcType="VARCHAR" property="clearPlanPlace" />
+        <result column="CATERERINGPLACE" jdbcType="VARCHAR" property="catereringPlace" />
+        <result column="BONDEDWARECLASS" jdbcType="VARCHAR" property="bondedwareClass" />
+        <result column="ENTRYTYPE" jdbcType="VARCHAR" property="entryType" />
+        <result column="REPORTCONDITION" jdbcType="VARCHAR" property="reportCondition" />
+        <result column="CUSTOMSDIV" jdbcType="VARCHAR" property="customDiv" />
+        <result column="PRESENT" jdbcType="VARCHAR" property="present" />
+        <result column="BONDEDWAREHOUSE" jdbcType="VARCHAR" property="bondedwareHouse" />
+        <result column="DEFAULTCLASS" jdbcType="VARCHAR" property="defaultClass" />	
+        <result column="DEFAULTKEY" jdbcType="VARCHAR" property="defaultKey" />	
+    </resultMap>
+
+    <select id="getDataQuery6" resultType="int">
+        SELECT 
+            COUNT(*)													
+        FROM 
+            AI_DATA OT1													
+        WHERE 1 = 1													
+            AND OT1.AWBNO	    = #{awbNo}												
+            AND OT1.CWBNO		= #{cwbNo}											
+            AND OT1.CWBNODEPTCD = #{cwbNoDeptCD}													
+            AND OT1.DELETEDATE IS NOT NULL													
+    </select>
+
+    <select id="getDataQuery15" resultMap="listAIData15">
+        SELECT 
+            T1.BWBNO, T1.CWBNO, T1.CWBNODEPTCD														
+        FROM 
+            AI_DATA T1														
+        WHERE 
+            1 = 1														
+            AND T1.DELETEDATE IS NULL														
+            AND T1.AWBNO		= #{awbNo}												
+            AND T1.CWBNO		= #{cwbNo}												
+            AND T1.SPSDOCCLASSCD = '0'														
+            AND T1.IDAFLG != '2'														
+	
+    </select>
+    <resultMap id="listAIData15" type="com.kse.wmsv2.oa_it_001.dto.OAIT001AIDataDto">
+        <result column="BWBNO" jdbcType="VARCHAR" property="bwbNo" />
+        <result column="CWBNO" jdbcType="VARCHAR" property="cwbNo" />
+        <result column="CWBNODEPTCD" jdbcType="VARCHAR" property="cwbNoDeptCD" />
+    </resultMap>
+
+    <select id="getDataQuery17" resultMap="getDataQuery17">
+        SELECT 
+            T1.CWBNO, T1.CWBNODEPTCD,  IFNULL(MAX(SEQ), 0) AS SEQ														
+        FROM 
+            AI_CONDITION T1														
+        WHERE 
+            1 = 1																				
+            AND T1.CWBNO		= #{cwbNo}												
+            AND T1.CWBNODEPTCD  = #{cwbNoDeptCD}											
+            GROUP BY CWBNO, CWBNODEPTCD													
+    </select>
+    <resultMap id="getDataQuery17" type="com.kse.wmsv2.oa_it_001.dto.OAIT001AIConditionDto">
+        <result column="CWBNO" jdbcType="VARCHAR" property="cwbNo" />
+        <result column="CWBNODEPTCD" jdbcType="VARCHAR" property="cwbNoDeptCD" />
+        <result column="SEQ" jdbcType="VARCHAR" property="seq" />
+    </resultMap>
+
+    <update id="updateQueryList1" parameterType="com.kse.wmsv2.oa_it_001.dto.OAIT001AIDataDto">
+        UPDATE AI_DATA										
+        SET DELETEUSERCD = NULL,	
+        DELETEDATE = NULL	 									
+        WHERE 1 = 1										
+        AND AWBNO			= #{awbNo}							
+        AND CWBNO			= #{cwbNo}							
+        AND CWBNODEPTCD	    = #{cwbNoDeptCD}	
+        AND DELETEDATE IS NOT NULL								
+    </update>
+
+    <update id="updateQueryList2" parameterType="com.kse.wmsv2.oa_it_001.dto.OAIT001AIDataDto">
+        UPDATE AI_DATA										
+        SET 
+            <if test="documentCheck != null">
+                DOCUMENTCHECK = #{documentCheck},
+            </if>
+            <if test="idaFlg != null">
+                IDAFLG = #{idaFlg},
+            </if>
+             UPDATEUSERCD = #{updateUserCd},
+             UPDATEDATE = #{updateDate}								
+        WHERE 1 = 1										
+        AND AWBNO = #{awbNo}							
+        AND CWBNO = #{cwbNo}							
+        AND CURRENTARRFLT_1	= #{currentarrFlt_1}									
+        AND CURRENTARRFLT_2	= #{currentarrFlt_2}									
+    </update>
+
+    <update id="updateAIData" parameterType="com.kse.wmsv2.oa_it_001.dto.OAIT001AIDataDto">
+        INSERT INTO
+        AI_DATA(
+            AWBNO,
+            BWBNO,
+            CWBNO,
+            CWBNODEPTCD,
+            CURRENTARRFLT_1,
+            CURRENTARRFLT_2,
+            DOCUMENTCHECK,
+            EDITFLG,
+            IDAFLG,
+            REMODELINGFLG,
+            GETPORT,
+            SHIPMENTCD,
+            ARRPORTDATE,
+            CUSTOMSTRADERCD,
+            CUSTOMSPLACECD,
+            BONDEDWAREHOUSECD,
+            ORIGIN,
+            SPSDOCCLASSCD,
+            DOCINCOMPLETEFLG,
+            DECLARATIONOUTPUTFLG,
+            CARRYINOBJECTFLG,
+            WAREHOUSECLASSCD,
+            LOCATIONCD,
+            CURRENTCUSTOMSSTATUSCD,
+            CURRENTCARGOSTATUSCD,
+            CURRENTDOCSTATUSCD,
+            INCLASSIFYCLASSNAME,
+            OUTCLASSIFYCLASSNAME,
+            DOMESTICCLASSIFYCLASSNAME,
+            SPECIALPREPARENAME01,
+            ENTRYTYPE,
+            REPORTCONDITION,
+            REPORTDIVCD,
+            REPORTDEPCD,
+            REPORTPERSONCD,
+            DESTINATION,
+            AGENT,
+            CARGOPIECE,
+            CARGOINPIECE,
+            CARGOINSCANPIECE,
+            WEIGHTUNITCD,
+            INVOICEVALUE,
+            FARE,
+            CARBONDEDWAREHOUSE,
+            DEFAULTSET,
+            INSPECTDOCFLAG,
+            CONFIRMDOCFLAG,
+            EDITHOLD,
+            CUSTOMSCHECKCOUNT,
+            CUSTOMSCHECKHOLD,
+            CUSTOMSCHECKCORRECT,
+            CUSTOMSCHECKCLASS1,
+            CUSTOMSCHECKCLASS2,
+            IDAMESSAGEMAKEFLAG,
+            HARDRECVFLAG,
+            REGUSERCD,
+            REGDATE)
+        VALUES (
+            #{awbNo},
+            #{bwbNo},
+            #{cwbNo},
+            #{cwbNoDeptCD},
+            #{currentarrFlt_1},
+            #{currentarrFlt_2},
+            #{documentCheck},
+            #{editFlg},
+            #{idaFlg},
+            #{remodelingFlg},
+            #{getPort},
+            #{shipmentCd},
+            #{arrPortDate},
+            #{customsTraderCd},
+            #{customsPlaceCd},
+            #{bondedWarehouseCd},
+            #{origin},
+            #{spsdocClassCd},
+            #{docIncompleteFlg},
+            #{declarationOutputFlg},
+            #{carryInObjectFlg},
+            #{warehouseClassCd},
+            #{locationCd},
+            #{currentCustomsStatusCd},
+            #{currentCargoStatusCd},
+            #{currentDocStatusCd},
+            #{inClassifyClassName},
+            #{outClassifyClassName},
+            #{domesticClassifyClassName},
+            #{specialPrepareName01},
+            #{entryType},
+            #{reportCondition},
+            #{reportDivCd},
+            #{reportDepCd},
+            #{reportPersonCd},
+            #{destination},
+            #{agent},
+            #{cargoPiece},
+            #{cargoInPiece},
+            #{cargoInScanPiece},
+            #{weightUnitCd},
+            #{invoiceValue},
+            #{fare},
+            #{carBondedWarehouse},
+            #{defaultSet},
+            #{inspectDocFlag},
+            #{confirmDocFlag},
+            #{editHold},
+            #{customsCheckCount},
+            #{customsCheckHold},
+            #{customsCheckCorrect},
+            #{customsCheckClass1},
+            #{customsCheckClass2},
+            #{idaMessageMakeFlag},
+            #{hardRecvFlag},
+            #{updateUserCd},
+            #{updateDate}
+        )
+        ON DUPLICATE KEY
+        UPDATE
+            <if test="bwbNo != null"> BWBNO = #{bwbNo},</if> 
+            <if test="currentarrFlt_1 != null"> CURRENTARRFLT_1 = #{currentarrFlt_1},</if> 
+            <if test="currentarrFlt_2 != null"> CURRENTARRFLT_2 = #{currentarrFlt_2},</if> 
+            <if test="documentCheck != null"> DOCUMENTCHECK = #{documentCheck},</if> 
+            <if test="editFlg != null"> EDITFLG = #{editFlg},</if> 
+            <if test="idaFlg != null"> IDAFLG = #{idaFlg},</if> 
+            <if test="remodelingFlg != null"> REMODELINGFLG = #{remodelingFlg},</if> 
+            <if test="getPort != null"> GETPORT = #{getPort},</if> 
+            <if test="shipmentCd != null"> SHIPMENTCD = #{shipmentCd},</if> 
+            <if test="arrPortDate != null"> ARRPORTDATE = #{arrPortDate},</if> 
+            <if test="customsTraderCd != null"> CUSTOMSTRADERCD = #{customsTraderCd},</if> 
+            <if test="customsPlaceCd != null"> CUSTOMSPLACECD = #{customsPlaceCd},</if> 
+            <if test="bondedWarehouseCd != null"> BONDEDWAREHOUSECD = #{bondedWarehouseCd},</if> 
+            <if test="origin != null"> ORIGIN = #{origin},</if> 
+            <if test="spsdocClassCd != null"> SPSDOCCLASSCD = #{spsdocClassCd},</if> 
+            <if test="docIncompleteFlg != null"> DOCINCOMPLETEFLG = #{docIncompleteFlg},</if> 
+            <if test="declarationOutputFlg != null"> DECLARATIONOUTPUTFLG = #{declarationOutputFlg},</if> 
+            <if test="carryInObjectFlg != null"> CARRYINOBJECTFLG = #{carryInObjectFlg},</if> 
+            <if test="warehouseClassCd != null"> WAREHOUSECLASSCD = #{warehouseClassCd},</if> 
+            <if test="locationCd != null"> LOCATIONCD = #{locationCd},</if> 
+            <if test="currentCustomsStatusCd != null"> CURRENTCUSTOMSSTATUSCD = #{currentCustomsStatusCd},</if> 
+            <if test="currentCargoStatusCd != null"> CURRENTCARGOSTATUSCD = #{currentCargoStatusCd},</if> 
+            <if test="currentDocStatusCd != null"> CURRENTDOCSTATUSCD = #{currentDocStatusCd},</if> 
+            <if test="inClassifyClassName != null"> INCLASSIFYCLASSNAME = #{inClassifyClassName},</if> 
+            <if test="outClassifyClassName != null"> OUTCLASSIFYCLASSNAME = #{outClassifyClassName},</if> 
+            <if test="domesticClassifyClassName != null"> DOMESTICCLASSIFYCLASSNAME = #{domesticClassifyClassName},</if> 
+            <if test="specialPrepareName01 != null"> SPECIALPREPARENAME01 = #{specialPrepareName01},</if> 
+            <if test="entryType != null"> ENTRYTYPE = #{entryType},</if> 
+            <if test="reportCondition != null"> REPORTCONDITION = #{reportCondition},</if> 
+            <if test="reportDivCd != null"> REPORTDIVCD = #{reportDivCd},</if> 
+            <if test="reportDepCd != null"> REPORTDEPCD = #{reportDepCd},</if> 
+            <if test="reportPersonCd != null"> REPORTPERSONCD = #{reportPersonCd},</if> 
+            <if test="destination != null"> DESTINATION = #{destination},</if> 
+            <if test="agent != null"> AGENT = #{agent},</if> 
+            <if test="cargoPiece != null"> CARGOPIECE = #{cargoPiece},</if> 
+            <if test="cargoInPiece != null"> CARGOINPIECE = #{cargoInPiece},</if> 
+            <if test="cargoInScanPiece != null"> CARGOINSCANPIECE = #{cargoInScanPiece},</if> 
+            <if test="weightUnitCd != null"> WEIGHTUNITCD = #{weightUnitCd},</if> 
+            <if test="invoiceValue != null"> INVOICEVALUE = #{invoiceValue},</if> 
+            <if test="fare != null"> FARE = #{fare},</if> 
+            <if test="carBondedWarehouse != null"> CARBONDEDWAREHOUSE = #{carBondedWarehouse},</if> 
+            <if test="defaultSet != null"> DEFAULTSET = #{defaultSet},</if> 
+            <if test="inspectDocFlag != null"> INSPECTDOCFLAG = #{inspectDocFlag},</if> 
+            <if test="confirmDocFlag != null"> CONFIRMDOCFLAG = #{confirmDocFlag},</if> 
+            <if test="editHold != null"> EDITHOLD = #{editHold},</if> 
+            <if test="customsCheckCount != null"> CUSTOMSCHECKCOUNT = #{customsCheckCount},</if> 
+            <if test="customsCheckHold != null"> CUSTOMSCHECKHOLD = #{customsCheckHold},</if> 
+            <if test="customsCheckCorrect != null"> CUSTOMSCHECKCORRECT = #{customsCheckCorrect},</if> 
+            <if test="customsCheckClass1 != null"> CUSTOMSCHECKCLASS1 = #{customsCheckClass1},</if> 
+            <if test="customsCheckClass2 != null"> CUSTOMSCHECKCLASS2 = #{customsCheckClass2},</if> 
+            <if test="idaMessageMakeFlag != null"> IDAMESSAGEMAKEFLAG = #{idaMessageMakeFlag},</if> 
+            <if test="hardRecvFlag != null"> HARDRECVFLAG = #{hardRecvFlag},</if> 
+            UPDATEUSERCD = #{updateUserCd},
+            UPDATEDATE = #{updateDate}
+    </update>
+
+    <update id="updateAICondition" parameterType="com.kse.wmsv2.oa_it_001.dto.OAIT001AIConditionDto">
+    INSERT INTO
+        AI_CONDITION(
+            CWBNO,
+            CWBNODEPTCD,
+            SEQ,
+            DOCSTATUSCD,
+            CONFIRMPLACECD,
+            CONFIRMPERSONNM,
+            CONTACT,
+            COMMENT,
+            REGUSERCD,
+            REGDATE)
+        VALUES (
+            #{cwbNo},
+            #{cwbNoDeptCD},
+            #{seq},
+            #{docstatusCd},
+            #{confirmPlaceCd},
+            #{confirmPersonNm},
+            #{contact},
+            #{comment},
+            #{updateUserCD},
+            #{updateDate}
+        )
+        ON DUPLICATE KEY
+        UPDATE
+            <if test="docstatusCd != null"> DOCSTATUSCD = #{docstatusCd},</if> 
+            <if test="confirmPlaceCd != null"> CONFIRMPLACECD = #{confirmPlaceCd},</if> 
+            <if test="confirmPersonNm != null"> CONFIRMPERSONNM = #{confirmPersonNm},</if> 
+            <if test="contact != null"> CONTACT = #{contact},</if> 
+            <if test="comment != null"> COMMENT = #{comment},</if> 
+            UPDATEUSERCD = #{updateUserCD},
+            UPDATEDATE = #{updateDate}
+    </update>
+
+    <update id="updateAIConditionConfirm" parameterType="com.kse.wmsv2.oa_it_001.dto.OAIT001AIConditionConfirmDto">
+    INSERT INTO
+        AI_CONDITION_CONFIRM(
+            CWBNO,	
+            CWBNODEPTCD,
+            SEQ,
+            CONFIRMITEMCD,
+            CONFIRMITEMDETAILCD,
+            CONFIRMPERSONCD,
+            REGUSERCD,
+            REGDATE)
+        VALUES (
+            #{cwbNo},
+            #{cwbNoDeptCD},
+            #{seq},
+            #{confirmItemCd},
+            #{confirmItemDetailCd},
+            #{confirmPersonCd},
+            #{updateUserCD},
+            #{updateDate}
+        )
+        ON DUPLICATE KEY
+        UPDATE
+            <if test="confirmItemCd != null"> CONFIRMITEMCD = #{confirmItemCd},</if> 
+            <if test="confirmItemDetailCd != null"> CONFIRMITEMDETAILCD = #{confirmItemDetailCd},</if> 
+            <if test="confirmPersonCd != null"> CONFIRMPERSONCD = #{confirmPersonCd},</if> 
+            UPDATEUSERCD = #{updateUserCD},
+            UPDATEDATE = #{updateDate}
+    </update>
+
+    <update id="updateAIStatusHistory" parameterType="com.kse.wmsv2.oa_it_001.dto.OAIT001AIStatusHistoryDto">
+    INSERT INTO
+        AI_STATUS_HISTORY(
+            AWBNO,
+            BWBNO,
+            CWBNO,
+            CWBNODEPTCD,
+            IMPORTEXPORTCLASS,
+            BUSINESSCLASS,
+            STATUSCD,
+            REGUSERCD,
+            REGDATE,
+            UPDATEUSERCD,
+            UPDATEDATE)
+        VALUES (
+            #{awbNo},
+            #{bwbNo},
+            #{cwbNo},
+            #{cwbNoDeptCD},
+            #{importExportClass},
+            #{bussinessClass},
+            #{statusCd},
+            #{updateUserCD},
+            #{updateDate},
+            #{updateUserCD},
+            #{updateDate}
+        )
+        ON DUPLICATE KEY
+        UPDATE
+            <if test="statusCd != null"> STATUSCD = #{statusCd},</if> 
+            <if test="importExportClass != null"> IMPORTEXPORTCLASS = #{importExportClass},</if> 
+            <if test="bussinessClass != null"> BUSINESSCLASS = #{bussinessClass},</if> 
+            UPDATEUSERCD = #{updateUserCD},
+            UPDATEDATE = #{updateDate}
+    </update>
+</mapper>

@@ -1,0 +1,96 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="com.kse.wmsv2.oa_ew_003.mapper.OAEW003ScreenMapper">
+    <select id="searchPort"  parameterType="hashMap" resultType="com.kse.wmsv2.oa_ew_003.dao.OAEW003portSearchResultDao">
+        SELECT DISTINCT
+        NAMECD
+        FROM
+        AM_NAME
+        WHERE
+        NAMECLASS = 0030
+    </select>
+    <select id="searchFlight"  parameterType="hashMap" resultType="com.kse.wmsv2.oa_ew_003.dao.OAEW003flightSearchResultDao">
+        SELECT DISTINCT
+        LINKTRUCKNO
+        FROM
+        AE_DATA
+        WHERE
+        LINKTRUCKNO IS NOT NULL
+     </select>
+     <select id="searchContainer"  parameterType="hashMap" resultType="com.kse.wmsv2.oa_ew_003.dao.OAEW003containerSearchResultDao">
+         SELECT DISTINCT
+         ULDNO
+         FROM
+         AE_CONTAINER
+         WHERE
+         HTDISPLAYFLG = 1
+     </select>
+     <select id="searchWarehouse" parameterType="hashMap" resultType="com.kse.wmsv2.oa_ew_003.dao.OAEW003SearchWarehouseDao" >
+         SELECT
+         HANDYTERMINALID,
+         BONDEDWAREHOUSECD,
+         REGUSERCD
+         FROM
+         CS_TERMINAL_ID
+         WHERE
+         CS_TERMINAL_ID.HANDYTERMINALID = #{termNo}
+     </select>
+     <select id="searchExamination"  parameterType="hashMap" resultType="com.kse.wmsv2.oa_ew_003.dao.OAEW003examinationSearchResultDao">
+         SELECT
+         AWBNO,
+         CWBNO,
+         DEPPORT, <!-- 追加 -->
+        LINKPIECE,
+        CURRENTCARGOSTATUSCD
+        FROM
+        AE_DATA
+        WHERE
+        CWBNO = #{cwbNo}
+          AND BONDEDWAREHOUSECD = #{bondedWarehouseCd}
+       </select>
+   <update id="updateExamination"  parameterType="com.kse.wmsv2.oa_ew_003.dao.OAEW003examinationUpdateDao">
+         UPDATE
+         AE_DATA
+         SET
+         UPDATEUSERCD = #{regUserCd},
+         UPDATEDATE = CURRENT_TIMESTAMP(2),
+         CURRENTCARGOSTATUSCD = #{currentCargoStatusCd},
+         ARRIVALPIECE = #{piece}
+         WHERE
+         DEPPORT = #{portName}
+         AND CWBNO = #{cwbNo}
+    </update>
+    <select id="searchStowage"  parameterType="hashMap" resultType="com.kse.wmsv2.oa_ew_003.dao.OAEW003stowageSearchResultDao">
+       SELECT
+       AE_DATA.AWBNO,
+       AE_DATA.CURRENTCARGOSTATUSCD,
+        AE_DATA.CURRENTCUSTOMSSTATUSCD,
+       AE_CONTAINER.CONTAINERCLASSCD,
+       AE_CONTAINER.ULDNO
+       FROM
+       AE_DATA
+       LEFT JOIN
+       AE_CONTAINER
+       ON
+       AE_DATA.AWBNO = AE_CONTAINER.AWBNO
+       WHERE
+       CWBNO = #{cwbNo}
+        <!-- AND FLTDESTINATION = #{fltDestination} -->
+     </select>
+  <update id="updateStowage"  parameterType="com.kse.wmsv2.oa_ew_003.dao.OAEW003stowageUpdateDao">
+          UPDATE
+          AE_DATA
+          SET
+          UPDATEDATE = CURRENT_TIMESTAMP(2),
+          UPDATEUSERCD = #{regUserCd},
+          CURRENTCARGOSTATUSCD = #{currentCargoStatusCd},
+          ULDNO = #{containerName},
+          CONTAINERCLASSCD = #{containerClassCd}
+          WHERE
+          CWBNO = #{cwbNo}
+      <!--  AND FLTDESTINATION = #{fltDestination} -->
+ </update>
+</mapper>

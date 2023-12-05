@@ -1,0 +1,51 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="com.kse.wmsv2.oa_it_002.mapper.AirImportAiStatusHistoryMapper">
+  <select id="getDataAiStatusHistory" parameterType="com.kse.wmsv2.oa_it_002.dto.request.AiStatusHistoryRequest" resultMap="aiStatusHistorys">
+    SELECT STS.NAME AS STS_NAME,
+          UPD.USERNAME AS USER_NAME,
+          AI_STATUS_HISTORY.REGDATE AS UPDATEDATE,
+          MAX(STATUSCD) AS STS
+    FROM AI_STATUS_HISTORY 
+    LEFT JOIN AM_NAME STS ON STS.DEPARTMENTCD = 'ALL'
+    AND STS.NAMECLASS IN ('0010',
+                              '0011',
+                              '0012',
+                              '0013',
+                              '0014',
+                              '0015',
+                              '0052')
+    AND STATUSCD = STS.NAMECD
+    LEFT JOIN CM_USER UPD ON AI_STATUS_HISTORY.REGUSERCD = UPD.USERCD
+    WHERE 1 = 1
+      <if test="businessClass != ''">
+        AND BUSINESSCLASS IN (#{businessClass}) 
+      </if>
+        <if test="cwbNo != ''">
+        AND CWBNO = #{cwbNo}
+      </if>
+      <if test="cwbNoDeptCd != ''">
+        AND CWBNODEPTCD = #{cwbNoDeptCd}
+      </if>
+      <if test="statusCd != ''">
+        AND STATUSCD = #{statusCd}
+      </if>
+    GROUP BY STS.NAME,
+            UPD.USERNAME,
+            AI_STATUS_HISTORY.REGDATE
+    ORDER BY UPDATEDATE,
+            STS
+  </select>
+
+  <resultMap id="aiStatusHistorys" type="com.kse.wmsv2.oa_it_002.dto.AiStatusHistoryDto">
+    <result column="STS_NAME" jdbcType="VARCHAR" property="stsName" />
+    <result column="USER_NAME" jdbcType="VARCHAR" property="userName" />
+    <result column="UPDATEDATE" jdbcType="TIMESTAMP" property="updateDate" />
+    <result column="STS" jdbcType="VARCHAR" property="sts" />
+  </resultMap>
+</mapper>
+
+ 

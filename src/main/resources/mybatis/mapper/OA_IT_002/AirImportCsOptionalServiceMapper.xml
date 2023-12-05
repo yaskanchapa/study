@@ -1,0 +1,54 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="com.kse.wmsv2.oa_it_002.mapper.AirImportCsOptionalServiceMapper">
+  <select id="getArrangementDetails" parameterType="com.kse.wmsv2.oa_it_002.dto.request.ArrangementDetailRequest" resultMap="arrangementDetails">
+            SELECT '0' AS CCheck ,
+                OPTIONALSERVICENO ,
+                OPTIONALSERVICECD ,
+                COMMENT ,
+                APOSMANAGEMENTFLAG ,
+                CASE
+                    WHEN M01.CHARACTERITEM9 = '1' THEN '0'
+                    ELSE '1'
+                END AS ENABLECLASS
+          FROM CS_OPTIONAL_SERVICE 
+          LEFT JOIN
+            (SELECT *
+            FROM AM_NAME 
+            WHERE 1 = 1
+              AND DEPARTMENTCD = 'ALL'
+              AND NAMECLASS = '0218' ) M01 ON OPTIONALSERVICECD = M01.NAMECD
+          WHERE 1 = 1
+            AND IMPORTEXPORTCLASS = #{importExportClass}
+            AND CWBNO = #{cwbNo}
+            AND (DISPLAYCLASS = #{displayClass}
+                OR DISPLAYCLASS = '3')
+          ORDER BY OPTIONALSERVICENO ASC
+  </select>
+  <resultMap id="arrangementDetails" type="com.kse.wmsv2.oa_it_002.dto.ArrangementDetailDto">
+    <result column="CCheck" jdbcType="VARCHAR" property="cCheck" />
+    <result column="OPTIONALSERVICENO" jdbcType="VARCHAR" property="optionalServiceNo" />
+    <result column="OPTIONALSERVICECD" jdbcType="VARCHAR" property="optionalServiceCd" />
+    <result column="COMMENT" jdbcType="VARCHAR" property="comment" />
+    <result column="APOSMANAGEMENTFLAG" jdbcType="VARCHAR" property="aposManagementFlag" />
+    <result column="ENABLECLASS" jdbcType="VARCHAR" property="enableClass" />
+  </resultMap>
+
+  <update id="updateCsOptionalService" parameterType="com.kse.wmsv2.oa_it_002.dto.CsOptionalServiceDto">
+    UPDATE CS_OPTIONAL_SERVICE
+    SET
+      APOSMANAGEMENTFLAG = #{aposManagementFlag},
+      UPDATEUSERCD = #{updateUserCd},
+      UPDATEDATE = #{updateDate}
+      WHERE IMPORTEXPORTCLASS = #{importExportClass}
+      AND CWBNO = #{cwbNo}
+      AND OPTIONALSERVICENO = #{optionalServiceNo} 
+      AND OPTIONALSERVICECD = #{optionalServiceCd};
+  </update>
+
+</mapper>
+
+ 

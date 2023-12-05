@@ -1,0 +1,163 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="com.kse.wmsv2.oa_et_003.mapper.OAET003ScreenMapper">
+    <select id="selectSearchResult"  parameterType="hashMap" resultType="com.kse.wmsv2.oa_et_003.dao.OAET003SearchResultDao">
+    SELECT DAT .AWBNO,
+        REP.CWBNO,
+        REP.EMPCUSTOMERNO,
+        REP.EMPCUSTOMERNAME,
+        IFNULL(                                                             --    輸入者住所
+        REP.EMPCUSTOMERADD, CONCAT(
+        DAT.EXPCUSTOMERADD_1, ' ',
+        DAT.EXPCUSTOMERADD_2, ' ',
+        DAT.EXPCUSTOMERADD_3, ' ',
+        DAT.EXPCUSTOMERADD_4
+        ) )AS EXPCUSTOMERADDFULL,
+        REP.EMPCUSTOMERTELNO,
+        REP.PERMITDATE2,
+        DATE_FORMAT(PERMITDATE2, '%Y-%m-%d' )      AS PERMITDATE2YMD,
+        DATE_FORMAT(PERMITDATE2, '%T' )            AS PERMITDATE2HM,
+        REP.REPORTNO,
+        REP.EXAMINATIONFLGDISC,
+        REP.ITEM,
+        REP.CARGOPIECE,
+        DAT.CARRYINGWEIGHT                        AS CARGOWEIGHT,
+        REP.KINDCD,
+        DAT.REPORTDEPCD,
+        DAT.REPORTDIVISIONCD,
+        DAT.NEWS_1,
+        DAT.NEWS_2,
+        DAT.NEWSSHIPPER,
+        DAT.INHOUSEREFNUMBER,
+        CASE
+        WHEN DAT.LARGESMALLFLG IS NULL THEN 'マニフェスト'
+        ELSE
+        CASE
+        WHEN DAT.LARGESMALLFLG = 'S' THEN '一般(小額)'
+        ELSE
+        CASE
+        WHEN DAT.LARGESMALLFLG = 'L' THEN '一般(大額)'
+        END
+        END
+        END                                       AS LARGESMALLFLG,
+        DAT.BONDEDWAREHOUSECD                     AS CLEARPLANPLACECD,
+        DAT.LASTDESTINATIONCD                     AS LASTDESTNAME,
+        DAT.FOBAMO                                AS FOBAMO,
+        NAM.CHARACTERITEM1                        AS ESAFLAGNAME,
+        REP.REPORTDATE2,
+        DATE_FORMAT(REPORTDATE2, '%Y-%m-%d' )      AS REPORTDATE2YMD,
+        DATE_FORMAT(REPORTDATE2, '%T' )            AS REPORTDATE2HM
+    FROM   AE_DETAIL_PERMIT_DATA REP
+        LEFT JOIN AE_DATA DAT
+        ON REP.CWBNO = DAT.CWBNO
+        LEFT JOIN AM_NAME NAM
+        ON DAT.ESAFLG = NAM.NAMECD
+        AND NAM.DEPARTMENTCD = 'ALL'
+        AND NAM.NAMECLASS = '0035'
+        WHERE  1 = 1
+        <if test="cwbNo != '' and cwbNo != null">
+        AND REP.CWBNO = #{cwbNo}
+        </if>
+        <if test="permissionDate1 != null and permissionDate1 != ''">
+            AND (
+            DATE_FORMAT(REP.PERMITDATE2, '%Y-%m-%d') &gt;= #{permissionDate1}
+            <if test="permissionDate2 != null and permissionDate2 != ''">
+                AND DATE_FORMAT(REP.PERMITDATE2, '%Y-%m-%d') BETWEEN #{permissionDate1} AND #{permissionDate2}
+            </if>
+            )
+        </if>
+        <if test="permissionDate2 != null and permissionDate2 != ''">
+            AND (
+            DATE_FORMAT(REP.PERMITDATE2, '%Y-%m-%d') &lt;= #{permissionDate2}
+            <if test="permissionDate1 != null and permissionDate1 != ''">
+                AND DATE_FORMAT(REP.PERMITDATE2, '%Y-%m-%d') BETWEEN #{permissionDate1} AND #{permissionDate2}
+            </if>
+            )
+        </if>
+        <if test="declarationDate1 != null and declarationDate1 != ''">
+            AND (
+            DATE_FORMAT(REP.REPORTDATE, '%Y-%m-%d') &gt;= #{declarationDate1}
+            <if test="declarationDate2 != null and declarationDate2 != ''">
+                AND DATE_FORMAT(REP.REPORTDATE, '%Y-%m-%d') BETWEEN #{declarationDate1} AND #{declarationDate2}
+            </if>
+            )
+        </if>
+        <if test="declarationDate2 != null and declarationDate2 != ''">
+            AND (
+            DATE_FORMAT(REP.REPORTDATE, '%Y-%m-%d') &lt;= #{declarationDate2}
+            <if test="declarationDate1 != null and declarationDate1 != ''">
+                AND DATE_FORMAT(REP.REPORTDATE, '%Y-%m-%d') BETWEEN #{declarationDate1} AND #{declarationDate2}
+            </if>
+            )
+        </if>
+        <if test="bondedCd != '' and bondedCd != null">
+            AND DAT.REPRESENTATIVECD = #{bondedCd}
+        </if>
+        <if test="shedCd != '' and shedCd != null">
+            AND REP.CLEARPLANPLACECD = #{shedCd}
+        </if>
+        <if test="awbNo != '' and awbNo != null">
+            AND DAT.AWBNO = #{awbNo}
+        </if>
+        <if test="flt1 != '' and flt1 != null">
+            AND DAT.FLT1 LIKE CONCAT('%', #{flt1}, '%')
+        </if>
+        <if test="flt2 != '' and flt2 != null">
+            AND DAT.FLT2 LIKE CONCAT('%', #{flt2}, '%')
+        </if>
+        <if test="referenceNo != '' and referenceNo != null">
+            AND DAT.INHOUSEREFNUMBER LIKE CONCAT('%', #{referenceNo}, '%')
+        </if>
+        <if test="item != '' and item != null">
+            AND REP.ITEM LIKE CONCAT('%', #{item}, '%')
+        </if>
+        <if test="exporterName != '' and exporterName != null">
+            AND REP.EMPCUSTOMERNAME LIKE CONCAT('%', #{exporterName}, '%')
+            </if>
+        <if test="exporterAdd != '' and exporterAdd != null">
+            AND (REP.EXPCUSTOMERADD_1 LIKE CONCAT('%', #{exporterAdd}, '%')
+            OR REP.EXPCUSTOMERADD_2 LIKE CONCAT('%', #{exporterAdd}, '%')
+            OR REP.EXPCUSTOMERADD_3 LIKE CONCAT('%', #{exporterAdd}, '%')
+            OR REP.EXPCUSTOMERADD_4 LIKE CONCAT('%', #{exporterAdd}, '%')
+            )
+        </if>
+        <if test="news1 != '' and news1 != null">
+            AND DAT.NEWS_1 = #{news1}
+        </if>
+        <if test="news2 != '' and news2 != null">
+            AND DAT.NEWS_2 = #{news2}
+        </if>
+        <if test="newsShipper != '' and newsShipper != null">
+            AND DAT.NEWSSHIPPER = #{newsShipper}
+        </if>
+        <if test="inputExpCustomerNo != '' and inputExpCustomerNo != null">
+            AND REP.EMPCUSTOMERNO = #{inputExpCustomerNo}
+        </if>
+        <if test="depPort != '' and depPort != null">
+            AND DAT.DEPPORT = #{depPort}
+        </if>
+        <if test="consigneeName != '' and consigneeName != null">
+            AND REP.CONSIGNEENAME = #{consigneeName}
+        </if>
+        <if test="consigneeAddLump != '' and consigneeAddLump != null">
+            AND REP.CONSIGNEEADD_LUMP LIKE CONCAT('%', #{consigneeAddLump}, '%')
+        </if>
+        ORDER BY DAT.AWBNO ASC
+        </select>
+
+
+<select id="selectSearchPrintResult"  parameterType="hashMap" resultType="com.kse.wmsv2.oa_et_003.dao.OAET003SearchPrintResultDao">
+       SELECT
+    AM_NAME.`NAME` AS IMAGETYPE,
+    AM_NAME.`NAMECD` AS IMAGETYPECD
+       FROM
+       AM_NAME
+       WHERE
+       DEPARTMENTCD ="ALL"
+       AND NAMECLASS = "0111"
+</select>
+
+        </mapper>

@@ -1,0 +1,430 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="com.kse.wmsv2.oa_it_001.mapper.OAIT001FileMapper">
+    <insert id="insertImportDataRep" parameterType="com.kse.wmsv2.oa_it_001.dao.OAIT001RepDataDao">
+        INSERT INTO AI_DATA_DETAIL
+            (
+            AWBNO, CWBNO, CWBNODEPTCD, SEQ, ITEM, COUNTRYOFORIGINCD,
+            ORIGINCERTIFIDISC, FAREDIVDISC, INCONSTAXKINDCD_1,REGUSERCD,REGDATE,UPDATEUSERCD,UPDATEDATE
+            )
+        VALUES
+            (
+            #{awbNo},#{cwbNo}, '000', 1, #{item},#{expCustomerCountry},
+            #{originCertifiDisc}, #{fareDivDisc}, #{inConsTaxKindCd1},#{userCd},#{date},#{userCd},#{date}
+            )
+    </insert>
+    <insert id="insertImportDataHead" parameterType="com.kse.wmsv2.oa_it_001.dao.OAIT001HeadDataDao">
+        INSERT INTO AI_HEAD
+            (
+            AWBNO,	ARRFLT_1,	ARRFLT_2,	ENTRYTYPE,	REQMIXEDFORWARDER,
+            CUSTOMSDIV,	CATERERINGPLACE,	REPORTCONDITION,	GETPORT, PRESENT, AIRPORTCD,
+            LOADINGFLT_1,	LOADINGFLT_2,	CLEARPLANPLACECD,	AWBPIECE,
+            AWBWEIGHT,	CWBCOUNT,	CWBPIECESUM,	CWBWEIHTSUM,
+            SCANCOUNT,	SCANPICEC,	OVERCOUNT,	OVERPICEC,
+            CARRYINACTIONFLG,	BONDEDWARECLASS, SHIPMENTCD, ARRAIRPORTCD,BONDEDWAREHOUSE,
+            REGUSERCD,REGDATE,UPDATEUSERCD,UPDATEDATE,
+            ARRDATE,ARRPORTDATE
+            )
+        SELECT DISTINCT
+            D.AWBNO, D.CURRENTARRFLT_1, D.CURRENTARRFLT_2, #{importSource}, #{deptCd},
+            #{customDiv}, D.ORIGIN, #{reportCondition}, #{getPort}, #{present}, #{airportCd},
+            D.CURRENTARRFLT_1, D.CURRENTARRFLT_2, #{clearPlanPlaceCd}, 0,
+            0, 0, 0, 0,
+            0, 0, 0, 0,
+            0, '2', IFNULL(ORI.CHARACTERITEM1,''),#{shipmentCd},#{bondedWareHouse}, #{userCd},#{date},#{userCd},#{date},
+            #{arrDate},#{arrPortDate}
+        FROM
+            AI_DATA AS D
+        LEFT JOIN
+            (SELECT
+                CHARACTERITEM1
+                , NAMECD
+            FROM
+                AM_NAME
+            WHERE
+                DEPARTMENTCD = 'ALL'
+                AND NAMECLASS = '0135'
+            ) ORI
+        ON
+            D.ORIGIN = ORI.NAMECD
+        WHERE
+            D.AWBNO =  #{awbNo}
+
+    </insert>
+
+    <insert id="insertImportDataDetail"  parameterType="com.kse.wmsv2.oa_it_001.dao.OAIT001DetailDataDao" >
+        INSERT INTO AI_DATA
+            (AWBNO, CWBNO, CWBNODEPTCD, REMODELINGFLG, BWBNO,
+            CURRENTARRFLT_1, CURRENTARRFLT_2, GETPORT, CUSTOMSTRADERCD, CUSTOMSPLACECD,
+            BONDEDWAREHOUSECD, EDITFLG, DOCUMENTCHECK, ORIGIN, SPSDOCCLASSCD,
+            DOCINCOMPLETEFLG, DECLARATIONOUTPUTFLG, CARRYINOBJECTFLG, LOCATIONCD,
+            CURRENTCUSTOMSSTATUSCD, CURRENTCARGOSTATUSCD, CURRENTDOCSTATUSCD, ENTRYTYPE,
+            IDAFLG, REPORTCONDITION, BIGSMALLFLG, REPORTKINDCD_1, REPORTKINDCD_2,
+            CARGODISC, DISCERNMENTMARK, REPORTDIVCD, REPORTDEPCD, IMPCUSTOMERNO,
+            IMPCUSTOMERDEPTCD, IMPCUSTOMEROCSDEPTCD, IMPCUSTOMERNAME, IMPPOSTCODE,
+            IMPCUSTOMERADD_1, IMPCUSTOMERADD_2, IMPCUSTOMERADD_3, IMPCUSTOMERADD_4,
+            IMPCUSTOMERADD_LUMP, IMPCUSTOMERADD, IMPCUSTOMERTELNO, REPORTPERSONCD,
+            EXPCUSTOMERNO, EXPCUSTOMERDEPTNO, EXPCUSTOMEROCSDEPTNO, EXPCUSTOMERNAME,
+            EXPCUSTOMERADD_1, EXPCUSTOMERADD_2, EXPCUSTOMERADD_3, EXPCUSTOMERADD_4,
+            EXPCUSTOMERADD_LUMP, EXPCUSTOMERADD, EXPCUSTOMERPOSTCODE, EXPCUSTOMERCOUNTRY,
+            EXPCUSTOMERTELNO, CARGOPIECE, CARGOINPIECE, CARGOINSCANPIECE, PERMITCARGOPIECE,
+            CARGOOUTPIECE, BONDEDCARGOOUTPIECE, BONDEDCARGOINPIECE, DOCSCANPIECE,
+            CARGOWEIGHT, WEIGHTUNITCD, TRADETYPEMARK, CONTAINERPIECE, INVOICEDISCERNMENT,
+            INVOICEVALCLASSCD, INVOICEVALCONCD, INVOICECURCD, INVOICEVALUE, FAREFLG,
+            FARECURRENCYCD, FARE, INSURANCECLASSCD, INSURANCEAMOUNT, INCINSUREGNO,
+            ESTIMATIONFLGCD, INCESTREPRENO, INCREVISEFLGCD, INCREVBASECURCD, INCREVBASEAMO,
+            TAXABLESAMOPDIVTO, LONGKEEPBONDEDWAREHOUSE, DELIVERYDATEEXTCD, BPAPPLICATIONCD,
+            PAYMETHODDISC, ACCOUNTNO, SECURITYREGNO_1, SECURITYREGNO_2, NEWS_2,
+            NEWSSHIPPER, INHOUSEREFNUMBER, ITEM, COUNTRYOFORIGINCD,
+            TAXABLESAMO, DESTINATION,
+            CARBONDEDWAREHOUSE, MANAGEDDATAFLG, MIXEDFORWARDER, AGENT, DIFFDAYS,
+            CHECKEDFLG, COLLECTFARE, JPYFARE, TOTALPIECE, TOTALWEIGHT, TAXAMO,
+            STATIONCD, COUREFNO, PICKUPINST, DELIVINST, SHIPMENTCD,
+            WAREHOUSECLASSCD, REPORTPLANINGDATE,
+            INCESTREPRENO_2, INCESTREPRENO_3,
+            CUSTOMSOFFICEJANITORCD, CUSTOMSOFFICEJANITORRENO,
+            CUSTOMSOFFICEJANITORNAME, INSPECTIONWITNESS,
+            SHIPPERSSECCD, SHIPPERSREFNO,
+            ADVANCERULINGVALUATION_1, ADVANCERULINGVALUATION_2,
+            OTHERLAWRECDISC_6, OTHERLAWRECDISC_7, OTHERLAWRECDISC_8,
+            OTHERLAWRECDISC_9, OTHERLAWRECDISC_10,
+            OTHERLAWRECNO_6, OTHERLAWRECNO_7, OTHERLAWRECNO_8,
+            OTHERLAWRECNO_9, OTHERLAWRECNO_10,
+            ARRAIRPORTCD, DEFAULTSET, REPORTNAYCLASSCD, INSPECTDOCFLAG, CONFIRMDOCFLAG, EDITHOLD,
+            CUSTOMSCHECKPRIORITYEDIT, CUSTOMSCHECKCOUNT, CUSTOMSCHECKHOLD, CUSTOMSCHECKCORRECT,
+            CUSTOMSCHECKCLASS1, CUSTOMSCHECKCLASS2, IDAMESSAGEMAKEFLAG, HARDRECVFLAG,
+            EDITDIFFICULTY,EDITSEVERITY,CUSTOMSCHECKPRIORITY,
+            INCLASSIFYCLASSNAME,OUTCLASSIFYCLASSNAME,DOMESTICCLASSIFYCLASSNAME,SPECIALPREPARENAME01,
+            SPECIALPREPARENAME02,SPECIALPREPARENAME03,SPECIALPREPARENAME04,SPECIALPREPARENAME05,
+            SPECIALPREPARENAME06,SPECIALPREPARENAME07,SPECIALPREPARENAME08,SPECIALPREPARENAME09,
+            SPECIALPREPARENAME10,
+            REGUSERCD,REGDATE,UPDATEUSERCD,UPDATEDATE
+            )
+        VALUES
+            (#{awbNo}, #{cwbNo}, #{cwbNoDeptCd}, #{remodelingFlg}, #{bwbNo}, #{currentArrFlt1}, #{currentArrFlt2}
+            , #{getPort}, #{customsTraderCd}, #{customsPlaceCd}, #{bondedWareHouseCd}, #{editFlg}, #{documentCheck}
+            , #{origin}, #{spsDocClassCd}, #{docInCompleteFlg}, #{declarationOutputFlg}, #{carryInObjectFlg}
+            , #{locationCd}, #{currentCustomsStatusCd}, #{currentCargoStatusCd}, #{currentDocStatusCd}, #{entryType}
+            , #{idaFlg}, #{reportCondtion}, #{bigSmallFlg}, #{reportKindCd1}, #{reportKindCd2}, #{cargoDisc}
+            , #{discernmentMark}, #{reportDivCd}, #{reportDepCd}, #{impCustomerNo}, #{impCustomerDeptCd}
+            , #{impCustomerOcsDeptCd}, #{impCustomerName}, #{impPostCode}, #{impCustomerAdd1}, #{impCustomerAdd2}
+            , #{impCustomerAdd3}, #{impCustomerAdd4}, #{impCustomerAddLump}, #{impCustomerAdd}, #{impCustomerTelNo}
+            , #{reportPersonCd}, #{expCustomerNo}, #{expCustomerDeptNo}, #{expCustomerOcsDeptNo}, #{expCustomerName}
+            , #{expCustomerAdd1}, #{expCustomerAdd2}, #{expCustomerAdd3}, #{expCustomerAdd4}, #{expCustomerAddLump}
+            , #{expCustomerAdd}, #{expCustomerPostCode}, #{expCustomerCountry}, #{expCustomerTelNo}, #{cargoPiece}
+            , #{cargoInPiece}, #{cargoInScanPiece}, #{permitCargoPiece}, #{cargoOutPiece}, #{bondedCargoOutPiece}
+            , #{bondedCargoInPiece}, #{docScanPiece}, #{cargoWeight}, #{weightUnitCd}, #{tradeTypeMark}
+            , #{containerPiece}, #{invoiceDiscernment}, #{invoiceValClassCd}, #{invoiceValConCd}, #{invoiceCurCd}
+            , #{invoiceValue}, #{fareFlg}, #{fareCurrencyCd}, #{fare}, #{insuranceClassCd}, #{insuranceAmount}
+            , #{incInsureRegNo}, #{estimationFlgCd}, #{incEstRePreNo}, #{increviseFlgCd}, #{increvBase}
+            , #{incRevBaseAmo}, #{taxablesAmoDivto}, #{longKeepBondedWarehouse}, #{deliveryDateExtCd}
+            , #{bpApplicationCd}, #{payMethodDisc}, #{accountNo}, #{securityRegNo1}, #{securityRegNo2}, #{news2}
+            , #{newsShipper}, #{inHouseRefNumber}, #{item}, #{countryOfOriginCd}, #{taxablesAmo}, #{destination}
+            , #{carBondedWarehouse}, #{managedDataFlg}, #{mixedForwarder}, #{agent}, #{diffDays}, #{checkedFlg}
+            , #{collectFare}, #{jpyFare}, #{totalPiece}, #{totalWeight}, #{taxAmo}, #{stationCd}, #{couRefNo}
+            , #{pickupInst}, #{delivInst}, #{shipmentCd}, #{wareHouseClassCd}, #{reportPlaningDate}, #{incEstRePreNo2}
+            , #{incEstRepReNo3}, #{customsOfficeJanitorCd}, #{customsOfficeJanitorReno}, #{customsOfficeJanitorName}
+            , #{inspectionWitness}, #{shippersSecCd}, #{shippersRefNo}, #{advanceRulingValuation1}
+            , #{advanceRulingValuation2}, #{otherLawRecDisc6}, #{otherLawRecDisc7}, #{otherLawRecDisc8}
+            , #{otherLawRecDisc9}, #{otherLawRecDisc10}, #{otherLawRecNo6}, #{otherLawRecNo7}, #{otherLawRecNo8}
+            , #{otherLawRecNo9}, #{otherLawRecNo10}, #{arrAirportCd}, #{defaultSet}
+            , #{reportNayClassCd}, #{inspectDocFlag}, #{confirmDocFlag}, #{editHold}, #{customsCheckPriorityEdit}
+            , #{customsCheckCount}, #{customsCheckHold}, #{customsCheckCorrect}, #{customsCheckClass1}
+            , #{customsCheckClass2}, #{idaMessageMakeFlag}, #{hardRecvFlag}
+            , #{editDifficulty}, #{editSeverity}, #{customsCheckPriority}
+            , #{inClassifyClassName}, #{outClassifyClassName}, #{domesticClassifyClassName}, #{specialPrepareName01}
+            , #{specialPrepareName02}, #{specialPrepareName03}, #{specialPrepareName04}, #{specialPrepareName05}
+            , #{specialPrepareName06}, #{specialPrepareName07}, #{specialPrepareName08}, #{specialPrepareName09}
+            , #{specialPrepareName10}
+            , #{userCd},#{date},#{userCd},#{date})
+    </insert>
+
+    <select id="getImporterInfo" parameterType="String" resultType="com.kse.wmsv2.oa_it_001.dao.OAIT001ImporterDao">
+        SELECT
+            CUSTOMERNO,
+            DEPTCD,
+            OCSDEPTCD,
+            CUSTOMERNAMEE,
+            ZIPCD,
+            CUSTOMERADDE1,
+            CUSTOMERADDE2,
+            CUSTOMERADDE3,
+            CUSTOMERADDE4,
+            CUSTOMERADDEBLANKET,
+            TELNO,
+            INSURANCECLASSCD,
+            INCINSUREGNO,
+            ESTIMATIONFLGCD,
+            INCESTREPRENO,
+            DELIVERYDATEEXTCD,
+            PAYMETHODDISC,
+            CONDITIONBANKACCOUNTNO,
+            CONDITIONCOLLATERALNO1,
+            CONDITIONCOLLATERALNO2,
+            CONDITIONCOMMENT
+        FROM
+            AM_CUSTOMER_NUMBER
+        WHERE
+            SUBSTRING(OCSDEPTCD,1,1) = '1'
+            AND TELNO = #{value}
+        ORDER BY
+            OCSDEPTCD DESC
+        LIMIT 1
+    </select>
+    <select id="getFareCurrency" parameterType="hashMap" resultType="hashMap">
+        SELECT
+            IFNULL(CHARACTERITEM1,'') AS FARECURRENCYCD,IFNULL(MIN(NUMERICITEM2),'') AS FARE
+        FROM
+            AM_NAME
+        WHERE
+            DEPARTMENTCD = #{deptCd}
+            AND NAMECLASS = '0407'
+            AND NUMERICITEM1 >= ${cargoWeight}
+        GROUP BY
+            CHARACTERITEM1
+    </select>
+    <select id="getCommonRate" parameterType="hashMap" resultType="String">
+        SELECT
+            RATE
+        FROM
+            CM_RATE
+        WHERE
+            STARTDATE <![CDATA[ <= ]]> #{date}
+            AND CURRENCYCD = #{currencyCd}
+        ORDER BY
+            STARTDATE DESC
+        LIMIT 1
+    </select>
+    <select id="getRate" parameterType="String" resultType="String">
+        SELECT
+            RATE
+        FROM
+            CM_RATE
+        WHERE
+            STARTDATE <![CDATA[ <= ]]> (
+                SELECT
+                    CONTROLDATE
+                FROM
+                    CM_CONTROL
+                WHERE
+                    CONTROLCD = '1'
+            )
+            AND CURRENCYCD = #{value}
+        ORDER BY
+            STARTDATE DESC
+        LIMIT 1
+    </select>
+    <select id="getLimitValue"  resultType="Integer">
+        SELECT
+            IFNULL(NUMERICITEM1,0)
+        FROM
+            AM_NAME
+        WHERE
+            DEPARTMENTCD = 'ALL'
+            AND NAMECLASS = '0121'
+            AND NAMECD = '001'
+        ORDER BY
+            NUMERICITEM1 DESC
+        LIMIT 1
+    </select>
+    <select id="getOptionalService" parameterType="String"  resultType="Integer">
+        SELECT
+            COUNT(*)
+        FROM
+            CS_OPTIONAL_SERVICE
+        WHERE
+            IMPORTEXPORTCLASS = '1'
+            AND DISPLAYCLASS IN ('2','3')
+            AND CWBNO = #{value}
+    </select>
+    <select id="getConditionCount" parameterType="String"  resultType="Integer">
+        SELECT
+            COUNT(*)
+        FROM
+            AI_CONDITION
+        WHERE
+            CWBNO = #{value}
+            AND DOCSTATUSCD = 'CND00001'
+    </select>
+    <select id="getCountIDAItem" parameterType="hashmap" resultType="Integer">
+        SELECT
+            COUNT(*)
+        FROM
+            AM_NAME
+        WHERE
+            DEPARTMENTCD = #{deptCd}
+            AND NAMECLASS = '0118'
+            AND UPPER(#{item}) LIKE CONCAT('%',UPPER(NAME),'%')
+    </select>
+    <select id="getMaximumCargoPiece" parameterType="hashmap" resultType="Integer">
+        SELECT
+            IFNULL(NUMERICITEM1,0)
+        FROM
+            AM_NAME
+        WHERE
+            DEPARTMENTCD = #{deptCd}
+            AND NAMECLASS = '0119'
+            AND NAMECD = '001'
+    </select>
+    <select id="getMaximumCargoWeight" parameterType="hashmap" resultType="Integer">
+        SELECT
+            IFNULL(NUMERICITEM1,0)
+        FROM
+            AM_NAME
+        WHERE
+            DEPARTMENTCD = #{deptCd}
+            AND NAMECLASS = '0120'
+            AND NAMECD = '001'
+    </select>
+    <select id="searchResultList" parameterType="String" resultType="com.kse.wmsv2.oa_it_001.dao.OAIT001SearchResultDao">
+        SELECT DISTINCT
+            D.AWBNO
+            , D.CWBNODEPTCD
+            , D.BWBNO
+            , D.CUSTOMSPLACECD
+            , '0' as LINKDATACLASS
+            , D.PERMITCLASSCD as PERMITFLG
+            , D.DOCUMENTCHECK
+            , D.IDAFLG
+            , D.EDITFLG
+            , ( SELECT NAME FROM AM_NAME WHERE NAMECLASS = '0013' AND NAMECD = D.CURRENTCUSTOMSSTATUSCD ) AS CURRENTCUSTOMSSTATUSCD
+            , ( SELECT NAME FROM AM_NAME WHERE NAMECLASS = '0014' AND NAMECD = D.CURRENTCARGOSTATUSCD ) AS CURRENTCARGOSTATUSCD
+            , (
+            SELECT
+            NAME
+            FROM
+            AM_NAME
+            WHERE
+            1=1
+            AND DEPARTMENTCD = 'ALL'
+            AND NAMECLASS = '0109'
+            AND NAMECD = (CASE WHEN ISNULL(IMG.IMGCNT) = 1  THEN '2' ELSE '1' END)
+            ) AS IMG
+            , '0' as CkPrint
+            , D.CWBNO
+            , CASE
+            WHEN (D.CARGOINPIECE + D.CARGOINSCANPIECE) <![CDATA[ < ]]> D.CARGOPIECE THEN '1' ELSE '0'	END AS SHORTFREIGHT
+            , D.CARGOINPIECE + D.CARGOINSCANPIECE AS CARGOINSCANPIECE
+            , D.CARGOPIECE
+            , D.CARGOWEIGHT
+            , D.ORIGIN
+            , D.ITEM
+            , D.INVOICEVALCONCD
+            , D.INVOICECURCD
+            , D.INVOICEVALUE
+            , D.FARECURRENCYCD
+            , D.FARE
+            , CONCAT(
+            COALESCE(D.IMPCUSTOMERNO,''),'-',COALESCE(D.IMPCUSTOMERDEPTCD,''),'-',COALESCE(D.IMPCUSTOMEROCSDEPTCD,'')
+            )  AS IMPORTCUSTOMERNO
+            , D.IMPCUSTOMERNAME
+            , D.IMPCUSTOMERADD_LUMP
+            , CONCAT(
+            COALESCE(D.EXPCUSTOMERNO,''),'-',COALESCE(D.EXPCUSTOMERDEPTNO,''),'-',COALESCE(D.EXPCUSTOMEROCSDEPTNO,'')
+            )  AS EXPORTCUSTOMERNO
+            , D.EXPCUSTOMERNAME
+            , D.EXPCUSTOMERADD_LUMP
+            , D.DESTINATION
+            , D.MIXEDFORWARDER
+            , D.MANAGEDDATAFLG
+            , D.PAYKIND
+            , D.SPECIALCARGOSIGN
+            , D.JPYFARE
+            , D.CARBONDEDWAREHOUSE
+            , D.DISCERNMENTMARK
+            , D.EDITREGUSERCD
+        FROM
+            AI_DATA AS D
+        LEFT JOIN
+            AI_HEAD AS HD
+        ON
+            D.AWBNO = HD.AWBNO
+        LEFT JOIN
+            (SELECT
+                CWBNO
+                , SUM( CASE WHEN IMAGECLASS IN ('IN','CW') THEN 1 ELSE 0 END) AS IMGCNT
+            FROM
+                CS_IMAGE_MANAGEMENT
+            WHERE
+                1=1
+                AND IMPORTEXPORTCLASS = '1'
+            GROUP BY
+                CWBNO) AS IMG
+        ON
+            D.CWBNO = IMG.CWBNO
+        WHERE
+            1 = 1
+            AND D.AWBNO = #{value}
+    </select>
+    <select id="searchResultHeader"  parameterType="String" resultType="com.kse.wmsv2.oa_it_001.dao.OAIT001HeaderDao">
+        SELECT 	DISTINCT
+            D.AWBNO
+            , D.REPORTPLANINGDATE
+            , D.INHOUSEREFNUMBER
+            , HD.REQMIXEDFORWARDER
+            , HD.CUSTOMSDIV
+            , HD.ARRAIRPORTCD
+            , HD.ARRFLT_1
+            , HD.ARRFLT_2
+            , HD.REPORTCONDITION
+            , HD.GETPORT
+            , HD.ARRDATE
+            , HD.PRESENT
+            , HD.AIRPORTCD
+            , HD.ARRPORTDATE
+            , HD.GRANDCHILDMIXED
+            , HD.SPLIT
+            , HD.CATERERINGPLACE
+            , HD.SHIPMENTCD
+            , HD.CLEARPLANPLACECD
+            , HD.JOINT
+        FROM
+            AI_HEAD HD
+        LEFT JOIN
+            (SELECT
+                AWBNO
+                , REPORTPLANINGDATE
+                , INHOUSEREFNUMBER
+                , CWBNO
+            FROM
+                AI_DATA
+            WHERE
+                AWBNO = #{value}
+            ) D
+        ON
+            HD.AWBNO = D.AWBNO
+        WHERE
+            1=1
+            AND HD.AWBNO = #{value}
+        ORDER BY
+            D.REPORTPLANINGDATE DESC
+        LIMIT 1
+    </select>
+    <delete id="deleteOldData" parameterType="String">
+        DELETE
+            H,D,R,S,SH
+        FROM
+            AI_HEAD AS H
+        LEFT JOIN
+            AI_DATA AS D
+        ON
+            H.AWBNO = D.AWBNO
+        LEFT JOIN
+            AI_DATA_DETAIL AS R
+        ON
+            D.CWBNO = R.CWBNO
+        LEFT JOIN
+            AI_STATUS AS S
+        ON
+            H.AWBNO = S.AWBNO
+        LEFT JOIN
+            AI_STATUS_HISTORY AS SH
+        ON
+            H.AWBNO = SH.AWBNO
+        WHERE
+            H.AWBNO = #{value}
+    </delete>
+</mapper>

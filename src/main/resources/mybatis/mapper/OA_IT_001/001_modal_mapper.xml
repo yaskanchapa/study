@@ -1,0 +1,896 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="com.kse.wmsv2.oa_it_001.mapper.OAIT001ModalMapper">
+    <update id="updateMicData" parameterType="com.kse.wmsv2.oa_it_001.dao.OAIT001MICDao">
+        UPDATE
+            AI_DATA
+        SET
+            IDAFLG = '0',
+            AWBNO = #{awbNo},CWBNO = #{cwbNo},CWBNODEPTCD = #{cwbNoDeptCd},REPORTCONDITION = #{reportCondition}
+            ,EDITFLG = '1', CURRENTCUSTOMSSTATUSCD = 'IC00500'
+            ,REPORTKINDCD_2 = #{reportKindCd2},DISCERNMENTMARK = #{discernmentMark},REPORTDIVCD = #{reportDivCd}
+            ,REPORTDEPCD = #{reportDepCd},REPORTPLANINGDATE = #{reportPlaningDate},IMPCUSTOMERNO = #{impCustomerNo}
+            ,IMPCUSTOMERDEPTCD = #{impCustomerDeptCd},IMPCUSTOMEROCSDEPTCD = #{impCustomerOcsDeptCd}
+            ,IMPCUSTOMERNAME = #{impCustomerName},IMPPOSTCODE = #{impPostCode},IMPCUSTOMERTELNO = #{impCustomerTelNo}
+            ,IMPCUSTOMERADD_1 = #{impCustomerAdd1},IMPCUSTOMERADD_2 = #{impCustomerAdd2}
+            ,IMPCUSTOMERADD_3 = #{impCustomerAdd3},IMPCUSTOMERADD_4 = #{impCustomerAdd4}
+            ,IMPCUSTOMERADD_LUMP = #{impCustomerAddLump},IMPCUSTOMERADD = #{impCustomerAdd}
+            ,EXPCUSTOMERNO = #{expCustomerNo},EXPCUSTOMERDEPTNO = #{expCustomerDeptNo}
+            ,EXPCUSTOMEROCSDEPTNO = #{expCustomerOcsDeptNo},EXPCUSTOMERNAME = #{expCustomerName}
+            ,EXPCUSTOMERPOSTCODE = #{expCustomerPostCode},EXPCUSTOMERCOUNTRY = #{expCustomerCountry}
+            ,EXPCUSTOMERADD_1 = #{expCustomerAdd1},EXPCUSTOMERADD_2 = #{expCustomerAdd2}
+            ,EXPCUSTOMERADD_3 = #{expCustomerAdd3},EXPCUSTOMERADD_4 = #{expCustomerAdd4}
+            ,EXPCUSTOMERADD_LUMP = #{expCustomerAddLump},EXPCUSTOMERADD = #{expCustomerAdd},CARGOPIECE = #{cargoPiece}
+            ,CARGOWEIGHT = #{cargoWeight},CURRENTARRFLT_1 = #{currentArrFlt1},CURRENTARRFLT_2 = #{currentArrFlt2}
+            ,ARRPORTDATE = #{arrPortDate},GETPORT = #{getPort},SHIPMENTCD = #{shipmentCd}
+            ,INVOICEVALCLASSCD = #{invoiceValClassCd},INVOICEVALCONCD = #{invoiceValConCd}
+            ,INVOICECURCD = #{invoiceCurCd},INVOICEVALUE = NULLIF(REPLACE(#{invoiceValue},',',''),'')
+            ,TAXABLESAMO = NULLIF(REPLACE(#{taxablesAmo},',',''),'')
+            ,FAREFLG = #{fareFlg},FARECURRENCYCD = #{fareCurrencyCd},FARE = NULLIF(REPLACE(#{fare},',',''),'')
+            ,INSURANCECLASSCD = #{insuranceClassCd},INSURANCECURCD = #{insuranceCurCd}
+            ,INSURANCEAMOUNT = NULLIF(REPLACE(#{insuranceAmount},',',''),''),COUNTRYOFORIGINCD = #{countryOfOriginCD},ITEM = #{item}
+            ,NEWS_2 = #{news2},INHOUSEREFNUMBER = #{inhouseRefNumber}
+            ,CUSTOMSOFFICEJANITORCD = #{customsOfficeJanitorCd},CUSTOMSOFFICEJANITORNAME = #{customsOfficeJanitorName}
+            ,CustomsOfficeJanitorReNo = #{customsOfficeJanitorReNo},InspectionWitness = #{inspectionWitness}
+            ,SHIPPERSSECCD = #{shippersSecCd},SHIPPERSREFNO =#{shippersRefNo},CUSTOMSCHECKPRIORITY = #{customsCheckPriority}
+            ,INCLASSIFYCLASSNAME = #{inClassifyClassName} ,OUTCLASSIFYCLASSNAME = #{outClassifyClassName}
+            ,DOMESTICCLASSIFYCLASSNAME = #{domesticClassifyClassName}
+        WHERE
+            1 = 1
+            AND AWBNO = #{awbNo}
+            AND CWBNO = #{cwbNo}
+            AND CWBNODEPTCD = #{cwbNoDeptCd}
+    </update>
+    <update id="updateMicHeadData" parameterType="hashMap">
+        UPDATE
+            AI_HEAD
+        SET
+            ARRFLT_1 = #{afterCurrentArrFlt1}
+            ,ARRFLT_2 = #{afterCurrentArrFlt2}
+        WHERE
+            1 = 1
+            AND AWBNO = #{awbNo}
+            AND ARRFLT_1 = #{beforeCurrentArrFlt1}
+            AND ARRFLT_2 = #{beforeCurrentArrFlt2}
+    </update>
+    <select id="getCurrentArrFlt" parameterType="hashMap" resultType="hashMap">
+        SELECT
+            CURRENTARRFLT_1,CURRENTARRFLT_2
+        FROM
+            AI_DATA
+        WHERE
+            1 = 1
+            AND AWBNO = #{awbNo}
+            AND CWBNO = #{cwbNo}
+            AND CWBNODEPTCD = #{cwbNoDeptCd}
+    </select>
+    <select id="getInvoiceItem" parameterType="com.kse.wmsv2.oa_it_001.dao.OAIT001MICDao" resultType="String">
+        SELECT
+            ITEMNM
+        FROM
+            CS_INVOICE_EDIT
+        WHERE
+            CWBNO = #{cwbNo}
+            AND CWBNODEPTCD = #{cwbNoDeptCd}
+        GROUP BY
+            ITEMNM
+    </select>
+    <select id="getSpecialItem" parameterType="string" resultType="int">
+        SELECT
+            IFNULL(COUNT(*),0)
+        FROM
+            AM_NAME
+        WHERE
+            DEPARTMENTCD = 'ALL'
+            AND NAMECLASS = '0239'
+            AND NAME = #{value}
+    </select>
+    <select id="checkSpecialOrder" parameterType="string" resultType="int">
+        SELECT
+            IFNULL(COUNT(OPTIONALSERVICECD),0)
+        FROM
+            CS_OPTIONAL_SERVICE
+        WHERE
+            CWBNO = #{value}
+        GROUP BY
+            OPTIONALSERVICECD
+    </select>
+    <select id="checkSpecialImporter" parameterType="com.kse.wmsv2.oa_it_001.dao.OAIT001MICDao" resultType="hashMap">
+        SELECT
+            (CASE WHEN
+                NULLIF(CONDITIONCOMMENT,'') is null
+                OR NULLIF(DELIVERYDATEEXTCD,'') is null
+                OR NULLIF(PAYMETHODDISC,'') is null
+                OR NULLIF(CONDITIONBANKACCOUNTNO,'') is null
+                OR NULLIF(CONDITIONCOLLATERALNO1,'') is null
+                OR NULLIF(CONDITIONCOLLATERALNO2,'') is null
+                OR NULLIF(ESTIMATIONFLGCD,'') is null
+                OR NULLIF(INCESTREPRENO,'') is null
+                OR NULLIF(INSURANCECLASSCD,'') is null
+                OR NULLIF(INCINSUREGNO,'') is null
+            THEN 0 ELSE 5 END),
+            (CASE WHEN NULLIF(CONDITIONFLG01,'') IS NULL THEN 0 ELSE 5 END),
+            (CASE WHEN NULLIF(CONDITIONFLG02,'') IS NULL THEN 0 ELSE 5 END),
+            (CASE WHEN NULLIF(CONDITIONFLG03,'') IS NULL THEN 0 ELSE 5 END),
+            (CASE WHEN NULLIF(CONDITIONFLG04,'') IS NULL THEN 0 ELSE 5 END),
+            (CASE WHEN NULLIF(CONDITIONFLG05,'') IS NULL THEN 0 ELSE 5 END),
+            (CASE WHEN NULLIF(CONDITIONFLG06,'') IS NULL THEN 0 ELSE 5 END),
+            (CASE WHEN NULLIF(CONDITIONFLG07,'') IS NULL THEN 0 ELSE 5 END),
+            (CASE WHEN NULLIF(CONDITIONFLG08,'') IS NULL THEN 0 ELSE 5 END),
+            (CASE WHEN NULLIF(CONDITIONFLG09,'') IS NULL THEN 0 ELSE 5 END),
+            (CASE WHEN NULLIF(CONDITIONFLG10,'') IS NULL THEN 0 ELSE 5 END),
+            (CASE WHEN NULLIF(CONDITIONFLG11,'') IS NULL THEN 0 ELSE 5 END),
+            (CASE WHEN NULLIF(CONDITIONFLG12,'') IS NULL THEN 0 ELSE 5 END),
+            (CASE WHEN NULLIF(CONDITIONFLG13,'') IS NULL THEN 0 ELSE 5 END),
+            (CASE WHEN NULLIF(CONDITIONFLG14,'') IS NULL THEN 0 ELSE 5 END),
+            (CASE WHEN NULLIF(CONDITIONFLG15,'') IS NULL THEN 0 ELSE 5 END),
+            (CASE WHEN NULLIF(CONDITIONFLG16,'') IS NULL THEN 0 ELSE 5 END),
+            (CASE WHEN NULLIF(CONDITIONFLG17,'') IS NULL THEN 0 ELSE 5 END),
+            (CASE WHEN NULLIF(CONDITIONFLG18,'') IS NULL THEN 0 ELSE 5 END),
+            (CASE WHEN NULLIF(CONDITIONFLG19,'') IS NULL THEN 0 ELSE 5 END),
+            (CASE WHEN NULLIF(CONDITIONFLG20,'') IS NULL THEN 0 ELSE 5 END),
+            (CASE WHEN NULLIF(CONDITIONFLG21,'') IS NULL THEN 0 ELSE 5 END),
+            (CASE WHEN NULLIF(CONDITIONFLG22,'') IS NULL THEN 0 ELSE 5 END),
+            (CASE WHEN NULLIF(CONDITIONFLG23,'') IS NULL THEN 0 ELSE 5 END),
+            (CASE WHEN NULLIF(CONDITIONFLG24,'') IS NULL THEN 0 ELSE 5 END),
+            (CASE WHEN NULLIF(CONDITIONFLG25,'') IS NULL THEN 0 ELSE 5 END)
+        FROM
+            AM_CUSTOMER_NUMBER
+        WHERE
+            1 = 1
+            AND CUSTOMERNO = #{impCustomerNo}
+            AND DEPTCD = #{impCustomerDeptCd}
+            AND OCSDEPTCD = #{impCustomerOcsDeptCd}
+        LIMIT 1
+    </select>
+    <select id="countInvoiceDetailData" parameterType="com.kse.wmsv2.oa_it_001.dao.OAIT001MICDao" resultType="hashMap">
+        SELECT
+            *
+        FROM
+            (SELECT
+                COUNT(CWBNO) AS CNTCWB
+            FROM
+                CS_INVOICE_EDIT
+            WHERE
+                1 = 1
+                AND CWBNO = #{cwbNo}
+                AND CWBNODEPTCD = #{cwbNoDeptCd}
+            GROUP BY
+                CWBNO
+            LIMIT 1) AS OCIE
+        WHERE
+            1 = 1
+            AND 9 <![CDATA[ < ]]> OCIE.CNTCWB
+    </select>
+    <select id="checkInvoiceAmount" parameterType="hashMap" resultType="hashMap">
+        SELECT
+            *
+        FROM
+            (
+                SELECT
+                    *
+                FROM
+                    CM_RATE
+                WHERE
+                    1 = 1
+                    AND STARTDATE <![CDATA[ <= ]]> #{date}
+                    AND CURRENCYCD = #{currencyCd}
+                ORDER BY
+                    STARTDATE DESC
+                LIMIT 1
+            ) AS CMRA
+        WHERE
+            1 = 1
+            AND 999999999999999  <![CDATA[ < ]]> FLOOR(CMRA.RATE * #{invoiceValue})
+    </select>
+    <select id="checkReplace" parameterType="com.kse.wmsv2.oa_it_001.dao.OAIT001MICDao" resultType="int">
+        SELECT
+            COUNT(*)
+        FROM
+            CS_OPTIONAL_SERVICE AS OC
+        INNER JOIN
+            AM_NAME AS AN
+        ON
+            OC.OPTIONALSERVICECD = AN.NAMECD
+        WHERE
+            1 = 1
+            AND OC.IMPORTEXPORTCLASS = '1'
+            AND OC.CWBNO = #{cwbNo}
+            AND OC.APOSMANAGEMENTFLAG = '0'
+            AND AN.DEPARTMENTCD = 'ALL'
+            AND AN.NAMECLASS = '0218'
+            AND AN.CHARACTERITEM9 = '1'
+    </select>
+    <select id="checkReportIda" parameterType="object" resultType="int">
+        SELECT
+            COUNT(*)
+        FROM
+            AI_STATUS_HISTORY
+        WHERE
+            1 = 1
+            AND BUSINESSCLASS = '01'
+            AND AWBNO = #{awbNo}
+            AND BWBNO = #{bwbNo}
+            AND CWBNO = #{cwbNo}
+            AND CWBNODEPTCD = #{cwbNoDeptCd}
+            AND STATUSCD = 'IC00800'
+    </select>
+    <update id="updateIDAMainData" parameterType="com.kse.wmsv2.oa_it_001.dao.OAIT001IDAMainDao" >
+        UPDATE
+            AI_DATA
+        SET
+        <choose>
+            <when test=" idaCheckFlag == '1' ">
+                IDAMESSAGEMAKEFLAG = '1',
+                CURRENTCUSTOMSSTATUSCD = 'IC00800',
+            </when>
+            <otherwise>
+                CURRENTCUSTOMSSTATUSCD = 'IC00600',
+            </otherwise>
+        </choose>
+            EDITFLG = '1',
+            IDAFLG = '1',
+            AWBNO = #{awbNo},
+            BWBNO = #{bwbNo},
+            CWBNO = #{cwbNo},
+            CWBNODEPTCD = #{cwbNoDeptCd},
+            CUSTOMSCHECKPRIORITY = #{customsCheckPriority},
+            CARGOPIECE = REPLACE(#{cargoPiece},',',''),
+            CARGOWEIGHT = REPLACE(#{cargoWeight},',',''),
+            WEIGHTUNITCD = #{weightUnitCD},
+            IMPCUSTOMERNO = #{impCustomerNo},
+            IMPCUSTOMERDEPTCD = #{impCustomerDeptCd},
+            IMPCUSTOMEROCSDEPTCD = #{impCustomerOcsDeptCd},
+            IMPCUSTOMERNAME = #{impCustomerName},
+            IMPPOSTCODE = #{impPostcode},
+            IMPCUSTOMERTELNO = #{impCustomerTelNo},
+            IMPCUSTOMERADD_1 = #{impCustomerAdd1},
+            IMPCUSTOMERADD_2 = #{impCustomerAdd2},
+            IMPCUSTOMERADD_3 = #{impCustomerAdd3},
+            IMPCUSTOMERADD_4 = #{impCustomerAdd4},
+            IMPCUSTOMERADD = #{impCustomerAdd},
+            EXPCUSTOMERNO = #{expCustomerNo},
+            EXPCUSTOMERDEPTNO = #{expCustomerDeptNo},
+            EXPCUSTOMEROCSDEPTNO = #{expCustomerOCSDeptNo},
+            EXPCUSTOMERNAME = #{expCustomerName},
+            EXPCUSTOMERPOSTCODE = #{expCustomerPostCode},
+            EXPCUSTOMERCOUNTRY = #{expCustomerCountry},
+            EXPCUSTOMERADD_1 = #{expCustomerAdd1},
+            EXPCUSTOMERADD_2 = #{expCustomerAdd2},
+            EXPCUSTOMERADD_3 = #{expCustomerAdd3},
+            EXPCUSTOMERADD_4 = #{expCustomerAdd4},
+            EXPCUSTOMERADD = #{expCustomerAdd},
+            IMPDEALINGSCD = #{impDealingsCD},
+            IMPDEALINGSDEPTCD = #{impDealingsDeptCD},
+            IMPDEALINGSOCSDEPTCD = #{impDealingsOCSDeptCD},
+            IMPDEALINGSNAME = #{impDealingsName},
+            INVOICEDISCERNMENT = #{invoiceDiscernment},
+            INVOICERECEIPTNO = #{invoiceReceiptNo},
+            INVOICENO = #{invoiceNo},
+            INVOICEVALCLASSCD = #{invoiceValClassCD},
+            INVOICEVALCONCD = #{invoiceValConCD},
+            INVOICECURCD = #{invoiceCurCD},
+            INVOICEVALUE = NULLIF(REPLACE(#{invoiceValue},',',''),''),
+            FAREFLG = #{fareFlg},
+            FARECURRENCYCD = #{fareCurrencyCD},
+            FARE = NULLIF(REPLACE(#{fare},',',''),''),
+            INSURANCECLASSCD = #{insuranceClassCD},
+            INSURANCECURCD = #{insuranceCurCD},
+            INSURANCEAMOUNT = NULLIF(REPLACE(#{insuranceAmount},',',''),''),
+            INCINSUREGNO = #{incInsuRegNo},
+            TAXABLESAMO = NULLIF(REPLACE(#{taxablesAmo},',',''),''),
+            ESTIMATIONFLGCD = #{estimationFlgCD},
+            INCESTREPRENO = #{incEstRepReNo},
+            INCESTREPRENO_2 = #{incEstRepReNo2},
+            INCESTREPRENO_3 = #{incEstRepReNo3},
+            INCREVISEFLGCD = #{incReviseFlgCD},
+            INCREVBASECURCD = #{incRevBaseCurCD},
+            INCREVBASEAMO = NULLIF(REPLACE(#{incRevBaseAmo},',',''),''),
+            INCREVBASE = #{incRevBase},
+            TAXABLESAMOPDIVTO = NULLIF(REPLACE(#{taxablesAmoPdivTo},',',''),''),
+            LONGKEEPBONDEDWAREHOUSE = #{longKeepBondedWarehouse},
+            DELIVERYDATEEXTCD = #{deliveryDateExtCD},
+            BPAPPLICATIONCD = #{bpApplicationCD},
+            PAYMETHODDISC = #{payMethodDisc},
+            ACCOUNTNO = #{accountNo},
+            SECURITYREGNO_1 = #{securityRegNo1},
+            SECURITYREGNO_2 = #{securityRegNo2},
+            BIGSMALLFLG = #{bigSmallFlg},
+            REPORTKINDCD_1 = #{reportKindCD1},
+            REPORTKINDCD_2 = #{reportKindCD2},
+            CARGODISC = #{cargoDisc},
+            DISCERNMENTMARK = #{discernmentMark},
+            REPORTDIVCD = #{reportDivCD},
+            REPORTDEPCD = #{reportDepCD},
+            REPORTPLANINGDATE = #{reportPlaningDate},
+            CURRENTARRFLT_1 = #{currentArrFLT1},
+            CURRENTARRFLT_2 = #{currentArrFLT2},
+            ARRPORTDATE = #{arrPortDate},
+            GETPORT = #{getPort},
+            SHIPMENTCD = #{shipmentCD},
+            SHIPMENTPLACENAME = #{shipmentPlaceName},
+            TRADETYPEMARK = #{tradeTypeMark},
+            BACKTAXREPORTDISC = #{backTaxReportDisc},
+            IMPTRADECONT3DISC = #{impTradeCont3Disc},
+            IMPRECOATTACHDISC = #{impRecoAttachDisc},
+            CONTCHECKREOTHER = #{contCheckReOther},
+            CUSTOMSEXAMMARK = #{customsExamMark},
+            OTHERLAW_1 = #{otherLaw1},
+            OTHERLAW_2 = #{otherLaw2},
+            OTHERLAW_3 = #{otherLaw3},
+            OTHERLAW_4 = #{otherLaw4},
+            OTHERLAW_5 = #{otherLaw5},
+            OTHERMINICONTNO = #{otherMiniContNo},
+            FHPROOFDISC = #{fhProofDisc},
+            PLANTPEDISC = #{plantPEDisc},
+            ANIMALQUARADISC = #{animalQuaraDisc},
+            CUSTOMSOFFICEJANITORCD = #{customsOfficeJanitorCd},
+            CUSTOMSOFFICEJANITORNAME = #{customsOfficeJanitorName},
+            CUSTOMSOFFICEJANITORRENO = #{customsOfficeJanitorReNo},
+            INSPECTIONWITNESS = #{inspectionWitness},
+            SHIPPERSSECCD = #{shippersSecCd},
+            SHIPPERSREFNO = #{shippersRefNo},
+            ADVANCERULINGVALUATION_1 = #{advanceRulingValuation1},
+            ADVANCERULINGVALUATION_2 = #{advanceRulingValuation2},
+            OTHERLAWRECDISC_1 = #{otherLawRecDisc1},
+            OTHERLAWRECNO_1 = #{otherLawRecNo1},
+            OTHERLAWRECDISC_2 = #{otherLawRecDisc2},
+            OTHERLAWRECNO_2 = #{otherLawRecNo2},
+            OTHERLAWRECDISC_3 = #{otherLawRecDisc3},
+            OTHERLAWRECNO_3 = #{otherLawRecNo3},
+            OTHERLAWRECDISC_4 = #{otherLawRecDisc4},
+            OTHERLAWRECNO_4 = #{otherLawRecNo4},
+            OTHERLAWRECDISC_5 = #{otherLawRecDisc5},
+            OTHERLAWRECNO_5 = #{otherLawRecNo5},
+            OTHERLAWRECDISC_6 = #{otherLawRecDisc6},
+            OTHERLAWRECNO_6 = #{otherLawRecNo6},
+            OTHERLAWRECDISC_7 = #{otherLawRecDisc7},
+            OTHERLAWRECNO_7 = #{otherLawRecNo7},
+            OTHERLAWRECDISC_8 = #{otherLawRecDisc8},
+            OTHERLAWRECNO_8 = #{otherLawRecNo8},
+            OTHERLAWRECDISC_9 = #{otherLawRecDisc9},
+            OTHERLAWRECNO_9 = #{otherLawRecNo9},
+            OTHERLAWRECDISC_10 = #{otherLawRecDisc10},
+            OTHERLAWRECNO_10 = #{otherLawRecNo10},
+            BONDEDWAREHOUSECD = #{bondedWarehouseCD},
+            REPORTPERSONCD = #{reportPersonCD},
+            NEWS_1 = #{news1},
+            NEWS_2 = #{news2},
+            NEWSSHIPPER = #{newsShipper},
+            INHOUSEREFNUMBER = #{inHouseRefNumber},
+            INCLASSIFYCLASSNAME = #{inClassifyClassName},
+            OUTCLASSIFYCLASSNAME = #{outClassifyClassName},
+            DOMESTICCLASSIFYCLASSNAME = #{domesticClassifyClassName}
+        WHERE
+            1 = 1
+            AND AWBNO = #{awbNo}
+            AND CWBNO = #{cwbNo}
+            AND CWBNODEPTCD = #{cwbNoDeptCd}
+    </update>
+    <delete id="deleteIDASubData" parameterType="hashMap">
+        DELETE
+        FROM
+            AI_DATA_DETAIL
+        WHERE
+            AWBNO = #{awbNo}
+            AND CWBNO = #{cwbNo}
+    </delete>
+    <update id="updateIDASubData" parameterType="com.kse.wmsv2.oa_it_001.dao.OAIT001IDASubDao">
+        INSERT INTO
+        AI_DATA_DETAIL(
+            AWBNO
+            ,CWBNO
+            ,CWBNODEPTCD
+            ,SEQ
+            ,ITEMCD
+            ,NACCSCD
+            ,ITEM
+            ,COUNTRYOFORIGINCD
+            ,ORIGINCERTIFIDISC
+            ,AMO_1
+            ,AMOUNIT_1
+            ,AMO_2
+            ,AMOUNIT_2
+            ,IMPTRADECONTCD
+            ,TAXABLESAMOPDIVTO
+            ,FAREDIVDISC
+            ,FOBCURRENCYCD
+            ,TAXABLESAMO
+            ,CUSTOMSEXEMPTCD
+            ,CUSTOMSEXEMPTAMO
+            ,INCONSTAXKINDCD_1
+            ,INCONSTAXEXEMCD_1
+            ,INCONSTAXEXEMAMO_1
+            ,INCONSTAXKINDCD_2
+            ,INCONSTAXEXEMCD_2
+            ,INCONSTAXEXEMAMO_2
+            ,INCONSTAXKINDCD_3
+            ,INCONSTAXEXEMCD_3
+            ,INCONSTAXEXEMAMO_3
+            ,INCONSTAXKINDCD_4
+            ,INCONSTAXEXEMCD_4
+            ,INCONSTAXEXEMAMO_4
+            ,INCONSTAXKINDCD_5
+            ,INCONSTAXEXEMCD_5
+            ,INCONSTAXEXEMAMO_5
+            ,INCONSTAXKINDCD_6
+            ,INCONSTAXEXEMCD_6
+            ,INCONSTAXEXEMAMO_6
+            ,ADVANCERULINGCLASSIFICATION
+            ,ADVANCERULINGORIGIN
+            )
+        VALUES
+            (
+            #{awbNo},
+            #{cwbNo},
+            #{cwbNoDeptCd},
+            #{seq},
+            #{itemCD},
+            #{naccsCD},
+            #{item},
+            #{countryOfOriginCD},
+            #{originCertifiDisc},
+            NULLIF(REPLACE(#{amo1},',',''),''),
+            #{amoUnit1},
+            NULLIF(REPLACE(#{amo2},',',''),''),
+            #{amoUnit2},
+            #{impTradeContCD},
+            NULLIF(REPLACE(#{taxablesAmoPdivTo},',',''),''),
+            #{fareDivDisc},
+            #{fobCurrencyCD},
+            NULLIF(REPLACE(#{taxablesAmo},',',''),''),
+            #{customsExemptCD},
+            NULLIF(REPLACE(#{customsExemptAmo},',',''),''),
+            #{inConsTaxKindCD1},
+            #{inConsTaxExemCD1},
+            NULLIF(REPLACE(#{inConsTaxExemAmo1},',',''),''),
+            #{inConsTaxKindCD2},
+            #{inConsTaxExemCD2},
+            NULLIF(REPLACE(#{inConsTaxExemAmo2},',',''),''),
+            #{inConsTaxKindCD3},
+            #{inConsTaxExemCD3},
+            NULLIF(REPLACE(#{inConsTaxExemAmo3},',',''),''),
+            #{inConsTaxKindCD4},
+            #{inConsTaxExemCD4},
+            NULLIF(REPLACE(#{inConsTaxExemAmo4},',',''),''),
+            #{inConsTaxKindCD5},
+            #{inConsTaxExemCD5},
+            NULLIF(REPLACE(#{inConsTaxExemAmo5},',',''),''),
+            #{inConsTaxKindCD6},
+            #{inConsTaxExemCD6},
+            NULLIF(REPLACE(#{inConsTaxExemAmo6},',',''),''),
+            #{advanceRulingClassification},
+            #{advanceRulingOrigin}
+            )
+        ON DUPLICATE KEY
+        UPDATE
+            ITEMCD = #{itemCD},
+            NACCSCD = #{naccsCD},
+            ITEM = "${item}",
+            COUNTRYOFORIGINCD = #{countryOfOriginCD},
+            ORIGINCERTIFIDISC = #{originCertifiDisc},
+            AMO_1 = NULLIF(REPLACE(#{amo1},',',''),''),
+            AMOUNIT_1 = #{amoUnit1},
+            AMO_2 = NULLIF(REPLACE(#{amo2},',',''),''),
+            AMOUNIT_2 = #{amoUnit2},
+            IMPTRADECONTCD = #{impTradeContCD},
+            TAXABLESAMOPDIVTO = NULLIF(REPLACE(#{taxablesAmoPdivTo},',',''),''),
+            FAREDIVDISC = #{fareDivDisc},
+            FOBCURRENCYCD = #{fobCurrencyCD},
+            TAXABLESAMO = NULLIF(REPLACE(#{taxablesAmo},',',''),''),
+            CUSTOMSEXEMPTCD = #{customsExemptCD},
+            CUSTOMSEXEMPTAMO = NULLIF(REPLACE(#{customsExemptAmo},',',''),''),
+            INCONSTAXKINDCD_1 = #{inConsTaxKindCD1},
+            INCONSTAXEXEMCD_1 = #{inConsTaxExemCD1},
+            INCONSTAXEXEMAMO_1 = NULLIF(REPLACE(#{inConsTaxExemAmo1},',',''),''),
+            INCONSTAXKINDCD_2 = #{inConsTaxKindCD2},
+            INCONSTAXEXEMCD_2 = #{inConsTaxExemCD2},
+            INCONSTAXEXEMAMO_2 = NULLIF(REPLACE(#{inConsTaxExemAmo2},',',''),''),
+            INCONSTAXKINDCD_3 = #{inConsTaxKindCD3},
+            INCONSTAXEXEMCD_3 = #{inConsTaxExemCD3},
+            INCONSTAXEXEMAMO_3 = NULLIF(REPLACE(#{inConsTaxExemAmo3},',',''),''),
+            INCONSTAXKINDCD_4 = #{inConsTaxKindCD4},
+            INCONSTAXEXEMCD_4 = #{inConsTaxExemCD4},
+            INCONSTAXEXEMAMO_4 = NULLIF(REPLACE(#{inConsTaxExemAmo4},',',''),''),
+            INCONSTAXKINDCD_5 = #{inConsTaxKindCD5},
+            INCONSTAXEXEMCD_5 = #{inConsTaxExemCD5},
+            INCONSTAXEXEMAMO_5 = NULLIF(REPLACE(#{inConsTaxExemAmo5},',',''),''),
+            INCONSTAXKINDCD_6 = #{inConsTaxKindCD6},
+            INCONSTAXEXEMCD_6 = #{inConsTaxExemCD6},
+            INCONSTAXEXEMAMO_6 = NULLIF(REPLACE(#{inConsTaxExemAmo6},',',''),''),
+            ADVANCERULINGCLASSIFICATION = #{advanceRulingClassification},
+            ADVANCERULINGORIGIN = #{advanceRulingOrigin},
+            AWBNO = #{awbNo}
+    </update>
+    <select id="checkIDAHeaderData" parameterType="com.kse.wmsv2.oa_it_001.dao.OAIT001IDAMainDao" resultType="int">
+        SELECT
+            COUNT(*)
+        FROM
+            AI_HEAD
+        WHERE
+            AWBNO = #{awbNo}
+            AND ARRFLT_1 = #{currentArrFLT1}
+            AND ARRFLT_2 = #{currentArrFLT2}
+            AND DELETEDATE IS NULL
+    </select>
+    <update id="updateIDAHeadData" parameterType="hashMap">
+        UPDATE
+            AI_HEAD
+        SET
+            AWBNO = #{AWBNO},
+            ARRFLT_1 = #{AFTERFLT1},
+            ARRFLT_2 = #{AFTERFLT2},
+            CWBCOUNT = #{COUNT},
+            CWBPIECESUM = #{CARGOPIECE},
+            CWBWEIHTSUM = #{CARGOWEIGHT},
+            UPDATEUSERCD = #{userCd},
+            UPDATEDATE = #{date}
+        WHERE
+            AWBNO = #{AWBNO}
+            AND ARRFLT_1 = #{BEFOREFLT1}
+            AND ARRFLT_2 = #{BEFOREFLT2}
+    </update>
+    <select id="getIDAHeadData" parameterType="com.kse.wmsv2.oa_it_001.dao.OAIT001IDAMainDao" resultType="hashMap">
+        SELECT
+            AWBNO,
+            CURRENTARRFLT_1 AS AFTERFLT1,
+            CURRENTARRFLT_2 AS AFTERFLT2,
+            COUNT(*) AS COUNT,
+            SUM(IFNULL(CARGOPIECE,0)) AS CARGOPIECE,
+            SUM(IFNULL(CARGOWEIGHT,0)) AS CARGOWEIGHT
+        FROM
+            AI_DATA
+        WHERE
+            AWBNO = #{awbNo}
+            AND CURRENTARRFLT_1 = #{currentArrFLT1}
+            AND CURRENTARRFLT_2 = #{currentArrFLT2}
+            AND DELETEDATE IS NULL
+            AND SPSDOCCLASSCD IN ('0', '2')
+            AND REMODELINGFLG != '1'
+        GROUP BY
+            AWBNO,
+            CURRENTARRFLT_1,
+            CURRENTARRFLT_2
+    </select>
+    <select id="searchErrorReport" parameterType="hashMap" resultType="com.kse.wmsv2.oa_it_001.dto.OAIT001ErrorReportDto">
+        SELECT
+            SEQ,ERRORCD,ERRORMESSAGE
+        FROM
+            CS_MESSAGE_ERROR
+        WHERE
+            IMPORTEXPORTCLASS = '1'
+            AND MESSAGETYPE = #{type}
+            AND AWBNO = #{awbNo}
+            AND CWBNO = #{cwbNo}
+    </select>
+    <update id="saveMicData" parameterType="com.kse.wmsv2.oa_it_001.dao.OAIT001MICDao">
+        UPDATE
+            AI_DATA
+        SET
+        IDAFLG = '0',
+        REPORTCONDITION = #{reportCondition}
+        ,REPORTKINDCD_2 = #{reportKindCd2},DISCERNMENTMARK = #{discernmentMark},REPORTDIVCD = #{reportDivCd}
+        ,REPORTDEPCD = #{reportDepCd},REPORTPLANINGDATE = #{reportPlaningDate},IMPCUSTOMERNO = #{impCustomerNo}
+        ,IMPCUSTOMERDEPTCD = #{impCustomerDeptCd},IMPCUSTOMEROCSDEPTCD = #{impCustomerOcsDeptCd}
+        ,IMPCUSTOMERNAME = #{impCustomerName},IMPPOSTCODE = #{impPostCode},IMPCUSTOMERTELNO = #{impCustomerTelNo}
+        ,IMPCUSTOMERADD_1 = #{impCustomerAdd1},IMPCUSTOMERADD_2 = #{impCustomerAdd2}
+        ,IMPCUSTOMERADD_3 = #{impCustomerAdd3},IMPCUSTOMERADD_4 = #{impCustomerAdd4}
+        ,IMPCUSTOMERADD_LUMP = #{impCustomerAddLump},IMPCUSTOMERADD = #{impCustomerAdd}
+        ,EXPCUSTOMERNO = #{expCustomerNo},EXPCUSTOMERDEPTNO = #{expCustomerDeptNo}
+        ,EXPCUSTOMEROCSDEPTNO = #{expCustomerOcsDeptNo},EXPCUSTOMERNAME = #{expCustomerName}
+        ,EXPCUSTOMERPOSTCODE = #{expCustomerPostCode},EXPCUSTOMERCOUNTRY = #{expCustomerCountry}
+        ,EXPCUSTOMERADD_1 = #{expCustomerAdd1},EXPCUSTOMERADD_2 = #{expCustomerAdd2}
+        ,EXPCUSTOMERADD_3 = #{expCustomerAdd3},EXPCUSTOMERADD_4 = #{expCustomerAdd4}
+        ,EXPCUSTOMERADD_LUMP = #{expCustomerAddLump},EXPCUSTOMERADD = #{expCustomerAdd},CARGOPIECE = #{cargoPiece}
+        ,CARGOWEIGHT = #{cargoWeight},CURRENTARRFLT_1 = #{currentArrFlt1},CURRENTARRFLT_2 = #{currentArrFlt2}
+        ,ARRPORTDATE = #{arrPortDate},GETPORT = #{getPort},SHIPMENTCD = #{shipmentCd}
+        ,INVOICEVALCLASSCD = #{invoiceValClassCd},INVOICEVALCONCD = #{invoiceValConCd}
+        ,INVOICECURCD = #{invoiceCurCd},INVOICEVALUE = NULLIF(REPLACE(#{invoiceValue},',',''),'')
+        ,TAXABLESAMO = NULLIF(REPLACE(#{taxablesAmo},',',''),'')
+        ,FAREFLG = #{fareFlg},FARECURRENCYCD = #{fareCurrencyCd},FARE = NULLIF(REPLACE(#{fare},',',''),'')
+        ,INSURANCECLASSCD = #{insuranceClassCd},INSURANCECURCD = #{insuranceCurCd}
+        ,INSURANCEAMOUNT = NULLIF(REPLACE(#{insuranceAmount},',',''),''),COUNTRYOFORIGINCD = #{countryOfOriginCD},ITEM = #{item}
+        ,NEWS_2 = #{news2},INHOUSEREFNUMBER = #{inhouseRefNumber}
+        ,CUSTOMSOFFICEJANITORCD = #{customsOfficeJanitorCd},CUSTOMSOFFICEJANITORNAME = #{customsOfficeJanitorName}
+        ,CustomsOfficeJanitorReNo = #{customsOfficeJanitorReNo},InspectionWitness = #{inspectionWitness}
+        ,SHIPPERSSECCD = #{shippersSecCd},SHIPPERSREFNO=#{shippersRefNo},CUSTOMSCHECKPRIORITY = #{customsCheckPriority}
+        ,INCLASSIFYCLASSNAME = #{inClassifyClassName} ,OUTCLASSIFYCLASSNAME = #{outClassifyClassName}
+        ,DOMESTICCLASSIFYCLASSNAME = #{domesticClassifyClassName}
+        WHERE
+            1 = 1
+            AND AWBNO = #{awbNo}
+            AND CWBNO = #{cwbNo}
+            AND CWBNODEPTCD = #{cwbNoDeptCd}
+    </update>
+    <update id="saveIDAMainData" parameterType="com.kse.wmsv2.oa_it_001.dao.OAIT001IDAMainDao" >
+        UPDATE
+            AI_DATA
+        SET
+            IDAFLG = '1',
+            CUSTOMSCHECKPRIORITY = #{customsCheckPriority},
+            CARGOPIECE = #{cargoPiece},
+            CARGOWEIGHT = #{cargoWeight},
+            WEIGHTUNITCD = #{weightUnitCD},
+            IMPCUSTOMERNO = #{impCustomerNo},
+            IMPCUSTOMERDEPTCD = #{impCustomerDeptCd},
+            IMPCUSTOMEROCSDEPTCD = #{impCustomerOcsDeptCd},
+            IMPCUSTOMERNAME = #{impCustomerName},
+            IMPPOSTCODE = #{impPostcode},
+            IMPCUSTOMERTELNO = #{impCustomerTelNo},
+            IMPCUSTOMERADD_1 = #{impCustomerAdd1},
+            IMPCUSTOMERADD_2 = #{impCustomerAdd2},
+            IMPCUSTOMERADD_3 = #{impCustomerAdd3},
+            IMPCUSTOMERADD_4 = #{impCustomerAdd4},
+            IMPCUSTOMERADD = #{impCustomerAdd},
+            EXPCUSTOMERNO = #{expCustomerNo},
+            EXPCUSTOMERDEPTNO = #{expCustomerDeptNo},
+            EXPCUSTOMEROCSDEPTNO = #{expCustomerOCSDeptNo},
+            EXPCUSTOMERNAME = #{expCustomerName},
+            EXPCUSTOMERPOSTCODE = #{expCustomerPostCode},
+            EXPCUSTOMERCOUNTRY = #{expCustomerCountry},
+            EXPCUSTOMERADD_1 = #{expCustomerAdd1},
+            EXPCUSTOMERADD_2 = #{expCustomerAdd2},
+            EXPCUSTOMERADD_3 = #{expCustomerAdd3},
+            EXPCUSTOMERADD_4 = #{expCustomerAdd4},
+            EXPCUSTOMERADD = #{expCustomerAdd},
+            IMPDEALINGSCD = #{impDealingsCD},
+            IMPDEALINGSDEPTCD = #{impDealingsDeptCD},
+            IMPDEALINGSOCSDEPTCD = #{impDealingsOCSDeptCD},
+            IMPDEALINGSNAME = #{impDealingsName},
+            INVOICEDISCERNMENT = #{invoiceDiscernment},
+            INVOICERECEIPTNO = #{invoiceReceiptNo},
+            INVOICENO = #{invoiceNo},
+            INVOICEVALCLASSCD = #{invoiceValClassCD},
+            INVOICEVALCONCD = #{invoiceValConCD},
+            INVOICECURCD = #{invoiceCurCD},
+            INVOICEVALUE = NULLIF(REPLACE(#{invoiceValue},',',''),''),
+            FAREFLG = #{fareFlg},
+            FARECURRENCYCD = #{fareCurrencyCD},
+            FARE = NULLIF(REPLACE(#{fare},',',''),''),
+            INSURANCECLASSCD = #{insuranceClassCD},
+            INSURANCECURCD = #{insuranceCurCD},
+            INSURANCEAMOUNT = NULLIF(REPLACE(#{insuranceAmount},',',''),''),
+            INCINSUREGNO = #{incInsuRegNo},
+            TAXABLESAMO = NULLIF(REPLACE(#{taxablesAmo},',',''),''),
+            ESTIMATIONFLGCD = #{estimationFlgCD},
+            INCESTREPRENO = #{incEstRepReNo},
+            INCESTREPRENO_2 = #{incEstRepReNo2},
+            INCESTREPRENO_3 = #{incEstRepReNo3},
+            INCREVISEFLGCD = #{incReviseFlgCD},
+            INCREVBASECURCD = #{incRevBaseCurCD},
+            INCREVBASEAMO = NULLIF(REPLACE(#{incRevBaseAmo},',',''),''),
+            INCREVBASE = #{incRevBase},
+            TAXABLESAMOPDIVTO = NULLIF(REPLACE(#{taxablesAmoPdivTo},',',''),''),
+            LONGKEEPBONDEDWAREHOUSE = #{longKeepBondedWarehouse},
+            DELIVERYDATEEXTCD = #{deliveryDateExtCD},
+            BPAPPLICATIONCD = #{bpApplicationCD},
+            PAYMETHODDISC = #{payMethodDisc},
+            ACCOUNTNO = #{accountNo},
+            SECURITYREGNO_1 = #{securityRegNo1},
+            SECURITYREGNO_2 = #{securityRegNo2},
+            BIGSMALLFLG = #{bigSmallFlg},
+            REPORTKINDCD_1 = #{reportKindCD1},
+            REPORTKINDCD_2 = #{reportKindCD2},
+            CARGODISC = #{cargoDisc},
+            DISCERNMENTMARK = #{discernmentMark},
+            REPORTDIVCD = #{reportDivCD},
+            REPORTDEPCD = #{reportDepCD},
+            REPORTPLANINGDATE = #{reportPlaningDate},
+            CURRENTARRFLT_1 = #{currentArrFLT1},
+            CURRENTARRFLT_2 = #{currentArrFLT2},
+            ARRPORTDATE = #{arrPortDate},
+            GETPORT = #{getPort},
+            SHIPMENTCD = #{shipmentCD},
+            SHIPMENTPLACENAME = #{shipmentPlaceName},
+            TRADETYPEMARK = #{tradeTypeMark},
+            BACKTAXREPORTDISC = #{backTaxReportDisc},
+            IMPTRADECONT3DISC = #{impTradeCont3Disc},
+            IMPRECOATTACHDISC = #{impRecoAttachDisc},
+            CONTCHECKREOTHER = #{contCheckReOther},
+            CUSTOMSEXAMMARK = #{customsExamMark},
+            OTHERLAW_1 = #{otherLaw1},
+            OTHERLAW_2 = #{otherLaw2},
+            OTHERLAW_3 = #{otherLaw3},
+            OTHERLAW_4 = #{otherLaw4},
+            OTHERLAW_5 = #{otherLaw5},
+            OTHERMINICONTNO = #{otherMiniContNo},
+            FHPROOFDISC = #{fhProofDisc},
+            PLANTPEDISC = #{plantPEDisc},
+            ANIMALQUARADISC = #{animalQuaraDisc},
+            CUSTOMSOFFICEJANITORCD = #{customsOfficeJanitorCd},
+            CUSTOMSOFFICEJANITORNAME = #{customsOfficeJanitorName},
+            CUSTOMSOFFICEJANITORRENO = #{customsOfficeJanitorReNo},
+            INSPECTIONWITNESS = #{inspectionWitness},
+            SHIPPERSSECCD = #{shippersSecCd},
+            SHIPPERSREFNO = #{shippersRefNo},
+            ADVANCERULINGVALUATION_1 = #{advanceRulingValuation1},
+            ADVANCERULINGVALUATION_2 = #{advanceRulingValuation2},
+            OTHERLAWRECDISC_1 = #{otherLawRecDisc1},
+            OTHERLAWRECNO_1 = #{otherLawRecNo1},
+            OTHERLAWRECDISC_2 = #{otherLawRecDisc2},
+            OTHERLAWRECNO_2 = #{otherLawRecNo2},
+            OTHERLAWRECDISC_3 = #{otherLawRecDisc3},
+            OTHERLAWRECNO_3 = #{otherLawRecNo3},
+            OTHERLAWRECDISC_4 = #{otherLawRecDisc4},
+            OTHERLAWRECNO_4 = #{otherLawRecNo4},
+            OTHERLAWRECDISC_5 = #{otherLawRecDisc5},
+            OTHERLAWRECNO_5 = #{otherLawRecNo5},
+            OTHERLAWRECDISC_6 = #{otherLawRecDisc6},
+            OTHERLAWRECNO_6 = #{otherLawRecNo6},
+            OTHERLAWRECDISC_7 = #{otherLawRecDisc7},
+            OTHERLAWRECNO_7 = #{otherLawRecNo7},
+            OTHERLAWRECDISC_8 = #{otherLawRecDisc8},
+            OTHERLAWRECNO_8 = #{otherLawRecNo8},
+            OTHERLAWRECDISC_9 = #{otherLawRecDisc9},
+            OTHERLAWRECNO_9 = #{otherLawRecNo9},
+            OTHERLAWRECDISC_10 = #{otherLawRecDisc10},
+            OTHERLAWRECNO_10 = #{otherLawRecNo10},
+            BONDEDWAREHOUSECD = #{bondedWarehouseCD},
+            REPORTPERSONCD = #{reportPersonCD},
+            NEWS_1 = #{news1},
+            NEWS_2 = #{news2},
+            NEWSSHIPPER = #{newsShipper},
+            INHOUSEREFNUMBER = #{inHouseRefNumber},
+            INCLASSIFYCLASSNAME = #{inClassifyClassName},
+            OUTCLASSIFYCLASSNAME = #{outClassifyClassName},
+            DOMESTICCLASSIFYCLASSNAME = #{domesticClassifyClassName}
+        WHERE
+            AWBNO = #{awbNo}
+            AND CWBNO = #{cwbNo}
+            AND CWBNODEPTCD = #{cwbNoDeptCd}
+    </update>
+    <update id="saveIDASubData" parameterType="com.kse.wmsv2.oa_it_001.dao.OAIT001IDASubDao">
+        INSERT INTO
+            AI_DATA_DETAIL(
+                AWBNO
+                ,CWBNO
+                ,CWBNODEPTCD
+                ,SEQ
+                ,ITEMCD
+                ,NACCSCD
+                ,ITEM
+                ,COUNTRYOFORIGINCD
+                ,ORIGINCERTIFIDISC
+                ,AMO_1
+                ,AMOUNIT_1
+                ,AMO_2
+                ,AMOUNIT_2
+                ,IMPTRADECONTCD
+                ,TAXABLESAMOPDIVTO
+                ,FAREDIVDISC
+                ,FOBCURRENCYCD
+                ,TAXABLESAMO
+                ,CUSTOMSEXEMPTCD
+                ,CUSTOMSEXEMPTAMO
+                ,INCONSTAXKINDCD_1
+                ,INCONSTAXEXEMCD_1
+                ,INCONSTAXEXEMAMO_1
+                ,INCONSTAXKINDCD_2
+                ,INCONSTAXEXEMCD_2
+                ,INCONSTAXEXEMAMO_2
+                ,INCONSTAXKINDCD_3
+                ,INCONSTAXEXEMCD_3
+                ,INCONSTAXEXEMAMO_3
+                ,INCONSTAXKINDCD_4
+                ,INCONSTAXEXEMCD_4
+                ,INCONSTAXEXEMAMO_4
+                ,INCONSTAXKINDCD_5
+                ,INCONSTAXEXEMCD_5
+                ,INCONSTAXEXEMAMO_5
+                ,INCONSTAXKINDCD_6
+                ,INCONSTAXEXEMCD_6
+                ,INCONSTAXEXEMAMO_6
+                ,ADVANCERULINGCLASSIFICATION
+                ,ADVANCERULINGORIGIN
+            )
+        VALUES
+        (
+            #{awbNo},
+            #{cwbNo},
+            #{cwbNoDeptCd},
+            #{seq},
+            #{itemCD},
+            #{naccsCD},
+            #{item},
+            #{countryOfOriginCD},
+            #{originCertifiDisc},
+            NULLIF(REPLACE(#{amo1},',',''),''),
+            #{amoUnit1},
+            NULLIF(REPLACE(#{amo2},',',''),''),
+            #{amoUnit2},
+            #{impTradeContCD},
+            NULLIF(REPLACE(#{taxablesAmoPdivTo},',',''),''),
+            #{fareDivDisc},
+            #{fobCurrencyCD},
+            NULLIF(REPLACE(#{taxablesAmo},',',''),''),
+            #{customsExemptCD},
+            NULLIF(REPLACE(#{customsExemptAmo},',',''),''),
+            #{inConsTaxKindCD1},
+            #{inConsTaxExemCD1},
+            NULLIF(REPLACE(#{inConsTaxExemAmo1},',',''),''),
+            #{inConsTaxKindCD2},
+            #{inConsTaxExemCD2},
+            NULLIF(REPLACE(#{inConsTaxExemAmo2},',',''),''),
+            #{inConsTaxKindCD3},
+            #{inConsTaxExemCD3},
+            NULLIF(REPLACE(#{inConsTaxExemAmo3},',',''),''),
+            #{inConsTaxKindCD4},
+            #{inConsTaxExemCD4},
+            NULLIF(REPLACE(#{inConsTaxExemAmo4},',',''),''),
+            #{inConsTaxKindCD5},
+            #{inConsTaxExemCD5},
+            NULLIF(REPLACE(#{inConsTaxExemAmo5},',',''),''),
+            #{inConsTaxKindCD6},
+            #{inConsTaxExemCD6},
+            NULLIF(REPLACE(#{inConsTaxExemAmo6},',',''),''),
+            #{advanceRulingClassification},
+            #{advanceRulingOrigin}
+        )
+        ON DUPLICATE KEY
+        UPDATE
+            ITEMCD = #{itemCD},
+            NACCSCD = #{naccsCD},
+            ITEM = "${item}",
+            COUNTRYOFORIGINCD = #{countryOfOriginCD},
+            ORIGINCERTIFIDISC = #{originCertifiDisc},
+            AMO_1 = NULLIF(REPLACE(#{amo1},',',''),''),
+            AMOUNIT_1 = #{amoUnit1},
+            AMO_2 = NULLIF(REPLACE(#{amo2},',',''),''),
+            AMOUNIT_2 = #{amoUnit2},
+            IMPTRADECONTCD = #{impTradeContCD},
+            TAXABLESAMOPDIVTO = NULLIF(REPLACE(#{taxablesAmoPdivTo},',',''),''),
+            FAREDIVDISC = #{fareDivDisc},
+            FOBCURRENCYCD = #{fobCurrencyCD},
+            TAXABLESAMO = NULLIF(REPLACE(#{taxablesAmo},',',''),''),
+            CUSTOMSEXEMPTCD = #{customsExemptCD},
+            CUSTOMSEXEMPTAMO = NULLIF(REPLACE(#{customsExemptAmo},',',''),''),
+            INCONSTAXKINDCD_1 = #{inConsTaxKindCD1},
+            INCONSTAXEXEMCD_1 = #{inConsTaxExemCD1},
+            INCONSTAXEXEMAMO_1 = NULLIF(REPLACE(#{inConsTaxExemAmo1},',',''),''),
+            INCONSTAXKINDCD_2 = #{inConsTaxKindCD2},
+            INCONSTAXEXEMCD_2 = #{inConsTaxExemCD2},
+            INCONSTAXEXEMAMO_2 = NULLIF(REPLACE(#{inConsTaxExemAmo2},',',''),''),
+            INCONSTAXKINDCD_3 = #{inConsTaxKindCD3},
+            INCONSTAXEXEMCD_3 = #{inConsTaxExemCD3},
+            INCONSTAXEXEMAMO_3 = NULLIF(REPLACE(#{inConsTaxExemAmo3},',',''),''),
+            INCONSTAXKINDCD_4 = #{inConsTaxKindCD4},
+            INCONSTAXEXEMCD_4 = #{inConsTaxExemCD4},
+            INCONSTAXEXEMAMO_4 = NULLIF(REPLACE(#{inConsTaxExemAmo4},',',''),''),
+            INCONSTAXKINDCD_5 = #{inConsTaxKindCD5},
+            INCONSTAXEXEMCD_5 = #{inConsTaxExemCD5},
+            INCONSTAXEXEMAMO_5 = NULLIF(REPLACE(#{inConsTaxExemAmo5},',',''),''),
+            INCONSTAXKINDCD_6 = #{inConsTaxKindCD6},
+            INCONSTAXEXEMCD_6 = #{inConsTaxExemCD6},
+            INCONSTAXEXEMAMO_6 = NULLIF(REPLACE(#{inConsTaxExemAmo6},',',''),''),
+            ADVANCERULINGCLASSIFICATION = #{advanceRulingClassification},
+            ADVANCERULINGORIGIN = #{advanceRulingOrigin},
+            AWBNO = #{awbNo}
+    </update>
+    <select id="getRate" parameterType="hashMap" resultType="String">
+        SELECT
+            IFNULL(RATE,'')
+        FROM
+            CM_RATE
+        WHERE
+            STARTDATE = #{date}
+            AND CURRENCYCD = #{rate}
+    </select>
+    <!--作業中-->
+<!--    <update id="releaseHAWBScan" parameterType="com.kse.wmsv2.oa_it_001.dao.OAIT001IDASubDao">-->
+<!--        UPDATE-->
+<!--            AI_DATA-->
+<!--        SET-->
+<!--            UPDATEUSERCD = #{userCd},-->
+<!--            UPDATEDATE = #{date},-->
+<!--            DOCUMENTCHECK = '0',-->
+<!--            CWBNODEPTCD = #{cwbNoDeptCd}-->
+<!--        WHERE-->
+<!--            AWBNO = #{awbNo}-->
+<!--            AND CWBNO = #{cwbNo}-->
+<!--            AND CURRENTARRFLT_1 = #{currentArrFLT1}-->
+<!--            AND CURRENTARRFLT_2 = #{currentArrFLT2}-->
+<!--    </update>-->
+</mapper>

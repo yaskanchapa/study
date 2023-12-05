@@ -1,0 +1,783 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="com.kse.wmsv2.oa_it_002.mapper.AirImportAIDataMapper">
+  <select id="getDataAI" parameterType="com.kse.wmsv2.oa_it_002.dto.request.AirImportRequest" resultMap="airImports">
+
+    SELECT DISTINCT (CASE
+                      WHEN DECLARATIONOUTPUTFLG = '0' THEN '1'
+                      ELSE '0'
+                  END) AS chk,
+                  T1.AWBNO AS MAWBNO,
+                  CASE T1.CWBNODEPTCD
+                      WHEN '000' THEN T1.CWBNO
+                      ELSE CONCAT(T1.CWBNO , '/' , T1.CWBNODEPTCD)
+                  END AS CWBNODEPT,
+                  T1.CWBNO AS CWBNO,
+                  T1.CWBNODEPTCD AS CWBDEPTCD,
+                  T1.ORIGIN AS ORG,
+                  T1.CUSTOMSTRADERCD AS CUSTOMER,
+                  T1.CUSTOMSPLACECD AS PLACE,
+                  T1.CURRENTARRFLT_1 AS ARRNAME,
+                  T1.REPORTNO AS REPORTNO,
+                  DATE_FORMAT(T2.ARRDATE, "%Y/%m/%d") AS ARRIVEDDATE,
+                  DATE_FORMAT(T17.REGDATE, "%Y/%m/%d") AS IMPDATE,
+                  DATE_FORMAT(T15.REPORTDATE2, "%Y/%m/%d %H:%i:%s") AS REPORTDATE,
+                  DATE_FORMAT(T15.PERMITDATE2, "%Y/%m/%d %H:%i:%s") AS PERMITDATE,
+                  DATE_FORMAT(T1.CARRYOUTDATE, "%Y/%m/%d") AS CARRYOUTDATE,
+                  T1.ITEM AS ITEM,
+                  T8.NAME AS PERMITCLASSCD,
+                  T1.IMPCUSTOMERNO AS IMPCUSTOMERNO,
+                  T1.IMPCUSTOMERDEPTCD AS IMPCUSTOMERDEPTCD,
+                  T1.IMPCUSTOMEROCSDEPTCD AS IMPCUSTOMEROCSDEPTCD,
+                  T1.IMPCUSTOMERNAME AS IMPCUSTOMERNAME,
+                  T1.EXPCUSTOMERNAME AS EXPCUSTOMERNAME,
+                  IFNULL(T1.CARGOPIECE, 0) AS CARGOPIECE,
+                  T1.CARGOWEIGHT AS CARGOWEIGHT,
+                  T5.STATUSCD AS STASUTCD,
+                  T5.NAME AS NAMEDOCSTATUS,
+                  T6.NAME AS NAMECARGOSTATUS,
+                  '再取込' AS POPIMAGERETAKING,
+                  '登録' AS POPENTRY,
+                  CUSTOMSSTS.NAME AS NAMECUSTOMSSTATUS,
+                  IFNULL(KAKUNIN.KAKUNIN, '') + IFNULL(NAITEN.NAITEN, '') AS NAITEN_KAKUNIN,
+                  EDIT.USERNAME AS EDITUSER,
+                  CASE
+                      WHEN CHECK2.USERNAME IS NULL THEN CHECK1.USERNAME
+                      ELSE CHECK2.USERNAME
+                  END AS CHECKUSER,
+                  OPTIONALSERVICE.COMMENT AS NAMESPECIALPREPARE,
+                  T1.IDAFLG AS IDAFLG,
+                  IFNULL(T9.STSCOUNT, 0) AS STSCOUNT,
+                  IFNULL(T10.CONCOUNT, 0) AS CONCOUNT
+  FROM AI_DATA T1
+  LEFT JOIN AI_HEAD T2 ON T2.AWBNO = T1.AWBNO
+  AND T2.ARRFLT_1 = T1.CURRENTARRFLT_1
+  AND T2.ARRFLT_2 = T1.CURRENTARRFLT_2
+  LEFT JOIN
+    (SELECT OCS1.CWBNO ,
+            COUNT(*) AS IMGCNT
+    FROM CS_IMAGE_MANAGEMENT OCS1
+    WHERE 1 = 1
+      AND OCS1.IMPORTEXPORTCLASS = '1'
+      AND OCS1.CWBNODEPTCD = '000'
+      AND OCS1.IMAGECLASS = 'CW'
+    GROUP BY OCS1.CWBNO) T3 ON 1 = 1
+  AND T1.CWBNO = T3.CWBNO
+
+<if test="!((currentCustomsStatusCd == '') | (hawbNo != ''))">
+    LEFT JOIN
+    (SELECT C1.CWBNO,
+            C1.CWBNODEPTCD,
+            C1.STATUSCD,
+            M1.NAME
+    FROM
+      (SELECT DISTINCT C3.CWBNO,
+                        C3.CWBNODEPTCD,
+                        C3.STATUSCD
+        FROM AI_STATUS_HISTORY C3
+        WHERE 1 = 1
+          AND C3.BUSINESSCLASS = '01' ) C1
+    LEFT JOIN AM_NAME M1 ON M1.DEPARTMENTCD = 'ALL'
+    AND M1.NAMECLASS = '0013'
+    AND C1.STATUSCD = M1.NAMECD) CUSTOMSSTS ON CUSTOMSSTS.CWBNO = T1.CWBNO
+  AND CUSTOMSSTS.CWBNODEPTCD = T1.CWBNODEPTCD
+</if>
+
+<if test="((currentCustomsStatusCd == '') | (hawbNo != ''))">
+  LEFT JOIN
+    (SELECT C1.CWBNO,
+            C1.CWBNODEPTCD,
+            C1.STATUSCD,
+            M1.NAME
+    FROM
+      (SELECT C2.CWBNO,
+              C2.CWBNODEPTCD,
+              MAX(C3.STATUSCD) AS STATUSCD
+        FROM
+          (SELECT DISTINCT C2.CWBNO,
+                          C2.CWBNODEPTCD,
+                          MAX(C2.REGDATE) AS REGDATE
+          FROM AI_STATUS_HISTORY C2
+          WHERE 1 = 1
+            AND C2.BUSINESSCLASS = '01'
+          GROUP BY C2.CWBNO,
+                    C2.CWBNODEPTCD) C2
+        INNER JOIN
+          (SELECT C3.CWBNO,
+                  C3.CWBNODEPTCD,
+                  C3.STATUSCD,
+                  C3.REGDATE
+          FROM AI_STATUS_HISTORY C3
+          WHERE 1 = 1
+            AND C3.BUSINESSCLASS = '01' ) C3 ON C2.CWBNO = C3.CWBNO
+        AND C2.CWBNODEPTCD = C3.CWBNODEPTCD
+        AND C2.REGDATE = C3.REGDATE
+        GROUP BY C2.CWBNO,
+                C2.CWBNODEPTCD) C1
+    LEFT JOIN AM_NAME M1 ON M1.DEPARTMENTCD = 'ALL'
+    AND M1.NAMECLASS = '0013'
+    AND C1.STATUSCD = M1.NAMECD) CUSTOMSSTS ON CUSTOMSSTS.CWBNO = T1.CWBNO
+  AND CUSTOMSSTS.CWBNODEPTCD = T1.CWBNODEPTCD 
+  </if>
+  
+  LEFT JOIN
+    (SELECT C1.CWBNO,
+            C1.CWBNODEPTCD,
+            C1.STATUSCD,
+            M1.NAME
+    FROM
+      (SELECT C2.CWBNO,
+              C2.CWBNODEPTCD,
+              MAX(C3.STATUSCD) AS STATUSCD
+        FROM
+          (SELECT DISTINCT C2.CWBNO,
+                          C2.CWBNODEPTCD,
+                          MAX(C2.REGDATE) AS REGDATE
+          FROM AI_STATUS_HISTORY C2
+          WHERE 1 = 1
+            AND C2.BUSINESSCLASS = '03'
+          GROUP BY C2.CWBNO,
+                    C2.CWBNODEPTCD) C2
+        INNER JOIN
+          (SELECT C3.CWBNO,
+                  C3.CWBNODEPTCD,
+                  C3.STATUSCD,
+                  C3.REGDATE
+          FROM AI_STATUS_HISTORY C3
+          WHERE 1 = 1
+            AND C3.BUSINESSCLASS = '03' ) C3 ON C2.CWBNO = C3.CWBNO
+        AND C2.CWBNODEPTCD = C3.CWBNODEPTCD
+        AND C2.REGDATE = C3.REGDATE
+        GROUP BY C2.CWBNO,
+                C2.CWBNODEPTCD) C1
+    LEFT JOIN AM_NAME M1 ON M1.DEPARTMENTCD = 'ALL'
+    AND M1.NAMECLASS = '0015'
+    AND C1.STATUSCD = M1.NAMECD) T5 ON T5.CWBNO = T1.CWBNO
+  AND T5.CWBNODEPTCD = T1.CWBNODEPTCD
+  LEFT JOIN
+    (SELECT C1.CWBNO,
+            C1.CWBNODEPTCD,
+            C1.STATUSCD,
+            M1.NAME
+    FROM
+      (SELECT C2.CWBNO,
+              C2.CWBNODEPTCD,
+              MAX(C3.STATUSCD) AS STATUSCD
+        FROM
+          (SELECT DISTINCT C2.CWBNO,
+                          C2.CWBNODEPTCD,
+                          MAX(C2.REGDATE) AS REGDATE
+          FROM AI_STATUS_HISTORY C2
+          WHERE 1 = 1
+            AND C2.BUSINESSCLASS = '02'
+          GROUP BY C2.CWBNO,
+                    C2.CWBNODEPTCD) C2
+        INNER JOIN
+          (SELECT C3.CWBNO,
+                  C3.CWBNODEPTCD,
+                  C3.STATUSCD,
+                  C3.REGDATE
+          FROM AI_STATUS_HISTORY C3
+          WHERE 1 = 1
+            AND C3.BUSINESSCLASS = '02' ) C3 ON C2.CWBNO = C3.CWBNO
+        AND C2.CWBNODEPTCD = C3.CWBNODEPTCD
+        AND C2.REGDATE = C3.REGDATE
+        GROUP BY C2.CWBNO,
+                C2.CWBNODEPTCD) C1
+    LEFT JOIN AM_NAME M1 ON M1.DEPARTMENTCD = 'ALL'
+    AND M1.NAMECLASS IN ('0014',
+                              '0052')
+    AND C1.STATUSCD = M1.NAMECD) T6 ON T6.CWBNO = T1.CWBNO
+  AND T6.CWBNODEPTCD = T1.CWBNODEPTCD
+  LEFT JOIN AM_NAME T8 ON (CASE (SUBSTRING(T1.PERMITCLASSCD, 1, 1) REGEXP '^[0-9]+$')
+                                            WHEN 0 THEN SUBSTRING(T1.PERMITCLASSCD, 2, 1)
+                                            WHEN 1 THEN SUBSTRING(T1.PERMITCLASSCD, 1, 1)
+                                        END) = T8.NAMECD
+  AND T8.NAMECLASS = '0073'
+  
+  LEFT JOIN
+    (SELECT CWBNO,
+            CWBNODEPTCD,
+            COUNT(CWBNO) AS STSCOUNT
+    FROM AI_STATUS_HISTORY
+    WHERE 
+       BUSINESSCLASS = '01'
+      AND (STATUSCD LIKE 'IC010%'
+            OR STATUSCD LIKE 'IC011%'
+            OR STATUSCD LIKE 'IC012%')
+    GROUP BY CWBNO,
+              CWBNODEPTCD) T9 ON T1.CWBNO = T9.CWBNO
+  AND T1.CWBNODEPTCD = T9.CWBNODEPTCD
+  LEFT JOIN
+    (SELECT CWBNO,
+            CWBNODEPTCD,
+            COUNT(CWBNO) AS PERCOUNT
+    FROM AI_STATUS_HISTORY
+    WHERE 
+       BUSINESSCLASS = '01'
+      AND STATUSCD LIKE 'IC012%'
+    GROUP BY CWBNO,
+              CWBNODEPTCD) T16 ON T1.CWBNO = T16.CWBNO
+  AND T1.CWBNODEPTCD = T16.CWBNODEPTCD
+  LEFT JOIN
+    (SELECT CWBNO,
+            CWBNODEPTCD,
+            COUNT(CWBNO) AS CONCOUNT
+    FROM AI_CONDITION
+    GROUP BY CWBNO,
+              CWBNODEPTCD) T10 ON T1.CWBNO = T10.CWBNO
+  AND T1.CWBNODEPTCD = T10.CWBNODEPTCD
+  LEFT JOIN
+    (SELECT CWBNO,
+            CWBNODEPTCD,
+            MIN(REGDATE) AS REGDATE
+    FROM AI_STATUS_HISTORY
+    WHERE 
+       BUSINESSCLASS = '02'
+      AND STATUSCD = 'IB00200'
+    GROUP BY CWBNO,
+              CWBNODEPTCD) T17 ON T1.CWBNO = T17.CWBNO
+  AND T1.CWBNODEPTCD = T17.CWBNODEPTCD
+
+
+<if test="set == 1">
+  LEFT JOIN
+    (SELECT CWBNO,
+            COUNT(CWBNO) AS CWCOUNT
+    FROM CS_IMAGE_MANAGEMENT
+    WHERE IMPORTEXPORTCLASS = '1'
+      AND CWBNODEPTCD = '000'
+      AND IMAGECLASS = 'CW'
+    GROUP BY CWBNO) T11 ON T1.CWBNO = T11.CWBNO
+  LEFT JOIN
+    (SELECT CWBNO,
+            COUNT(CWBNO) AS INCOUNT
+    FROM CS_IMAGE_MANAGEMENT
+    WHERE IMPORTEXPORTCLASS = '1'
+      AND CWBNODEPTCD = '000'
+      AND IMAGECLASS = 'IN'
+    GROUP BY CWBNO) T12 ON T1.CWBNO = T12.CWBNO
+  LEFT JOIN
+    (SELECT CWBNO,
+            CWBNODEPTCD,
+            COUNT(CWBNO) AS COUNT
+    FROM CS_IMAGE_MANAGEMENT
+    WHERE IMPORTEXPORTCLASS = '1'
+      AND IMAGECLASS IN ('SP',
+                              'RE',
+                              'RP')
+    GROUP BY CWBNO,
+              CWBNODEPTCD) T13 ON T1.CWBNO = T13.CWBNO
+  AND T1.CWBNODEPTCD = T13.CWBNODEPTCD
+</if>
+  LEFT JOIN AI_DETAIL_PERMIT_DATA T15 ON T1.CWBNO = T15.CWBNO
+  AND T1.CWBNODEPTCD = T15.CWBNODEPTCD
+  AND T1.REPORTNO = T15.REPORTNO
+  LEFT JOIN
+    (SELECT AWBNO ,
+            CWBNO ,
+            CWBNODEPTCD ,
+            REPORTNO ,
+            'K' AS KAKUNIN
+    FROM AI_CONFIRM_DOCUMENT) KAKUNIN ON T1.AWBNO = KAKUNIN.AWBNO
+  AND T1.CWBNO = KAKUNIN.CWBNO
+  AND T1.CWBNODEPTCD = KAKUNIN.CWBNODEPTCD
+  AND T1.REPORTNO = KAKUNIN.REPORTNO
+  LEFT JOIN
+    (SELECT AWBNO ,
+            CWBNO ,
+            CWBNODEPTCD ,
+            REPORTNO ,
+            'N' AS NAITEN
+    FROM AI_INSPECT_DOCUMENT_HEAD) NAITEN ON T1.AWBNO = NAITEN.AWBNO
+  AND T1.CWBNO = NAITEN.CWBNO
+  AND T1.CWBNODEPTCD = NAITEN.CWBNODEPTCD
+  AND T1.REPORTNO = NAITEN.REPORTNO
+  LEFT JOIN CM_USER EDIT ON T1.EDITREGUSERCD = EDIT.USERCD
+  LEFT JOIN CM_USER CHECK1 ON T1.CUSTOMSCHECKUSERCD1 = CHECK1.USERCD
+  LEFT JOIN CM_USER CHECK2 ON T1.CUSTOMSCHECKUSERCD2 = CHECK2.USERCD
+  LEFT JOIN
+    (SELECT C2.CWBNO,
+            MIN(C3.COMMENT) AS COMMENT
+    FROM
+      (SELECT DISTINCT C2.CWBNO,
+                        MIN(C2.REGDATE) AS REGDATE
+        FROM CS_OPTIONAL_SERVICE C2
+        WHERE 1 = 1
+          AND C2.IMPORTEXPORTCLASS = '1'
+          AND C2.DISPLAYCLASS IN ('1',
+                                      '3')
+        GROUP BY C2.CWBNO) C2
+    INNER JOIN
+      (SELECT C3.CWBNO,
+              C3.COMMENT,
+              C3.REGDATE
+        FROM CS_OPTIONAL_SERVICE C3
+        WHERE 1 = 1
+          AND C3.IMPORTEXPORTCLASS = '1'
+          AND C3.DISPLAYCLASS IN ('1',
+                                      '3') ) C3 ON C2.CWBNO = C3.CWBNO
+    AND C2.REGDATE = C3.REGDATE
+    GROUP BY C2.CWBNO) OPTIONALSERVICE ON T1.CWBNO = OPTIONALSERVICE.CWBNO WHERE 1=1
+  AND T1.SPSDOCCLASSCD = '0'
+  AND T1.ENTRYTYPE IS NOT NULL
+  AND T1.DEFAULTSET = '1'
+  AND T1.DELETEDATE IS NULL
+  AND T2.DELETEDATE IS NULL
+
+<if test="hawbNo != ''">
+  AND T1.CWBNO = #{hawbNo}
+</if>
+
+<if test="hawbNo == ''">
+  AND T1.REMODELINGFLG != '1'
+  <if test="mawbNo != ''">
+    AND T1.AWBNO = #{mawbNo}
+  </if>
+  <if test="origin != ''">
+    AND T1.ORIGIN = #{origin}
+  </if>
+  <if test="customsTraderCd != ''">
+    AND T1.CUSTOMSTRADERCD = #{customsTraderCd}
+  </if>
+  <if test="customSplaceCd != ''">
+    AND T1.CUSTOMSPLACECD = #{customSplaceCd}
+  </if>
+  <if test="currentArrflt != ''">
+    AND T1.CURRENTARRFLT_1 = #{currentArrflt}
+  </if>
+  <if test="reportNo != ''">
+    AND T1.REPORTNO = #{reportNo}
+  </if>
+  <if test="currentDocStatusCd != ''">
+    AND T5.STATUSCD = #{currentDocStatusCd}
+  </if>
+  <if test="currentCargoStatusCd != ''">
+    AND T6.STATUSCD = #{currentCargoStatusCd}
+  </if>
+  <if test="image01 == 1 and image02 == 0">
+    AND IFNULL(T3.IMGCNT,0) > 0
+  </if>
+  <if test="image01 == 0 and image02 == 1">
+    AND IFNULL(T3.IMGCNT,0) &lt; 1
+  </if>
+  <if test="reportMic == 1 and reportIda == 0">
+    AND T1.IDAFLG = '0'
+  </if>
+  <if test="reportMic == 0 and reportIda == 1">
+    AND T1.IDAFLG = '1'
+  </if>
+  <if test="declarationOutput01 == 1 and declarationOutput02 == 0">
+    AND T1.DECLARATIONOUTPUTFLG = '0'
+  </if>
+  <if test="declarationOutput01 == 0 and declarationOutput02 == 1">
+    AND T1.DECLARATIONOUTPUTFLG = '1'
+  </if>
+  <if test="objectDate == 0">
+    AND T2.ARRDATE >= #{objectDateFrom} AND T2.ARRDATE &lt; DATE_ADD(#{objectDateTo}, INTERVAL 1 DAY)
+  </if>
+  <if test="objectDate == 1">
+      AND T17.REGDATE >= #{objectDateFrom} AND T17.REGDATE &lt; DATE_ADD(#{objectDateTo}, INTERVAL 1 DAY)
+  </if>
+  <if test="objectDate == 2">
+    AND T1.REPORTDATE >= #{objectDateFrom} AND T1.REPORTDATE &lt; DATE_ADD(#{objectDateTo}, INTERVAL 1 DAY)
+  </if>
+  <if test="objectDate == 3">
+    AND T15.PERMITDATE2 >= #{objectDateFrom} AND T15.PERMITDATE2 &lt; DATE_ADD(#{objectDateTo}, INTERVAL 1 DAY)
+  </if>
+  <if test="objectDate == 4">
+    AND T1.CARRYOUTDATE >= #{objectDateFrom} AND T1.CARRYOUTDATE &lt; DATE_ADD(#{objectDateTo}, INTERVAL 1 DAY)
+  </if>
+  <if test="itemName != ''">
+    AND T1.ITEM LIKE '%' #{itemName} '%'
+  </if>
+  <if test="permitClassCd != ''">
+    AND (CASE (SUBSTRING(T1.PERMITCLASSCD,1,1) REGEXP '^[0-9]+$')
+    WHEN 0 THEN SUBSTRING(T1.PERMITCLASSCD,2,1)
+    WHEN 1 THEN SUBSTRING(T1.PERMITCLASSCD,1,1) END) ${operator}
+  </if>
+  <if test="permitClass != '' and permitClass != '999'">
+    AND T1.PERMITCLASSCD IS NOT NULL
+    AND (LENGTH(T1.PERMITCLASSCD) >=2
+        AND RIGHT(T1.PERMITCLASSCD, 1) IN
+          (SELECT CHARACTERITEM1
+            FROM AM_NAME
+            WHERE 1 = 1
+              AND DEPARTMENTCD = 'ALL'
+              AND NAMECLASS = '0292'
+              AND NAMECD = #{permitClass} ))
+  </if>
+  <if test="permitClass != '' and permitClass == '999'">
+    AND T1.PERMITCLASSCD IS NOT NULL
+    AND NOT (LENGTH(T1.PERMITCLASSCD) >=2
+         AND RIGHT(T1.PERMITCLASSCD, 1) IN
+           (SELECT CHARACTERITEM1
+            FROM AM_NAME
+            WHERE 1 = 1
+              AND DEPARTMENTCD = 'ALL'
+              AND NAMECLASS = '0292'
+              AND NAMECD != '999' ))
+  </if>
+  <if test="customerNo != ''">
+    AND T1.IMPCUSTOMERNO = #{customerNo}
+  </if>
+  <if test="customerDeptCd != ''">
+    AND T1.IMPCUSTOMERDEPTCD = #{customerDeptCd}
+  </if>
+  <if test="customerOcsDeptCd != ''">
+    AND T1.IMPCUSTOMEROCSDEPTCD = #{customerOcsDeptCd}
+  </if>
+  <if test="set == 1">
+    AND (T11.CWCOUNT IS NULL OR T12.INCOUNT IS NULL OR T13.COUNT IS NULL)
+  </if>
+  <if test="reportFlg01 == 1 and reportFlg02 == 0">
+    AND ((T9.STSCOUNT = 0 OR T9.STSCOUNT IS NULL) AND (T16.PERCOUNT = 0 OR T16.PERCOUNT IS NULL))
+  </if>
+  <if test="reportFlg01 == 0 and reportFlg02 == 1">
+    AND (T9.STSCOUNT > 0 OR T16.PERCOUNT > 0)
+  </if>
+  <if test="permitFlg01 == 1 and permitFlg02 == 0">
+    AND (T16.PERCOUNT = 0 OR T16.PERCOUNT IS NULL)
+  </if>
+  <if test="permitFlg01 == 0 and permitFlg02 == 1">
+    AND T16.PERCOUNT > 0
+  </if>
+  <if test="c4regFlg01 == 1 and c4regFlg02 == 0">
+    AND (T10.CONCOUNT = 0 OR T10.CONCOUNT IS NULL)
+  </if>
+  <if test="c4regFlg01 == 0 and c4regFlg02 == 1">
+    AND T10.CONCOUNT > 0
+  </if>
+  <if test="hpkFlg01 == 1 and hpkFlg02 == 0">
+    AND T17.CWBNO IS NULL
+  </if>
+  <if test="hpkFlg01 == 0 and hpkFlg02 == 1">
+    AND T17.CWBNO IS NOT NULL
+  </if>
+  <if test="listHawb != null and listHawb.size() > 0">
+   AND
+    <if test="hawbNoCmb == 0 or hawbNoCmb == 2">
+      NOT 
+    </if>
+    <foreach item="item" collection="listHawb" open="( 1 = 0" close=")">
+        OR ( T1.CWBNO = #{item.hawbNo} AND T1.CWBNODEPTCD = #{item.hawbNoDeptCd} )
+    </foreach>
+  </if>
+  <if test="currentCustomsStatusCd != ''">
+    AND CUSTOMSSTS.STATUSCD = #{currentCustomsStatusCd}
+  </if>
+  <if test="optional01 == 1 and optional02 == 0">
+    AND OPTIONALSERVICE.CWBNO IS NOT NULL
+  </if>
+  <if test="optional01 == 0 and optional02 == 1">
+    AND OPTIONALSERVICE.CWBNO IS NULL
+  </if>
+  <if test="certificate01 == 1 and certificate02 == 0">
+    AND (KAKUNIN.KAKUNIN IS NOT NULL OR NAITEN.NAITEN IS NOT NULL)
+  </if>
+  <if test="certificate01 == 0 and certificate02 == 1">
+    AND (KAKUNIN.KAKUNIN IS NULL AND NAITEN.NAITEN IS NULL)
+  </if>
+  <if test="reportMic == 0 and reportIda == 1 and bigSmallFlg02 == 0 and bigSmallFlg01 == 1">
+    AND T1.BIGSMALLFLG = 'L'
+  </if>
+  <if test="reportMic == 0 and reportIda == 1 and bigSmallFlg02 == 1 and bigSmallFlg01 == 0">
+    AND T1.BIGSMALLFLG = 'S'
+  </if>
+  <if test="agencyCmb != ''">
+    AND T1.INHOUSEREFNUMBER = #{agencyCmb}
+  </if>
+  <if test="agencyInput != ''">
+    AND T1.INHOUSEREFNUMBER LIKE '%' #{agencyInput} '%'
+  </if>
+</if>
+
+  ORDER BY T1.AWBNO ASC, T1.CWBNO ASC
+
+    <if test="page != null">
+      <if test="itemPerPage != null">
+        LIMIT
+        #{page},
+        #{itemPerPage}
+      </if>
+    </if>
+  </select>
+  
+   <resultMap id="airImports" type="com.kse.wmsv2.oa_it_002.dto.AirImportDto">
+    <result column="chk" jdbcType="VARCHAR" property="chk" />
+    <result column="MAWBNO" jdbcType="VARCHAR" property="mawbNo" />
+    <result column="CWBNODEPT" jdbcType="VARCHAR" property="hawbNo" />
+    <result column="CWBNO" jdbcType="VARCHAR" property="cwbNo" />
+    <result column="CWBDEPTCD" jdbcType="VARCHAR" property="cwbDeptCd" />
+    <result column="ORG" jdbcType="VARCHAR" property="org" />
+    <result column="CUSTOMER" jdbcType="VARCHAR" property="customer" />
+    <result column="PLACE" jdbcType="VARCHAR" property="place" />
+    <result column="ARRNAME" jdbcType="VARCHAR" property="arrName" />
+    <result column="REPORTNO" jdbcType="VARCHAR" property="reportNo" />
+    <result column="ARRIVEDDATE" jdbcType="VARCHAR" property="arrivedDate" />
+    <result column="IMPDATE" jdbcType="VARCHAR" property="impDate" />
+    <result column="REPORTDATE" jdbcType="VARCHAR" property="reportdate" />
+    <result column="PERMITDATE" jdbcType="VARCHAR" property="permitDate" />
+    <result column="CARRYOUTDATE" jdbcType="VARCHAR" property="carryOutDate" />
+    <result column="ITEM" jdbcType="VARCHAR" property="item" />
+    <result column="PERMITCLASSCD" jdbcType="VARCHAR" property="permitClassCd" />
+    <result column="IMPCUSTOMERNO" jdbcType="VARCHAR" property="impCustomerNo" />
+    <result column="IMPCUSTOMERDEPTCD" jdbcType="VARCHAR" property="impCustomerDeptCd" />
+    <result column="IMPCUSTOMEROCSDEPTCD" jdbcType="VARCHAR" property="impCustomerOcsDeptCd" />
+    <result column="IMPCUSTOMERNAME" jdbcType="VARCHAR" property="impCustomerName" />
+    <result column="EXPCUSTOMERNAME" jdbcType="VARCHAR" property="expCustomerName" />
+    <result column="CARGOPIECE" jdbcType="INTEGER" property="cargoPiece" />
+    <result column="CARGOWEIGHT" jdbcType="VARCHAR" property="cargoWeight" />
+    <result column="STASUTCD" jdbcType="VARCHAR" property="stasutCd" />
+    <result column="NAMEDOCSTATUS" jdbcType="VARCHAR" property="namedocStatus" />
+    <result column="NAMECARGOSTATUS" jdbcType="VARCHAR" property="nameCarGoStatus" />
+    <result column="POPIMAGERETAKING" jdbcType="VARCHAR" property="popImageRetaking" />
+    <result column="POPENTRY" jdbcType="VARCHAR" property="popenTry" />
+    <result column="NAMECUSTOMSSTATUS" jdbcType="VARCHAR" property="nameCustomsStatus" />
+    <result column="NAITEN_KAKUNIN" jdbcType="VARCHAR" property="naitenKakunIn" />
+    <result column="EDITUSER" jdbcType="VARCHAR" property="editUser" />
+    <result column="CHECKUSER" jdbcType="VARCHAR" property="checkUser" />
+    <result column="NAMESPECIALPREPARE" jdbcType="VARCHAR" property="nameSpecialPrepare" />
+    <result column="IDAFLG" jdbcType="VARCHAR" property="idaFlg" />
+    <result column="STSCOUNT" jdbcType="INTEGER" property="stsCount" />
+    <result column="CONCOUNT" jdbcType="INTEGER" property="conCount" />
+  </resultMap>
+
+    <select id="getDataCSVAfterPermission" parameterType="java.lang.String" resultMap="airImportsCsv">
+            SELECT AWBNO,
+              CASE
+                  WHEN CWBNODEPTCD = '000' THEN CWBNO
+                  ELSE CONCAT(CWBNO , '/' , CWBNODEPTCD)
+              END AS CWBNO,
+              IMPCUSTOMERNO,
+              REPLACE(IMPCUSTOMERNAME, '\"', '') AS IMPCUSTOMERNAME,
+              REPLACE(
+                IFNULL(IMPCUSTOMERADD, 
+                CONCAT
+                (IFNULL(IMPCUSTOMERADD_1, '') , ' ' 
+                , IFNULL(IMPCUSTOMERADD_2, '') , ' ' , IFNULL(IMPCUSTOMERADD_3, '') , ' ' 
+                , IFNULL(IMPCUSTOMERADD_4, '')))
+              , '\"', '') AS IMPCUSTOMERADD,
+              IMPCUSTOMERTELNO,
+              REPORTNO,
+              DATE_FORMAT(PERMITDATE2, '%Y/%m/%d') AS PERMITDATE2_YMD,
+              DATE_FORMAT(PERMITDATE2, '%H:%i') AS PERMITDATE2_HM,
+              LEFT(EXAMINATIONFLGDISC, 1) AS EXAMINATIONFLGDISC,
+              CAST(CASE
+        WHEN INVOICECURCD = 'JPY' THEN INVOICEVALUE
+        ELSE FLOOR(INVOICEVALUE * 
+        IFNULL(CASE
+          WHEN INVOICECURCD = EXCHANGERATECURRENCYCD_1 THEN EXCHANGERATE_1
+          ELSE CASE
+          WHEN INVOICECURCD = EXCHANGERATECURRENCYCD_2 THEN EXCHANGERATE_2
+          ELSE CASE
+        WHEN INVOICECURCD = EXCHANGERATECURRENCYCD_3 THEN EXCHANGERATE_3
+        ELSE 0
+        END
+          END
+          END, 0))
+        END + CASE
+          WHEN FARECURRENCYCD = 'JPY' THEN FARE
+          ELSE FLOOR(IFNULL(FARE * 
+          CASE
+        WHEN FARECURRENCYCD = EXCHANGERATECURRENCYCD_1 THEN EXCHANGERATE_1
+        ELSE CASE
+        WHEN FARECURRENCYCD = EXCHANGERATECURRENCYCD_2 THEN EXCHANGERATE_2
+        ELSE CASE
+          WHEN FARECURRENCYCD = EXCHANGERATECURRENCYCD_3 THEN EXCHANGERATE_3
+          ELSE 0
+          END
+        END
+        END, 0))
+          END + CASE
+        WHEN INSURANCECURCD = 'JPY' THEN INSURANCEAMOUNT
+        ELSE FLOOR(IFNULL(INSURANCEAMOUNT * 
+        CASE
+        WHEN INSURANCECURCD = EXCHANGERATECURRENCYCD_1 THEN EXCHANGERATE_1
+        ELSE CASE
+          WHEN INSURANCECURCD = EXCHANGERATECURRENCYCD_2 THEN EXCHANGERATE_2
+          ELSE CASE
+          WHEN INSURANCECURCD = EXCHANGERATECURRENCYCD_3 THEN EXCHANGERATE_3
+          ELSE 0
+          END
+          END
+        END, 0))
+        END AS INT) AS AMO,
+              REPLACE(ITEM, '\"', '') AS ITEM,
+              CARGOPIECE,
+              CASE
+                  WHEN TAXKIND_1_2 = '関税' THEN TAXKIND_1_3
+                  ELSE 0
+              END + CASE
+        WHEN TAXKIND_2_2 = '関税' THEN TAXKIND_2_3
+        ELSE 0
+        END + CASE
+          WHEN TAXKIND_3_2 = '関税' THEN TAXKIND_3_3
+          ELSE 0
+          END + CASE
+        WHEN TAXKIND_4_2 = '関税' THEN TAXKIND_4_3
+        ELSE 0
+        END + CASE
+          WHEN TAXKIND_5_2 = '関税' THEN TAXKIND_5_3
+          ELSE 0
+          END + CASE
+        WHEN TAXKIND_6_2 = '関税' THEN TAXKIND_6_3
+        ELSE 0
+        END + CASE
+          WHEN TAXKIND_7_2 = '関税' THEN TAXKIND_7_3
+          ELSE 0
+          END AS SUM_KANZEI,
+          CASE
+          WHEN TAXKIND_1_2 = '消費税' THEN TAXKIND_1_3
+          ELSE 0
+          END + CASE
+        WHEN TAXKIND_2_2 = '消費税' THEN TAXKIND_2_3
+        ELSE 0
+        END + CASE
+          WHEN TAXKIND_3_2 = '消費税' THEN TAXKIND_3_3
+          ELSE 0
+          END + CASE
+        WHEN TAXKIND_4_2 = '消費税' THEN TAXKIND_4_3
+        ELSE 0
+        END + CASE
+          WHEN TAXKIND_5_2 = '消費税' THEN TAXKIND_5_3
+          ELSE 0
+          END + CASE
+        WHEN TAXKIND_6_2 = '消費税' THEN TAXKIND_6_3
+        ELSE 0
+        END + CASE
+          WHEN TAXKIND_7_2 = '消費税' THEN TAXKIND_7_3
+          ELSE 0
+          END AS SUM_SHOUHIZEI,
+          CASE
+          WHEN TAXKIND_1_2 = '地方消費税' THEN TAXKIND_1_3
+          ELSE 0
+          END + CASE
+        WHEN TAXKIND_2_2 = '地方消費税' THEN TAXKIND_2_3
+        ELSE 0
+        END + CASE
+          WHEN TAXKIND_3_2 = '地方消費税' THEN TAXKIND_3_3
+          ELSE 0
+          END + CASE
+        WHEN TAXKIND_4_2 = '地方消費税' THEN TAXKIND_4_3
+        ELSE 0
+        END + CASE
+          WHEN TAXKIND_5_2 = '地方消費税' THEN TAXKIND_5_3
+          ELSE 0
+          END + CASE
+        WHEN TAXKIND_6_2 = '地方消費税' THEN TAXKIND_6_3
+        ELSE 0
+        END + CASE
+          WHEN TAXKIND_7_2 = '地方消費税' THEN TAXKIND_7_3
+          ELSE 0
+          END AS SUM_CHIHOUSHOUHIZEI,
+          IFNULL(TAXAMO, 0) AS TAXAMO,
+          IMPCUSTOMERPOSTCODE,
+          NULL AS AREA,
+          NULL AS DESTADD,
+          CARGOWEIGHT,
+          LOADINGFLT_1,
+          CONCAT(LEFT(ARRPORTDATE, 4) , '/' , SUBSTRING(ARRPORTDATE, 5, 2) , '/' , RIGHT(ARRPORTDATE, 2)) AS ARRPORTDATE_YMD,
+          NULL AS PAYMENT,
+          '0' AS FREIGHT,
+          NULL AS CONTACTPERSON,
+          CONSIGNORCOUNTRY,
+          CONSIGNORNAME,
+          REPLACE(
+            IFNULL(CONSIGNORADD_LUMP, 
+              CONCAT(
+              IFNULL(CONSIGNORADD_1, '') , ' ' 
+            , IFNULL(CONSIGNORADD_2, '') , ' ' , IFNULL(CONSIGNORADD_3, '') , ' ' 
+            , IFNULL(CONSIGNORADD_4, ''))
+          ), '\"', '') AS CONSIGNORADD,
+          INVOICECURCD AS FARECURRENCYCD,
+          INVOICEVALUE AS FARE,
+          CONCAT(LEFT(REPORTDATE, 4) , '/' , SUBSTRING(REPORTDATE, 5, 2) , '/' , RIGHT(REPORTDATE, 2)) AS REPORTDATE_YMD,
+          NEWS_2,
+          CASE
+          WHEN LARGESMALLFLG IS NULL THEN 'マニフェスト'
+          ELSE CASE
+        WHEN LARGESMALLFLG = 'S' THEN '一般(小額)'
+        ELSE CASE
+        WHEN LARGESMALLFLG = 'L' THEN '一般(大額)'
+        END
+        END
+          END AS SHIKIBETSU,
+          INHOUSEREFNUMBER,
+          LARGESMALLFLG
+        FROM AI_DETAIL_PERMIT_DATA
+      <if test="countHawb == '2'">
+        WHERE CWBNO =  #{hawb1}
+          AND CWBNODEPTCD = #{hawb2}
+      </if>
+      <if test="countHawb != '2'">
+        WHERE CWBNO = #{hawb1}
+          AND CWBNODEPTCD ='000'
+      </if>
+    </select>
+   <resultMap id="airImportsCsv" type="com.kse.wmsv2.oa_it_002.dto.AirImportCSVDto">
+    <result column="AWBNO" jdbcType="VARCHAR" property="awbNo" />
+    <result column="NO" jdbcType="VARCHAR" property="no" />
+    <result column="CWBNO" jdbcType="VARCHAR" property="cwbNo" />
+    <result column="IMPCUSTOMERNO" jdbcType="VARCHAR" property="impCustomerNo" />
+    <result column="IMPCUSTOMERNAME" jdbcType="VARCHAR" property="impCustomerName" />
+    <result column="IMPCUSTOMERADD" jdbcType="VARCHAR" property="impCustomerAdd" />
+    <result column="IMPCUSTOMERTELNO" jdbcType="VARCHAR" property="impCustomerTelNo" />
+    <result column="REPORTNO" jdbcType="VARCHAR" property="reportNo" />
+    <result column="PERMITDATE2_YMD" jdbcType="VARCHAR" property="permitDate2Ymd" />
+    <result column="PERMITDATE2_HM" jdbcType="VARCHAR" property="permitDate2Hm" />
+    <result column="EXAMINATIONFLGDISC" jdbcType="VARCHAR" property="examinationFlgDisc" />
+    <result column="AMO" jdbcType="VARCHAR" property="amo" />
+    <result column="ITEM" jdbcType="VARCHAR" property="item" />
+    <result column="CARGOPIECE" jdbcType="VARCHAR" property="cargopiece" />
+    <result column="SUM_KANZEI" jdbcType="VARCHAR" property="sumKanzei" />
+    <result column="SUM_SHOUHIZEI" jdbcType="VARCHAR" property="sumShouhizei" />
+    <result column="SUM_CHIHOUSHOUHIZEI" jdbcType="VARCHAR" property="sumChihoushouhizei" />
+    <result column="TAXAMO" jdbcType="VARCHAR" property="taxamo" />
+    <result column="IMPCUSTOMERPOSTCODE" jdbcType="VARCHAR" property="impCustomerPostcode" />
+    <result column="AREA" jdbcType="VARCHAR" property="area" />
+    <result column="DESTADD" jdbcType="VARCHAR" property="destAdd" />
+    <result column="CARGOWEIGHT" jdbcType="VARCHAR" property="cargoWeight" />
+    <result column="LOADINGFLT_1" jdbcType="INTEGER" property="loadingFlt1" />
+    <result column="ARRPORTDATE_YMD" jdbcType="VARCHAR" property="arrportdateYmd" />
+    <result column="PAYMENT" jdbcType="VARCHAR" property="payment" />
+    <result column="FREIGHT" jdbcType="VARCHAR" property="freight" />
+    <result column="CONTACTPERSON" jdbcType="VARCHAR" property="contactPerson" />
+    <result column="CONSIGNORCOUNTRY" jdbcType="VARCHAR" property="consignorCountry" />
+    <result column="CONSIGNORNAME" jdbcType="VARCHAR" property="consignorName" />
+    <result column="CONSIGNORADD" jdbcType="VARCHAR" property="consignorAdd" />
+    <result column="FARECURRENCYCD" jdbcType="VARCHAR" property="fareCurrencyCd" />
+    <result column="FARE" jdbcType="VARCHAR" property="fare" />
+    <result column="REPORTDATE_YMD" jdbcType="VARCHAR" property="reportdateYmd" />
+    <result column="NEWS_2" jdbcType="VARCHAR" property="news2" />
+    <result column="SHIKIBETSU" jdbcType="VARCHAR" property="shikibetsu" />
+    <result column="INHOUSEREFNUMBER" jdbcType="VARCHAR" property="inHouseRefNumber" />
+    <result column="LARGESMALLFLG" jdbcType="VARCHAR" property="largeSmallFlg" />
+  </resultMap>
+
+  <select id="checkHawbNo" parameterType="com.kse.wmsv2.oa_it_002.dto.HawbDto" resultMap="hawbData">
+            SELECT CWBNO ,
+                  CWBNODEPTCD
+            FROM AI_DATA
+            WHERE 1 = 1
+              AND CWBNO = #{hawbNo}
+              AND CWBNODEPTCD= #{hawbNoDeptCd}
+              AND DELETEDATE IS NULL
+              AND SPSDOCCLASSCD = '0'
+  </select>
+  <resultMap id="hawbData" type="com.kse.wmsv2.oa_it_002.dto.HawbDto">
+    <result column="CWBNO" jdbcType="VARCHAR" property="hawbNo" />
+    <result column="CWBNODEPTCD" jdbcType="VARCHAR" property="hawbNoDeptCd" />
+  </resultMap>
+
+  <update id="updateHawbNo" parameterType="com.kse.wmsv2.oa_it_002.dto.HawbDto">
+    UPDATE AI_DATA
+    SET DECLARATIONOUTPUTFLG='1'
+    WHERE 1 = 1
+      AND CWBNO = #{hawbNo}
+      AND CWBNODEPTCD= #{hawbNoDeptCd}
+  </update>
+</mapper>

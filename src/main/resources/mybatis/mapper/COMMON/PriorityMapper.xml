@@ -1,0 +1,126 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="com.kse.wmsv2.common.mapper.PriorityMapper">
+    <select id="getInvoiceItem" parameterType="object" resultType="String">
+        SELECT
+            ITEMNM
+        FROM
+            CS_INVOICE_EDIT
+        WHERE
+            CWBNO = #{cwbNo}
+            AND CWBNODEPTCD = #{cwbNoDeptCd}
+        GROUP BY
+            ITEMNM
+    </select>
+    <select id="getSpecialItem" parameterType="string" resultType="int">
+        SELECT
+            IFNULL(COUNT(*),0)
+        FROM
+            AM_NAME
+        WHERE
+            DEPARTMENTCD = 'ALL'
+            AND NAMECLASS = '0239'
+            AND NAME = #{value}
+    </select>
+    <select id="checkSpecialOrder" parameterType="string" resultType="int">
+        SELECT
+            IFNULL(COUNT(OPTIONALSERVICECD),0)
+        FROM
+            CS_OPTIONAL_SERVICE
+        WHERE
+            CWBNO = #{value}
+            GROUP BY
+            OPTIONALSERVICECD
+    </select>
+    <select id="checkSpecialImporter" parameterType="object" resultType="hashMap">
+        SELECT
+            (CASE WHEN
+            NULLIF(CONDITIONCOMMENT,'') is null
+            OR NULLIF(DELIVERYDATEEXTCD,'') is null
+            OR NULLIF(PAYMETHODDISC,'') is null
+            OR NULLIF(CONDITIONBANKACCOUNTNO,'') is null
+            OR NULLIF(CONDITIONCOLLATERALNO1,'') is null
+            OR NULLIF(CONDITIONCOLLATERALNO2,'') is null
+            OR NULLIF(ESTIMATIONFLGCD,'') is null
+            OR NULLIF(INCESTREPRENO,'') is null
+            OR NULLIF(INSURANCECLASSCD,'') is null
+            OR NULLIF(INCINSUREGNO,'') is null
+            THEN 0 ELSE 5 END),
+        (CASE WHEN NULLIF(CONDITIONFLG01,'') IS NULL THEN 0 ELSE 5 END),
+        (CASE WHEN NULLIF(CONDITIONFLG02,'') IS NULL THEN 0 ELSE 5 END),
+        (CASE WHEN NULLIF(CONDITIONFLG03,'') IS NULL THEN 0 ELSE 5 END),
+        (CASE WHEN NULLIF(CONDITIONFLG04,'') IS NULL THEN 0 ELSE 5 END),
+        (CASE WHEN NULLIF(CONDITIONFLG05,'') IS NULL THEN 0 ELSE 5 END),
+        (CASE WHEN NULLIF(CONDITIONFLG06,'') IS NULL THEN 0 ELSE 5 END),
+        (CASE WHEN NULLIF(CONDITIONFLG07,'') IS NULL THEN 0 ELSE 5 END),
+        (CASE WHEN NULLIF(CONDITIONFLG08,'') IS NULL THEN 0 ELSE 5 END),
+        (CASE WHEN NULLIF(CONDITIONFLG09,'') IS NULL THEN 0 ELSE 5 END),
+        (CASE WHEN NULLIF(CONDITIONFLG10,'') IS NULL THEN 0 ELSE 5 END),
+        (CASE WHEN NULLIF(CONDITIONFLG11,'') IS NULL THEN 0 ELSE 5 END),
+        (CASE WHEN NULLIF(CONDITIONFLG12,'') IS NULL THEN 0 ELSE 5 END),
+        (CASE WHEN NULLIF(CONDITIONFLG13,'') IS NULL THEN 0 ELSE 5 END),
+        (CASE WHEN NULLIF(CONDITIONFLG14,'') IS NULL THEN 0 ELSE 5 END),
+        (CASE WHEN NULLIF(CONDITIONFLG15,'') IS NULL THEN 0 ELSE 5 END),
+        (CASE WHEN NULLIF(CONDITIONFLG16,'') IS NULL THEN 0 ELSE 5 END),
+        (CASE WHEN NULLIF(CONDITIONFLG17,'') IS NULL THEN 0 ELSE 5 END),
+        (CASE WHEN NULLIF(CONDITIONFLG18,'') IS NULL THEN 0 ELSE 5 END),
+        (CASE WHEN NULLIF(CONDITIONFLG19,'') IS NULL THEN 0 ELSE 5 END),
+        (CASE WHEN NULLIF(CONDITIONFLG20,'') IS NULL THEN 0 ELSE 5 END),
+        (CASE WHEN NULLIF(CONDITIONFLG21,'') IS NULL THEN 0 ELSE 5 END),
+        (CASE WHEN NULLIF(CONDITIONFLG22,'') IS NULL THEN 0 ELSE 5 END),
+        (CASE WHEN NULLIF(CONDITIONFLG23,'') IS NULL THEN 0 ELSE 5 END),
+        (CASE WHEN NULLIF(CONDITIONFLG24,'') IS NULL THEN 0 ELSE 5 END),
+        (CASE WHEN NULLIF(CONDITIONFLG25,'') IS NULL THEN 0 ELSE 5 END)
+        FROM
+        AM_CUSTOMER_NUMBER
+        WHERE
+        1 = 1
+        AND CUSTOMERNO = #{impCustomerNo}
+        AND DEPTCD = #{impCustomerDeptCd}
+        AND OCSDEPTCD = #{impCustomerOcsDeptCd}
+        LIMIT 1
+    </select>
+    <select id="countInvoiceDetailData" parameterType="object" resultType="hashMap">
+        SELECT
+        *
+        FROM
+        (SELECT
+        COUNT(CWBNO) AS CNTCWB
+        FROM
+        CS_INVOICE_EDIT
+        WHERE
+        1 = 1
+        AND CWBNO = #{cwbNo}
+        AND CWBNODEPTCD = #{cwbNoDeptCd}
+        GROUP BY
+        CWBNO
+        LIMIT 1) AS OCIE
+        WHERE
+        1 = 1
+        AND 9 <![CDATA[ < ]]> OCIE.CNTCWB
+    </select>
+    <select id="checkInvoiceAmount" parameterType="hashMap" resultType="hashMap">
+        SELECT
+        *
+        FROM
+        (
+        SELECT
+        *
+        FROM
+        CM_RATE
+        WHERE
+        1 = 1
+        AND STARTDATE <![CDATA[ <= ]]> #{date}
+        AND CURRENCYCD = #{currencyCd}
+        ORDER BY
+        STARTDATE DESC
+        LIMIT 1
+        ) AS CMRA
+        WHERE
+            1 = 1
+            AND 999999999999999  <![CDATA[ < ]]> FLOOR(CMRA.RATE * #{invoiceValue})
+    </select>
+</mapper>

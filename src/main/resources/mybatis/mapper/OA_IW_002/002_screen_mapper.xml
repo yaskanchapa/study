@@ -1,0 +1,1111 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="com.kse.wmsv2.oa_iw_002.mapper.OAIW002ScreenMapper">
+
+    <select id="selectOutFilePathList" parameterType="com.kse.wmsv2.oa_iw_002.dto.OAIW002OutFilePathDto" resultType="com.kse.wmsv2.oa_iw_002.dao.OAIW002OutFilePathDao">
+        SELECT
+            CHARACTERITEM1,
+            CHARACTERITEM2
+        FROM
+            AM_NAME
+        WHERE
+            NAMECLASS = #{nameClass}
+            AND NAMECD = #{nameCd}
+    </select>
+
+<!-- ■E002 検索表示 -->
+    <!-- 1.2 搬出データを検索し一覧に表示する。 -->
+    <select id="selectBondedOutList"  parameterType="com.kse.wmsv2.oa_iw_002.dao.OAIW002SelectBondedOutListDao"
+                                    resultType="com.kse.wmsv2.oa_iw_002.dto.OAIW002SelectBondedOutListDto">
+        SELECT
+           T11.CURRENTARRFLT_1 AS arrFtl1,
+           T11.CURRENTARRFLT_2 AS arrFtl2,
+           T20.CATERERINGPLACE AS origin,
+           T11.AWBNO AS awbNo,
+           T11.CWBNO AS cwbNo,
+           T11.CWBNODEPTCD AS cwbNoDeptCd,
+           IFNULL(T11.INCLASSIFYCLASSNAME,'') AS inClassifyClassName,
+           T11.REPORTCONDITION AS reportCondition,
+           SUM(CASE WHEN (T17.STATUSCD >= 'IB00200' AND T17.STATUSCD <![CDATA[<]]> 'IB00500') THEN 1 ELSE 0 END) AS IB00200cnt,
+           SUM(CASE WHEN T17.STATUSCD = 'IB00500' THEN 1 ELSE 0 END) AS ib00500Cnt,
+           SUM(CASE WHEN T17.STATUSCD = 'IB00600' THEN 1 ELSE 0 END) AS ib00600Cnt,
+           SUM(CASE WHEN T17.STATUSCD = 'IB00710' THEN 1 ELSE 0 END) AS ib00710Cnt,
+           SUM(CASE WHEN T17.STATUSCD = 'IB00720' THEN 1 ELSE 0 END) AS ib00720Cnt,
+           SUM(CASE WHEN T17.STATUSCD = 'IB00800' THEN 1 ELSE 0 END) AS ib00800Cnt,
+           T20.BBM AS bbm
+        FROM
+            -- 輸入データ(未搬出 or マッチ)取得
+            (
+                SELECT
+                    T0.AWBNO, T0.CWBNO, T0.CWBNODEPTCD, T0.CURRENTARRFLT_1, T0.CURRENTARRFLT_2, T0.INCLASSIFYCLASSNAME, T0.REPORTCONDITION
+                FROM AI_DATA T0
+                WHERE 1 = 1
+                  -- 搬出年月日
+                  <if test="matchFlg == true and carryOutDate != null and carryOutDate != ''">
+                    AND (T0.CARRYOUTDATE = #{carryOutDate} OR T0.CARRYOUTDATE IS NULL)
+                  </if>
+                  <if test="matchFlg == false">
+                    AND T0.CARRYOUTDATE IS NULL
+                  </if>
+                  <if test="bondedWarehouseCd != null and bondedWarehouseCd != ''">
+                    -- 蔵置場
+                    AND T0.BONDEDWAREHOUSECD = #{bondedWarehouseCd}
+                  </if>
+                  <if test="arrFtl1 != null and arrFtl1 != ''">
+                    AND T0.CURRENTARRFLT_1 = #{arrFtl1} -- 便名
+                  </if>
+                  <if test="arrFtl2 != null and arrFtl2 != ''">
+                    AND T0.CURRENTARRFLT_2 = #{arrFtl2} -- 便・日付(出発日)
+                  </if>
+                  <if test="awbNo != null and awbNo != ''">
+                    AND T0.AWBNO = #{awbNo} -- 航空運送状番号
+                  </if>
+                  AND T0.WAREHOUSECLASSCD = '1' -- 蔵置区分(特定)
+                  AND T0.REMODELINGFLG <![CDATA[<>]]> '1' -- 改装仕分区分(親は除く)
+                  AND T0.INCLASSIFYCLASSNAME IN ('緊急','Ｓ仕分緊急','請求','Ｓ仕分請求','無税','Ｓ無税','マニ申告','Ｓマニ申告','検査','許可緊急','許可請求','S/U検査','許可無税')
+                  <if test="unMatchHawbCntFlg == true or unMatchPieceFlg == true or matchFlg == true">
+                    -- アンマッチ「CWB件数」「アンマッチ個数」「アンマッチマッチ」
+                      AND EXISTS
+                       ( SELECT T1.AWBNO, T1.CWBNO, T1.CWBNODEPTCD
+                         FROM AI_DATA T1
+                         WHERE 1 = 1
+                           AND T1.AWBNO = T0.AWBNO
+                           AND T1.CURRENTARRFLT_1 = T0.CURRENTARRFLT_1
+                           AND T1.CURRENTARRFLT_2 = T0.CURRENTARRFLT_2
+                           AND (1 = 0
+                                 <if test="unMatchHawbCntFlg == true">
+                                   OR (T1.CARRYOUTDATE IS NULL)
+                                 </if>
+                                 <if test="unMatchPieceFlg == true">
+                                   OR (T1.CARRYOUTDATE IS NULL AND T1.CARGOOUTPIECE <![CDATA[<>]]> T1.CARGOPIECE)
+                                 </if>
+                                 <if test="matchFlg == true">
+                                   OR (T1.CARRYOUTDATE IS NOT NULL AND T1.CARGOOUTPIECE = T1.CARGOPIECE)
+                                 </if>
+                               )
+                       )
+                  </if>
+                  AND T0.DELETEDATE IS NULL
+                  AND T0.SPSDOCCLASSCD IN ('0','2')
+            ) T11
+
+            -- ステータス管理データ取得(IB00200～IB00800)
+            LEFT JOIN
+            (
+                SELECT
+                    AWBNO,
+                    CWBNO,
+                    CWBNODEPTCD,
+                    STATUSCD
+                FROM
+                    AI_STATUS_HISTORY
+                WHERE 1 = 1
+                  AND BUSINESSCLASS = '02'
+                  AND STATUSCD >= 'IB00200' AND STATUSCD <![CDATA[<=]]> 'IB00800'
+                GROUP BY
+                    CWBNO, CWBNODEPTCD, STATUSCD
+            ) T17
+              ON  T11.AWBNO = T17.AWBNO
+              AND T11.CWBNO = T17.CWBNO
+              AND T11.CWBNODEPTCD = T17.CWBNODEPTCD
+
+            -- 輸入データヘッダ取得
+            LEFT JOIN AI_HEAD T20
+              ON  T11.AWBNO = T20.AWBNO
+                AND T11.CURRENTARRFLT_1 = T20.ARRFLT_1
+                AND T11.CURRENTARRFLT_2 = T20.ARRFLT_2
+                AND T20.DELETEDATE IS NULL
+
+        WHERE 1 = 1
+            <if test="origin != null and origin != ''">
+              AND T20.CATERERINGPLACE = #{origin} -- 出発空港(airport of origin)
+            </if>
+        GROUP BY
+            T11.CURRENTARRFLT_1, T11.CURRENTARRFLT_2, T20.CATERERINGPLACE, T11.AWBNO, T11.CWBNO, T11.CWBNODEPTCD, T11.INCLASSIFYCLASSNAME, T11.REPORTCONDITION, T20.BBM
+        HAVING
+            SUM(CASE WHEN T17.STATUSCD = 'IB00200' THEN 1 ELSE 0 END) > 0
+        ORDER BY
+            T11.CURRENTARRFLT_1, T11.CURRENTARRFLT_2, T20.CATERERINGPLACE, T11.AWBNO, T11.CWBNO, T11.CWBNODEPTCD, T11.INCLASSIFYCLASSNAME
+    </select>
+
+<!-- ■E005 許可 -->
+    <!-- 1.1 輸入通関データ(AI_DATA)から搬出データを取得して、搬出用一時データに登録する。 -->
+    <select id="selectAiData1"  parameterType="com.kse.wmsv2.oa_iw_002.dao.OAIW002SelectAiData1Dao"
+                                    resultType="com.kse.wmsv2.oa_iw_002.dto.OAIW002SelectAiData1Dto">
+        SELECT
+            BONDEDWAREHOUSECD AS bondedWarehouseCd,
+            CURRENTARRFLT_1 AS currentArrflt1,
+            CURRENTARRFLT_2 AS currentArrflt2,
+            T1.AWBNO AS awbNo,
+            T1.CWBNO AS cwbNo,
+            T1.CWBNODEPTCD AS cwbNoDeptCd,
+            REMODELINGFLG AS remodelingFlg,
+            BWBNO AS bwbNo,
+            CARGOINPIECE AS cargoInPiece,
+            CARGOWEIGHT AS cargoWeight,
+            OUTCLASSIFYCLASSNAME AS outClassifyClassName,
+            SPECIALPREPARENAME01 AS SpcialPrepareName01,
+            SPECIALPREPARENAME02 AS SpcialPrepareName02,
+            SPECIALPREPARENAME03 AS SpcialPrepareName03,
+            SPECIALPREPARENAME04 AS SpcialPrepareName04,
+            SPECIALPREPARENAME05 AS SpcialPrepareName05,
+            SPECIALPREPARENAME06 AS SpcialPrepareName06,
+            SPECIALPREPARENAME07 AS SpcialPrepareName07,
+            SPECIALPREPARENAME08 AS SpcialPrepareName08,
+            SPECIALPREPARENAME09 AS SpcialPrepareName09,
+            SPECIALPREPARENAME10 AS SpcialPrepareName10
+        FROM AI_DATA T1
+            LEFT JOIN
+            (SELECT
+                AWBNO,
+                CWBNO,
+                CWBNODEPTCD,
+                COUNT(*) AS HPKCNT
+             FROM
+                 AI_STATUS_HISTORY
+             WHERE 1 = 1
+                 AND BUSINESSCLASS = '02'
+                 AND STATUSCD = 'IB00200'
+             GROUP BY
+                 CWBNO,
+                 CWBNODEPTCD
+             ) T20 ON  T1.AWBNO = T20.AWBNO AND T1.CWBNO = T20.CWBNO AND T1.CWBNODEPTCD = T20.CWBNODEPTCD
+             LEFT JOIN
+             (SELECT
+                 AWBNO,
+                 CWBNO,
+                 CWBNODEPTCD,
+                 COUNT(*) AS PERMCNT
+             FROM
+                 AI_STATUS_HISTORY
+             WHERE 1 = 1
+                 AND BUSINESSCLASS = '02'
+                 AND STATUSCD = 'IB00600'
+             GROUP BY
+                 CWBNO,
+                 CWBNODEPTCD
+             ) T21 ON T1.AWBNO = T21.AWBNO AND T1.CWBNO = T21.CWBNO AND T1.CWBNODEPTCD = T21.CWBNODEPTCD
+             LEFT JOIN
+             (SELECT
+                 AWBNO,
+                 CWBNO,
+                 CWBNODEPTCD,
+                 COUNT(*) AS OUTSCNT
+             FROM
+                 AI_STATUS_HISTORY
+             WHERE 1 = 1
+                 AND BUSINESSCLASS = '02'
+                 AND STATUSCD = 'IB00710'
+             GROUP BY
+                 CWBNO,
+                 CWBNODEPTCD
+             ) T22 ON  T1.AWBNO = T22.AWBNO AND T1.CWBNO = T22.CWBNO AND T1.CWBNODEPTCD = T22.CWBNODEPTCD
+             LEFT JOIN
+             (SELECT
+                 AWBNO,
+                 CWBNO,
+                 CWBNODEPTCD,
+                 COUNT(*) AS OUTSCANCNT
+             FROM
+                 AI_STATUS_HISTORY
+             WHERE 1 = 1
+                 AND BUSINESSCLASS = '02'
+                 AND STATUSCD = 'IB00720'
+             GROUP BY
+                 CWBNO,
+                 CWBNODEPTCD
+             ) T23 ON T1.AWBNO = T23.AWBNO AND T1.CWBNO = T23.CWBNO AND T1.CWBNODEPTCD = T23.CWBNODEPTCD
+             LEFT JOIN
+             (SELECT
+                 AWBNO,
+                 CWBNO,
+                 CWBNODEPTCD,
+                 COUNT(*) AS OUTECNT
+             FROM
+                 AI_STATUS_HISTORY
+             WHERE 1 = 1
+                 AND BUSINESSCLASS = '02'
+                 AND STATUSCD = 'IB00730'
+             GROUP BY
+                 CWBNO,
+                 CWBNODEPTCD
+             ) T24 ON T1.AWBNO = T24.AWBNO AND T1.CWBNO = T24.CWBNO AND T1.CWBNODEPTCD = T24.CWBNODEPTCD
+             LEFT JOIN
+             (SELECT
+                 AWBNO,
+                 CWBNO,
+                 CWBNODEPTCD,
+                 COUNT(*) AS OUTTRANSCNT
+             FROM
+                 AI_STATUS_HISTORY
+             WHERE 1 = 1
+                 AND BUSINESSCLASS = '02'
+                 AND STATUSCD = 'IB00800'
+             GROUP BY
+                 CWBNO,
+                 CWBNODEPTCD
+             ) T25 ON  T1.AWBNO = T25.AWBNO AND T1.CWBNO = T25.CWBNO AND T1.CWBNODEPTCD = T25.CWBNODEPTCD
+             LEFT JOIN
+             (SELECT
+                 AWBNO,
+                 CWBNO,
+                 CWBNODEPTCD,
+                 COUNT(*) AS OUTCARRYCNT
+             FROM
+                 AI_STATUS_HISTORY
+             WHERE 1 = 1
+                 AND BUSINESSCLASS = '02'
+                 AND STATUSCD = 'IB00900'
+             GROUP BY
+                CWBNO,
+                CWBNODEPTCD
+             ) T26 ON T1.AWBNO = T26.AWBNO AND T1.CWBNO = T26.CWBNO AND T1.CWBNODEPTCD = T26.CWBNODEPTCD
+             LEFT JOIN
+             AI_HEAD T27 ON T1.AWBNO = T27.AWBNO AND T1.CURRENTARRFLT_1 = T27.ARRFLT_1 AND T1.CURRENTARRFLT_2 = T27.ARRFLT_2
+             WHERE 1 = 1
+              <if test="awbNo != null and awbNo != ''">
+                AND T1.AWBNO = #{awbNo} -- 航空運送状番号
+              </if>
+              <if test="arrFtl1 != null and arrFtl1 != ''">
+                AND T1.CURRENTARRFLT_1 = #{arrFtl1} -- 便名
+              </if>
+              <if test="arrFtl2 != null and arrFtl2 != ''">
+                AND T1.CURRENTARRFLT_2 = #{arrFtl2} -- 便・日付(出発日)
+              </if>
+              <if test="bondedWarehouseCd != null and bondedWarehouseCd != ''">
+                AND T1.BONDEDWAREHOUSECD = #{bondedWarehouseCd} -- 蔵置場所
+              </if>
+              <choose>
+                  <when test='"緊急".equals(inClassifyClassName)'>
+                    AND T1.INCLASSIFYCLASSNAME IN ('緊急','Ｓ仕分緊急','許可緊急') -- INCLASSIFYCLASSNAME(搬入仕分区分)
+                  </when>
+                  <when test='"請求".equals(inClassifyClassName)'>
+                    AND T1.INCLASSIFYCLASSNAME IN ('請求','Ｓ仕分請求','検査','許可請求','S/U検査') -- INCLASSIFYCLASSNAME(搬入仕分区分)
+                  </when>
+                  <when test='"無税".equals(inClassifyClassName)'>
+                    AND T1.INCLASSIFYCLASSNAME IN ('無税','Ｓ無税','許可無税') -- INCLASSIFYCLASSNAME(搬入仕分区分)
+                  </when>
+                  <when test='"マニ".equals(inClassifyClassName)'>
+                    AND T1.INCLASSIFYCLASSNAME IN ('マニ申告','Ｓマニ申告') -- INCLASSIFYCLASSNAME(搬入仕分区分)
+                  </when>
+                  <otherwise />
+              </choose>
+                AND WAREHOUSECLASSCD = "1"
+                AND REMODELINGFLG <![CDATA[<>]]> '1'
+                <if test="carryOutDate != null and carryOutDate != ''">
+                  AND (CARRYOUTDATE = #{carryOutDate} OR CARRYOUTDATE IS NULL) -- 搬出年月日
+                </if>
+                <if test="origin != null and origin != ''">
+                  AND CATERERINGPLACE = #{origin} -- 出発空港(airport of origin)
+                </if>
+                <if test="unMatchHawbCntFlg == true or unMatchPieceFlg == true or matchFlg == true">
+                  AND (
+                       1 = 0
+                      <if test="unMatchHawbCntFlg == true">
+                        -- アンマッチ・HAWB件数
+                        OR (CONCAT(T1.AWBNO, T1.CURRENTARRFLT_1, T1.CURRENTARRFLT_2) IN(SELECT  CONCAT(AWBNO, CURRENTARRFLT_1, CURRENTARRFLT_2) FROM AI_DATA WHERE CARRYOUTDATE IS NULL))
+                      </if>
+                      <if test="unMatchPieceFlg == true">
+                          -- アンマッチ・個数
+                          OR (CONCAT(T1.AWBNO, T1.CURRENTARRFLT_1, T1.CURRENTARRFLT_2) IN(SELECT CONCAT(AWBNO, CURRENTARRFLT_1, CURRENTARRFLT_2) FROM AI_DATA  WHERE CARGOOUTPIECE <![CDATA[<>]]> CARGOPIECE))
+                      </if>
+                      <if test="matchFlg == true">
+                          -- アンマッチ・マッチ
+                          OR (CONCAT(T1.AWBNO, T1.CURRENTARRFLT_1, T1.CURRENTARRFLT_2) IN(SELECT CONCAT(AWBNO, CURRENTARRFLT_1, CURRENTARRFLT_2) FROM AI_DATA  WHERE CARRYOUTDATE IS NOT NULL AND CARGOOUTPIECE = CARGOPIECE))
+                      </if>
+                  )
+                </if>
+                AND T1.DELETEDATE IS NULL
+                AND T1.SPSDOCCLASSCD IN ('0','2')
+                AND IFNULL(T20.HPKCNT,0) > 0
+                AND IFNULL(T21.PERMCNT,0) > 0
+                AND IFNULL(T22.OUTSCNT,0) <![CDATA[<]]> 1
+                AND IFNULL(T23.OUTSCANCNT,0) <![CDATA[<]]> 1
+                AND IFNULL(T24.OUTECNT,0) <![CDATA[<]]> 1
+                AND IFNULL(T25.OUTTRANSCNT,0) <![CDATA[<]]> 1
+                AND IFNULL(T26.OUTCARRYCNT,0) <![CDATA[<]]> 1
+    </select>
+
+    <!-- 1.3.1 輸入搬出データヘッダ(AI_CARGO_OUT_HEAD)データを取得する。 -->
+    <select id="selectAiCargoOutHead1"  parameterType="com.kse.wmsv2.oa_iw_002.dao.OAIW002SelectAiCargoOutHead1Dao"
+                                           resultType="com.kse.wmsv2.oa_iw_002.dto.OAIW002SelectAiCargoOutHead1Dto">
+        SELECT
+          BONDEDWAREHOUSECD AS BondedWarehouseCd,
+          FLT1 AS ftl1,
+          FLT2 AS ftl2,
+          AWBNO AS awbNo,
+          CARGOOUTDATE AS cargoOutDate,
+          CWBCOUNT AS cwbCount,
+          SCANCWBCOUNT AS scanCwbCount,
+          OVERCWBCOUNT AS overCwbCount,
+          SCANPICEC AS scanPiece,
+          DATAPICEC AS dataPiece,
+          DATAWEIGHT AS dataWeight,
+          REGUSERCD AS regUserCd,
+          REGDATE AS regDate,
+          UPDATEUSERCD AS updateUserCd,
+          UPDATEDATE AS updateDate
+        FROM
+          AI_CARGO_OUT_HEAD
+        WHERE 1 = 1
+        <if test="bondedWarehouseCd != null and bondedWarehouseCd != ''">
+            AND BONDEDWAREHOUSECD = #{bondedWarehouseCd} -- 蔵置場所
+        </if>
+        <if test="arrFtl1 != null and arrFtl1 != ''">
+            AND FLT1 = #{arrFtl1} -- 便名
+        </if>
+        <if test="arrFtl2 != null and arrFtl2 != ''">
+            AND FLT2 = #{arrFtl2} -- 便・日付(出発日)
+        </if>
+        <if test="awbNo != null and awbNo != ''">
+            AND AWBNO = #{awbNo} -- 航空運送状番号
+        </if>
+        <if test="cargoOutDate != null and cargoOutDate != ''">
+            AND CARGOOUTDATE = #{cargoOutDate}
+        </if>
+    </select>
+
+    <!-- 1.3.2 輸入搬出データヘッダ(AI_CARGO_OUT_HEAD)データを取得する。 -->
+    <insert id="insertAiCargoInData1" parameterType="com.kse.wmsv2.oa_iw_002.dao.OAIW002InsertAiCargoInData1Dao">
+        INSERT INTO AI_CARGO_OUT_HEAD
+            (BONDEDWAREHOUSECD,
+            FLT1,
+            FLT2,
+            AWBNO,
+            CARGOOUTDATE,
+            CWBCOUNT,
+            SCANCWBCOUNT,
+            OVERCWBCOUNT,
+            SCANPICEC,
+            DATAPICEC,
+            DATAWEIGHT,
+            REGUSERCD,
+            REGDATE,
+            UPDATEUSERCD,
+            UPDATEDATE)
+        VALUES(
+            #{bondedWarehouseCd}, -- 蔵置場所
+            #{arrFtl1}, -- 便名
+            #{arrFtl2}, -- 便・日付(出発日)
+            #{awbNo}, -- 航空運送状番号
+            #{updateDate}, -- 現在日時
+            1,
+            0,
+            0,
+            0,
+            0,
+            0,
+            #{userCd},
+            #{updateDate},
+            #{userCd},
+            #{updateDate}
+        )
+    </insert>
+
+    <!-- 1.5 搬出用一時データのデータから輸入搬出データ(AI_CARGO_OUT_DATA)を登録する。 -->
+    <insert id="insertAiCargoOutData1" parameterType="java.util.List">
+        INSERT INTO AI_CARGO_OUT_DATA
+        (
+           BONDEDWAREHOUSECD,
+           FLT1,
+           FLT2,
+           AWBNO,
+           CARGOOUTDATE,
+           CWBNO,
+           CWBNODEPTCD,
+           REMODELINGFLG,
+           BWBNO,
+           SCANPICEC,
+           DATAPICEC,
+           DATAWEIGHT,
+           CLASSIFYCLASSNAME,
+           SPECIALPREPARENAME01,
+           SPECIALPREPARENAME02,
+           SPECIALPREPARENAME03,
+           SPECIALPREPARENAME04,
+           SPECIALPREPARENAME05,
+           SPECIALPREPARENAME06,
+           SPECIALPREPARENAME07,
+           SPECIALPREPARENAME08,
+           SPECIALPREPARENAME09,
+           SPECIALPREPARENAME10,
+           OVERFLG,
+           REGUSERCD,
+           REGDATE,
+           UPDATEUSERCD,
+           UPDATEDATE
+        )
+        VALUES
+        <foreach collection="insertAiCargoOutData1DaoList" item="aiCargoOutData" separator=",">
+        (
+            #{aiCargoOutData.bondedWarehouseCd},
+            #{aiCargoOutData.arrFtl1},
+            #{aiCargoOutData.arrFtl2},
+            #{aiCargoOutData.awbNo},
+            #{aiCargoOutData.cargoOutDate},
+            #{aiCargoOutData.cwbNo},
+            #{aiCargoOutData.cwbNoDeptCd},
+            #{aiCargoOutData.reModelingFlg},
+            #{aiCargoOutData.bwbNo},
+            0,
+            #{aiCargoOutData.cargoInPiece},
+            #{aiCargoOutData.cargoWeight},
+            #{aiCargoOutData.outClassifyClassName},
+            #{aiCargoOutData.specialPrepareName01},
+            #{aiCargoOutData.specialPrepareName02},
+            #{aiCargoOutData.specialPrepareName03},
+            #{aiCargoOutData.specialPrepareName04},
+            #{aiCargoOutData.specialPrepareName05},
+            #{aiCargoOutData.specialPrepareName06},
+            #{aiCargoOutData.specialPrepareName07},
+            #{aiCargoOutData.specialPrepareName08},
+            #{aiCargoOutData.specialPrepareName09},
+            #{aiCargoOutData.specialPrepareName10},
+            '0',
+            #{aiCargoOutData.userCd},
+            #{aiCargoOutData.updateDate},
+            #{aiCargoOutData.userCd},
+            #{aiCargoOutData.updateDate}
+        )
+        </foreach>
+    </insert>
+    <!-- 1.6 登録した輸入搬出データ件数を取得する。 -->
+    <select id="selectAiCargoOutDataCnt1"  parameterType="com.kse.wmsv2.oa_iw_002.dao.OAIW002SelectAiCargoOutDataCnt1Dao"
+                                           resultType="com.kse.wmsv2.oa_iw_002.dto.OAIW002SelectAiCargoOutDataCnt1Dto">
+        SELECT
+            COUNT(*) AS cwbCnt,
+            SUM(IFNULL(DATAPICEC,0)) AS dataPiece,
+            SUM(IFNULL(DATAWEIGHT,0)) AS dataWeight
+        FROM
+            AI_CARGO_OUT_DATA
+        WHERE 1 = 1
+          <if test="bondedWarehouseCd != null and bondedWarehouseCd != ''">
+            AND BONDEDWAREHOUSECD = #{bondedWarehouseCd} -- 蔵置場所
+          </if>
+          <if test="arrFtl1 != null and arrFtl1 != ''">
+            AND FLT1 = #{arrFtl1} -- 便名
+          </if>
+          <if test="arrFtl2 != null and arrFtl2 != ''">
+            AND FLT2 = #{arrFtl2} -- 便・日付(出発日)
+          </if>
+          <if test="awbNo != null and awbNo != ''">
+            AND AWBNo = #{awbNo} -- 航空運送状番号
+          </if>
+          <if test="cargoOutDate != null and cargoOutDate != ''">
+            AND CARGOOUTDATE = #{cargoOutDate}
+          </if>
+        GROUP BY BONDEDWAREHOUSECD, FLT1, FLT2, AWBNO
+    </select>
+
+    <!-- 1.7 登録した輸入搬出データ件数が1件以上の場合、輸入搬出データヘッダ(I_CARGO_OUT_HEAD	)を更新する。 -->
+    <update id="updateAiCargoOutHead1" parameterType="com.kse.wmsv2.oa_iw_002.dao.OAIW002UpdateAiCargoOutHead1Dao">
+        UPDATE AI_CARGO_OUT_HEAD SET
+            CWBCOUNT= #{cwbCnt},
+            DATAPICEC = #{dataPiece},
+            UPDATEUSERCD = #{userCd},
+            UPDATEDATE = #{updateDate}
+        WHERE
+            BONDEDWAREHOUSECD = #{bondedWarehouseCd} -- 蔵置場所
+            AND FLT1 = #{arrFtl1} -- 便名
+            AND FLT2 = #{arrFtl2} -- 便・日付(出発日)
+            AND AWBNO = #{awbNo} -- 航空運送状番号
+            AND CARGOOUTDATE = #{cargoOutDate}
+    </update>
+
+    <!-- 1.8 更新パラメータ１(輸入通関データ更新)から輸入通関データ(AI_DATA)を更新する。 -->
+    <update id="updateAiData1" parameterType="com.kse.wmsv2.oa_iw_002.dao.OAIW002UpdateAiData1Dao">
+        UPDATE AI_DATA SET
+            CURRENTCARGOSTATUSCD = #{currentCargoStatusCd},
+            UPDATEUSERCD = #{userCd},
+            UPDATEDATE = #{updateDate}
+        WHERE
+            AWBNO = #{awbNo}
+            AND CWBNO = #{cwbNo}
+            AND CWBNODeptCD = #{cwbNoDeptCd}
+    </update>
+
+    <!-- 1.9 搬出用一時データを輸入申告状況履歴(HISTORY)に登録する。 -->
+    <insert id="insertAiStatusHistory1" parameterType="java.util.List">
+        INSERT INTO AI_STATUS_HISTORY
+        (
+            BUSINESSCLASS,
+            AWBNO,
+            BWBNO,
+            CWBNO,
+            CWBNODEPTCD,
+            STATUSCD,
+            PERMITFLG,
+            REGUSERCD,
+            REGDATE,
+            UPDATEUSERCD,
+            UPDATEDATE
+        )
+        VALUES
+        <foreach collection="insertAiStatusHistory1DaoList" item="aiStatusHistory" separator=",">
+        (
+            '02',
+            #{aiStatusHistory.awbNo},
+            #{aiStatusHistory.bwbNo},
+            #{aiStatusHistory.cwbNo},
+            #{aiStatusHistory.cwbNoDeptCd},
+            'IB00710',
+            '0',
+            #{aiStatusHistory.userCd},
+            #{aiStatusHistory.updateDate},
+            #{aiStatusHistory.userCd},
+            #{aiStatusHistory.updateDate}
+        )
+        </foreach>
+    </insert>
+
+<!-- ■E006 搬出中 -->
+    <!-- 1.2.1 搬出対象データ1を取得 -->
+    <select id="selectAiCargoOutData1" parameterType="com.kse.wmsv2.oa_iw_002.dao.OAIW002SelectAiCargoOutData1Dao"
+                                           resultType="com.kse.wmsv2.oa_iw_002.dto.OAIW002SelectAiCargoOutData1Dto">
+        SELECT
+          T11.AWBNO AS awbNo,
+          T11.CWBNO AS cwbNo,
+          T11.CWBNODEPTCD AS cwbNoDeptCd,
+          T11.CARGOOUTDATE AS cargoOutDate,
+          T12.INCLASSIFYCLASSNAME AS inClassifyClassName
+        FROM
+          (SELECT
+             AWBNO,
+             CWBNO,
+             CWBNODEPTCD,
+             CARGOOUTDATE
+           FROM
+             AI_CARGO_OUT_DATA
+           WHERE 1 = 1
+               <if test="bondedWarehouseCd != null and bondedWarehouseCd != ''">
+                 AND BONDEDWAREHOUSECD = #{bondedWarehouseCd} -- 蔵置場所
+               </if>
+               <if test="arrFtl1 != null and arrFtl1 != ''">
+                 AND FLT1 = #{arrFtl1} -- 便名
+               </if>
+               <if test="arrFtl2 != null and arrFtl2 != ''">
+                 AND FLT2 = #{arrFtl2} -- 便・日付(出発日)
+               </if>
+               <if test="awbNo != null and awbNo != ''">
+                 AND AWBNO = #{awbNo} -- 航空運送状番号
+               </if>
+               AND OVERFLG = "0"
+           ) T11
+           INNER JOIN
+           (SELECT
+             AWBNO,
+             CWBNO,
+             CWBNODEPTCD,
+             INCLASSIFYCLASSNAME
+           FROM
+             AI_DATA
+           WHERE 1 = 1
+            <choose>
+              <when test='"緊急".equals(inClassifyClassName)'>
+                AND INCLASSIFYCLASSNAME IN ('緊急','Ｓ仕分緊急','許可緊急') -- INCLASSIFYCLASSNAME(搬入仕分区分)
+              </when>
+              <when test='"請求".equals(inClassifyClassName)'>
+                AND INCLASSIFYCLASSNAME IN ('請求','Ｓ仕分請求','検査','許可請求','S/U検査') -- INCLASSIFYCLASSNAME(搬入仕分区分)
+              </when>
+              <when test='"無税".equals(inClassifyClassName)'>
+                AND INCLASSIFYCLASSNAME IN ('無税','Ｓ無税','許可無税') -- INCLASSIFYCLASSNAME(搬入仕分区分)
+              </when>
+              <when test='"マニ".equals(inClassifyClassName)'>
+                AND INCLASSIFYCLASSNAME IN ('マニ申告','Ｓマニ申告') -- INCLASSIFYCLASSNAME(搬入仕分区分)
+              </when>
+              <otherwise />
+            </choose>
+               AND WAREHOUSECLASSCD = '1' AND REMODELINGFLG <![CDATA[<>]]> '1'
+                <if test="carryOutDate != null and carryOutDate != ''">
+                 AND (CARRYOUTDATE = #{carryOutDate} OR CARRYOUTDATE IS NULL) -- 搬出年月日
+               </if>
+               <if test="unMatchHawbCntFlg == true or unMatchPieceFlg == true or matchFlg == true">
+                 AND (1 = 0
+                      <if test="unMatchHawbCntFlg == true">
+                        -- アンマッチ・HAWB件数
+                        OR (CONCAT(AWBNO, CURRENTARRFLT_1, CURRENTARRFLT_2) IN(SELECT CONCAT(AWBNO, CURRENTARRFLT_1, CURRENTARRFLT_2) FROM AI_DATA WHERE CARRYOUTDATE IS NULL))
+                      </if>
+                      <if test="unMatchPieceFlg == true">
+                        -- アンマッチ・個数
+                        OR (CONCAT(AWBNO, CURRENTARRFLT_1, CURRENTARRFLT_2) IN(SELECT CONCAT(AWBNO, CURRENTARRFLT_1, CURRENTARRFLT_2) FROM AI_DATA WHERE CARGOOUTPIECE <![CDATA[<>]]> CARGOPIECE))
+                      </if>
+                      <if test="matchFlg == true">
+                        -- アンマッチ・マッチ
+                        OR (CONCAT(AWBNO, CURRENTARRFLT_1, CURRENTARRFLT_2) IN(CONCAT(SELECT AWBNO, CURRENTARRFLT_1, CURRENTARRFLT_2) FROM AI_DATA WHERE CARRYOUTDATE IS NOT NULL AND CARGOOUTPIECE = CARGOPIECE))
+                      </if>
+                 )
+               </if>
+               AND DELETEDATE IS NULL
+               AND SPSDOCCLASSCD IN ('0','2')
+           ) T12  ON T11.AWBNO = T12.AWBNO  AND T11.CWBNO = T12.CWBNO  AND T11.CWBNODEPTCD = T12.CWBNODEPTCD
+    </select>
+
+    <!-- 1.3.2 輸入申告状況履歴（HISTORY）を削除する。 -->
+    <delete id="deleteAiStatusHistory1" parameterType="com.kse.wmsv2.oa_iw_002.dao.OAIW002DeleteAiStatusHistory1Dao">
+        DELETE
+          H1
+        FROM AI_STATUS_HISTORY H1
+             INNER JOIN (SELECT
+                AWBNO,
+                CWBNO,
+                CWBNODEPTCD
+              FROM  AI_CARGO_OUT_DATA
+              WHERE 1 = 1
+                 <if test="bondedWarehouseCd != null and bondedWarehouseCd != ''">
+                   AND BONDEDWAREHOUSECD = #{bondedWarehouseCd} -- 蔵置場所
+                 </if>
+                 <if test="arrFtl1 != null and arrFtl1 != ''">
+                   AND FLT1 = #{arrFtl1} -- 便名
+                 </if>
+                 <if test="arrFtl2 != null and arrFtl2 != ''">
+                   AND FLT2 = #{arrFtl2} -- 便・日付(出発日)
+                 </if>
+                 <if test="awbNo != null and awbNo != ''">
+                   AND AWBNO = #{awbNo} -- 航空運送状番号
+                 </if>
+                 AND OVERFLG = "0"
+             ) T1 ON T1.AWBNO = H1.AWBNO AND T1.CWBNO = H1.CWBNO AND T1.CWBNODEPTCD = H1.CWBNODEPTCD
+             INNER JOIN
+             (SELECT
+                AWBNO,
+                CWBNO,
+                CWBNODEPTCD
+              FROM
+                AI_DATA
+              WHERE 1 = 1
+                <choose>
+                  <when test='"緊急".equals(inClassifyClassName)'>
+                    AND INCLASSIFYCLASSNAME IN ('緊急','Ｓ仕分緊急','許可緊急') -- INCLASSIFYCLASSNAME(搬入仕分区分)
+                  </when>
+                  <when test='"請求".equals(inClassifyClassName)'>
+                    AND INCLASSIFYCLASSNAME IN ('請求','Ｓ仕分請求','検査','許可請求','S/U検査') -- INCLASSIFYCLASSNAME(搬入仕分区分)
+                  </when>
+                  <when test='"無税".equals(inClassifyClassName)'>
+                    AND INCLASSIFYCLASSNAME IN ('無税','Ｓ無税','許可無税') -- INCLASSIFYCLASSNAME(搬入仕分区分)
+                  </when>
+                  <when test='"マニ".equals(inClassifyClassName)'>
+                    AND INCLASSIFYCLASSNAME IN ('マニ申告','Ｓマニ申告') -- INCLASSIFYCLASSNAME(搬入仕分区分)
+                  </when>
+                  <otherwise />
+                </choose>
+                AND WAREHOUSECLASSCD = '1'
+                AND REMODELINGFLG <![CDATA[<>]]> '1'
+                <if test="carryOutDate != null and carryOutDate != ''">
+                  AND (CARRYOUTDATE = #{carryOutDate} OR CARRYOUTDATE IS NULL) -- 搬出年月日
+                </if>
+                <if test="unMatchHawbCntFlg == true or unMatchPieceFlg == true or matchFlg == true">
+                 AND (
+                    1 = 0
+                    <if test="unMatchHawbCntFlg == true">
+                      -- アンマッチ・HAWB件数
+                      OR ( CONCAT(AWBNO, CURRENTARRFLT_1, CURRENTARRFLT_2) IN (SELECT CONCAT(AWBNO, CURRENTARRFLT_1, CURRENTARRFLT_2) FROM AI_DATA WHERE CARRYOUTDATE IS NULL) )
+                    </if>
+                    <if test="unMatchPieceFlg == true">
+                      -- アンマッチ・個数
+                      OR ( CONCAT(AWBNO, CURRENTARRFLT_1, CURRENTARRFLT_2) IN (SELECT CONCAT(AWBNO, CURRENTARRFLT_1, CURRENTARRFLT_2) FROM AI_DATA WHERE CARGOOUTPIECE <![CDATA[<>]]> CARGOPIECE) )
+                    </if>
+                    <if test="matchFlg == true">
+                      -- アンマッチ・マッチ
+                      OR ( CONCAT(AWBNO, CURRENTARRFLT_1, CURRENTARRFLT_2) IN (SELECT CONCAT(AWBNO, CURRENTARRFLT_1, CURRENTARRFLT_2) FROM AI_DATA WHERE CARRYOUTDATE IS NOT NULL AND CARGOOUTPIECE = CARGOPIECE) )
+                    </if>
+                   )
+                </if>
+             ) T2 ON T1.AWBNO = T2.AWBNO AND T1.CWBNO = T2.CWBNO AND T1.CWBNODEPTCD = T2.CWBNODEPTCD
+        WHERE
+          H1.CWBNO = T1.CWBNO
+          AND H1.CWBNODEPTCD = T1.CWBNODEPTCD
+          AND H1.BUSINESSCLASS = '02'
+          AND H1.STATUSCD = 'IB00710'
+    </delete>
+
+    <!-- 1.3.2 輸入申告状況履歴（HISTORY）を削除する。 -->
+    <delete id="deleteAiCargoOutData1" parameterType="com.kse.wmsv2.oa_iw_002.dao.OAIW002DeleteAiCargoOutData1Dao">
+        DELETE
+            O1
+        FROM
+            AI_CARGO_OUT_DATA O1
+        	INNER JOIN
+            AI_DATA T1
+            ON O1.AWBNO = T1.AWBNO AND O1.CWBNO = T1.CWBNO
+        WHERE O1.AWBNO = T1.AWBNO
+            AND O1.CWBNO = T1.CWBNO
+                <choose>
+                  <when test='"緊急".equals(inClassifyClassName)'>
+                    AND T1.INCLASSIFYCLASSNAME IN ('緊急','Ｓ仕分緊急','許可緊急') -- INCLASSIFYCLASSNAME(搬入仕分区分)
+                  </when>
+                  <when test='"請求".equals(inClassifyClassName)'>
+                    AND T1.INCLASSIFYCLASSNAME IN ('請求','Ｓ仕分請求','検査','許可請求','S/U検査') -- INCLASSIFYCLASSNAME(搬入仕分区分)
+                  </when>
+                  <when test='"無税".equals(inClassifyClassName)'>
+                    AND T1.INCLASSIFYCLASSNAME IN ('無税','Ｓ無税','許可無税') -- INCLASSIFYCLASSNAME(搬入仕分区分)
+                  </when>
+                  <when test='"マニ".equals(inClassifyClassName)'>
+                    AND T1.INCLASSIFYCLASSNAME IN ('マニ申告','Ｓマニ申告') -- INCLASSIFYCLASSNAME(搬入仕分区分)
+                  </when>
+                  <otherwise />
+                </choose>
+            <if test="bondedWarehouseCd != null and bondedWarehouseCd != ''">
+              AND O1.BONDEDWAREHOUSECD = #{bondedWarehouseCd} -- 蔵置場所
+            </if>
+            <if test="arrFtl1 != null and arrFtl1 != ''">
+              AND O1.FLT1 = #{arrFtl1} -- 便名
+            </if>
+            <if test="arrFtl2 != null and arrFtl2 != ''">
+              AND O1.FLT2 = #{arrFtl2} -- 便・日付(出発日)
+            </if>
+            <if test="awbNo != null and awbNo != ''">
+              AND O1.AWBNO = #{awbNo} -- 航空運送状番号
+            </if>
+            AND T1.WAREHOUSECLASSCD = '1'  AND T1.REMODELINGFLG <![CDATA[<>]]> '1'
+            <if test="carryOutDate != null and carryOutDate != ''">
+              AND (T1.CARRYOUTDATE = #{carryOutDate} OR T1.CARRYOUTDATE IS NULL) -- 搬出年月日
+            </if>
+            <if test="unMatchHawbCntFlg == true or unMatchPieceFlg == true or matchFlg == true">
+             AND (
+                1 = 0
+                <if test="unMatchHawbCntFlg == true">
+                  -- アンマッチ・HAWB件数
+                  OR ( CONCAT(T1.AWBNO, T1.CURRENTARRFLT_1, T1.CURRENTARRFLT_2) IN (SELECT CONCAT(AWBNO, CURRENTARRFLT_1, CURRENTARRFLT_2) FROM AI_DATA WHERE CARRYOUTDATE IS NULL) )
+                </if>
+                <if test="unMatchPieceFlg == true">
+                  -- アンマッチ・個数
+                  OR ( CONCAT(T1.AWBNO, T1.CURRENTARRFLT_1, T1.CURRENTARRFLT_2) IN (SELECT CONCAT(AWBNO, CURRENTARRFLT_1, CURRENTARRFLT_2) FROM AI_DATA WHERE CARGOOUTPIECE <![CDATA[<>]]> CARGOPIECE) )
+                </if>
+                <if test="matchFlg == true">
+                  -- アンマッチ・マッチ
+                  OR ( CONCAT(T1.AWBNO, T1.CURRENTARRFLT_1, T1.CURRENTARRFLT_2) IN (SELECT CONCAT(AWBNO, CURRENTARRFLT_1, CURRENTARRFLT_2) FROM AI_DATA WHERE CARRYOUTDATE IS NOT NULL AND T1.CARGOOUTPIECE = CARGOPIECE) )
+                </if>
+               )
+            </if>
+           AND OVERFLG = "0"
+    </delete>
+
+    <!-- 1.5 搬出対象データ2を取得する。 -->
+    <!-- selectAiCargoOutDataCnt1を利用する -->
+
+    <!-- 1.6 搬出対象データ2の件数が1以上の場合、輸入搬出データヘッダ(AI_CARGO_OUT_HEAD)を更新する。 -->
+    <update id="updateAiCargoOutHead2" parameterType="com.kse.wmsv2.oa_iw_002.dao.OAIW002UpdateAiCargoOutHead2Dao">
+        UPDATE AI_CARGO_OUT_HEAD SET
+            CARGOOUTDATE = #{cargoOutDate}
+            ,CWBCOUNT= #{cwbCnt}
+            ,DATAPICEC = #{dataPiece}
+            ,UPDATEUSERCD = #{userCd}
+            ,UPDATEDATE = #{updateDate}
+        WHERE
+            BONDEDWAREHOUSECD = #{bondedWarehouseCd} -- 蔵置場所
+            AND FLT1 = #{arrFtl1} -- 便名
+            AND FLT2 = #{arrFtl2} -- 便・日付(出発日)
+            AND AWBNO = #{awbNo} -- 航空運送状番号
+    </update>
+
+    <!-- 1.7.1 輸入搬出データヘッダ(AI_CARGO_OUT_HEAD)データを取得する。 -->
+    <select id="selectAiCargoOutHead2"  parameterType="com.kse.wmsv2.oa_iw_002.dao.OAIW002SelectAiCargoOutHead2Dao"
+                                           resultType="com.kse.wmsv2.oa_iw_002.dto.OAIW002SelectAiCargoOutHead2Dto">
+        SELECT
+          BONDEDWAREHOUSECD,
+          FLT1,
+          FLT2,
+          AWBNO,
+          CARGOOUTDATE,
+          CWBCOUNT,
+          SCANCWBCOUNT,
+          OVERCWBCOUNT,
+          SCANPICEC,
+          DATAPICEC,
+          DATAWEIGHT,
+          REGUSERCD,
+          REGDATE,
+          UPDATEUSERCD,
+          UPDATEDATE
+        FROM
+          AI_CARGO_OUT_HEAD
+        WHERE 1 = 1
+           AND BONDEDWAREHOUSECD = #{bondedWarehouseCd} -- 蔵置場所
+           AND FLT1 = #{arrFtl1} -- 便名
+           AND FLT2 = #{arrFtl2} -- 便・日付(出発日)
+           AND AWBNO = #{awbNo} -- 航空運送状番号
+           -- AND OVERFLG = "0"
+           AND CARGOOUTDATE = #{cargoOutDate}
+    </select>
+
+   <!-- 1.7.2 「1.7.1」で取得したデータ件数が1以上の場合、輸入搬出データヘッダ(AI_CARGO_OUT_HEAD)を削除する。 -->
+    <delete id="deleteAiCargoOutHead1" parameterType="com.kse.wmsv2.oa_iw_002.dao.OAIW002DeleteAiCargoOutHead1Dao">
+        DELETE FROM AI_CARGO_OUT_HEAD
+        WHERE
+            BONDEDWAREHOUSECD = #{bondedWarehouseCd} -- 蔵置場所
+        AND FLT1 = #{arrFtl1} -- 便名
+        AND FLT2 = #{arrFtl2} -- 便・日付(出発日)
+        AND AWBNO = #{awbNo} -- 航空運送状番号
+        AND CARGOOUTDATE = #{cargoOutDate}
+    </delete>
+
+    <!-- 1.8 搬出対象データ1から輸入通関データ(AI_DATA)を更新する。 -->
+    <update id="updateAiData2" parameterType="com.kse.wmsv2.oa_iw_002.dao.OAIW002UpdateAiData2Dao">
+        UPDATE AI_DATA
+        SET
+            CURRENTCARGOSTATUSCD = #{currentCargoStatusCd}, -- 搬出対象データ1.CURRENTCARGOSTATUSCD
+            UPDATEUSERCD = #{userCd},
+            UPDATEDATE = #{updateDate}
+        WHERE
+                AWBNO = #{awbNo} -- 搬出対象データ1.AWBNO
+            AND CWBNO = #{cwbNo} -- 搬出対象データ1.CWBNO
+            AND CWBNODEPTCD = #{cwbNoDeptCd} -- 搬出対象データ1.CWBNODEPTCD
+    </update>
+
+<!-- ■E008 OUT -->
+
+    <!-- 2.1.2 OUT作成対象データを取得する。 -->
+    <select id="selectAiCargoOutData2"  parameterType="com.kse.wmsv2.oa_iw_002.dao.OAIW002SelectAiCargoOutData2Dao"
+                                           resultType="com.kse.wmsv2.oa_iw_002.dto.OAIW002SelectAiCargoOutData2Dto">
+        SELECT
+          BONDEDWAREHOUSECD AS bondedWarehouseCd,
+          FLT1 AS ftl1,
+          FLT2 AS ftl2,
+          AWBNO AS awbNo,
+          CARGOOUTDATE AS cargoOutDate,
+          CWBNO AS cwbNo,
+          CWBNODEPTCD AS cwbNoDeptCd,
+          REMODELINGFLG AS remodelingFlg,
+          BWBNO AS bwbNo,
+          SCANPICEC AS scanPiece,
+          DATAPICEC AS dataPiece,
+          DATAWEIGHT AS dataWeight,
+          CLASSIFYCLASSNAME AS classifyClassName,
+          SPECIALPREPARENAME01 AS specialPrepareName01,
+          SPECIALPREPARENAME02 AS specialPrepareName02,
+          SPECIALPREPARENAME03 AS specialPrepareName03,
+          SPECIALPREPARENAME04 AS specialPrepareName04,
+          SPECIALPREPARENAME05 AS specialPrepareName05,
+          SPECIALPREPARENAME06 AS specialPrepareName06,
+          SPECIALPREPARENAME07 AS specialPrepareName07,
+          SPECIALPREPARENAME08 AS specialPrepareName08,
+          SPECIALPREPARENAME09 AS specialPrepareName09,
+          SPECIALPREPARENAME10 AS specialPrepareName10,
+          OVERFLG AS overFlg,
+          REGUSERCD AS regUserCd,
+          REGDATE AS RegDate,
+          UPDATEUSERCD AS updateUserCd,
+          UPDATEDATE AS updateDate
+        FROM
+          AI_CARGO_OUT_DATA
+        WHERE 1 = 1
+        <if test="bondedWarehouseCd != null and bondedWarehouseCd != ''">
+          AND BONDEDWAREHOUSECD = #{bondedWarehouseCd} -- 蔵置場所
+        </if>
+          AND FLT1 <![CDATA[<>]]> '000000'
+          AND FLT2 <![CDATA[<>]]> '00000'
+        <if test="awbNo != null and awbNo != ''">
+          AND AWBNO = #{awbNo} -- 航空運送状番号
+        </if>
+          AND OVERFLG <![CDATA[<>]]> '0'   -- オーバ区分:0以外が対象
+        ORDER BY
+          AWBNO, CWBNO, CWBNODEPTCD
+    </select>
+
+    <!-- 2.1.3 OUT作成対象搬出チェックデータを削除する。 -->
+    <delete id="deleteAiCargoOutData2" parameterType="com.kse.wmsv2.oa_iw_002.dao.OAIW002DeleteAiCargoOutData2Dao">
+        DELETE FROM
+          AI_CARGO_OUT_DATA
+        WHERE
+                BONDEDWAREHOUSECD = #{bondedWarehouseCd} -- 蔵置場所
+            AND FLT1 <![CDATA[<>]]> '000000'
+            AND FLT2 <![CDATA[<>]]> '00000'
+            AND AWBNO = #{awbNo} -- 航空運送状番号
+            AND OVERFLG <![CDATA[<>]]> '0'
+    </delete>
+
+    <!-- 2.1.5 パラメータ2(輸入データSELECT条件)に対して輸入搬出データを取得(AI_CARGO_OUT_DATA)する。 -->
+    <select id="selectAiData3"  parameterType="com.kse.wmsv2.oa_iw_002.dao.OAIW002SelectAiData3Dao"
+                                resultType="com.kse.wmsv2.oa_iw_002.dto.OAIW002SelectAiData3Dto">
+        SELECT
+          AWBNO,
+          CWBNO,
+          CWBNODEPTCD,
+          BWBNO,
+          CUSTOMSPLACECD,
+          INCLASSIFYCLASSNAME,
+          CARRYOUTDATE,
+          COLLECTTRADER,
+          OTHERWAREHOUSE,
+          CARGOOUTPIECE,
+          BONDEDWAREHOUSECD,
+          CURRENTCARGOSTATUSCD
+        FROM
+          AI_DATA
+        WHERE
+                AWBNO = #{awbNo} -- パラメータ2.AWBNo
+            AND CWBNO = #{cwbNo} -- パラメータ2.CWBNo
+            AND CWBNODEPTCD = #{cwbNoDeptCd} -- パラメータ2.CWBNoDeptCD
+            AND DELETEDATE IS NULL
+            AND SPSDOCCLASSCD IN ('0','2')
+        ORDER BY
+          CARRYOUTDATE, COLLECTTRADER, BONDEDWAREHOUSECD
+    </select>
+
+    <!-- 2.1.8.1 検索パラメータ１(輸入搬出データヘッダ検索・更新時に使用)に対して削除する輸入搬出データのキーで搬出ヘッダを読み，再計算対象のヘッダを取得する。 -->
+    <!--① 輸入搬出ヘデータッダ情報取得 -->
+    <select id="selectAiCargoOutHead3"  parameterType="com.kse.wmsv2.oa_iw_002.dao.OAIW002SelectAiCargoOutHead3Dao"
+                                resultType="com.kse.wmsv2.oa_iw_002.dto.OAIW002SelectAiCargoOutHead3Dto">
+        SELECT
+          BONDEDWAREHOUSECD AS bondedWarehouseCd,
+          FLT1 AS ftl1,
+          FLT2 AS ftl2,
+          AWBNO AS awbNo,
+          CARGOOUTDATE AS cargoOutDate,
+          CWBCOUNT AS cwbCount,
+          SCANCWBCOUNT AS scanCwbCount,
+          OVERCWBCOUNT AS overCwbCount,
+          SCANPICEC AS scanPiece,
+          DATAPICEC AS dataPiece,
+          DATAWEIGHT AS dataWeight,
+          REGUSERCD AS regUserCd,
+          REGDATE AS regDate,
+          UPDATEUSERCD AS updateUserCd,
+          UPDATEDATE AS updateDate
+        FROM
+          AI_CARGO_OUT_HEAD
+        WHERE
+            BONDEDWAREHOUSECD = #{bondedWarehouseCd} -- 検索パラメータ１.BONDEDWAREHOUSECD
+        AND FLT1 = #{arrFtl1} -- 検索パラメータ１.FLT1
+        AND FLT2 = #{arrFtl2} -- 検索パラメータ１.FLT2
+        AND AWBNO = #{awbNo} -- 検索パラメータ１.AWBNO
+        AND CARGOOUTDATE = #{cargoOutDate} -- 検索パラメータ１.CARGOOUTDATE
+    </select>
+
+    <!-- 2.1.8.2」の輸入搬出ヘデータッダ情報取得から輸入搬出データヘッダの再計算を行う。 -->
+    <!--① 搬出チェックデータの件数合計を取得する。 -->
+    <!-- selectAiCargoOutDataCnt1を利用する -->
+
+    <!-- 2.1.8.3 更新パラメータ2(輸入搬出データヘッダ更新)に対して輸入搬出データヘッダ(AI_CARGO_OUT_HEAD)を更新する。 -->
+    <update id="updateAiCargoOutHead4" parameterType="com.kse.wmsv2.oa_iw_002.dao.OAIW002UpdateAiCargoOutHead4Dao">
+        UPDATE AI_CARGO_OUT_HEAD SET
+            CWBCOUNT = #{cwbCount}, -- 更新パラメータ2.CWBCOUNT
+            SCANCWBCOUNT = 0,
+            OVERCWBCOUNT = 0,
+            SCANPICEC = 0,
+            DATAPICEC = #{dataPiece}, -- 更新パラメータ2.DATAPICEC
+            UPDATEUSERCD = #{userCd},
+            UPDATEDATE = #{updateDate}
+        WHERE
+                BONDEDWAREHOUSECD = #{bondedWarehouseCd} -- 更新パラメータ2.BONDEDWAREHOUSECD
+            AND FLT1 = #{arrFtl1} -- 更新パラメータ2.FLT1
+            AND FLT2 = #{arrFtl2} -- 更新パラメータ2.FLT2
+            AND AWBNO = #{awbNo} -- 更新パラメータ2.AWBNO
+            AND CARGOOUTDATE = #{cargoOutDate} -- 更新パラメータ2.CARGOOUTDATE
+    </update>
+
+    <!-- 2.1.8.4 削除パラメータ１(輸入搬出データヘッダ削除)に対して輸入搬出データヘッダ(AI_CARGO_OUT_HEAD)データを削除す -->
+    <delete id="deleteAiCargoOutHead2" parameterType="com.kse.wmsv2.oa_iw_002.dao.OAIW002DeleteAiCargoOutHead2Dao">
+        DELETE FROM
+          AI_CARGO_OUT_HEAD
+        WHERE
+              BONDEDWAREHOUSECD = #{bondedWarehouseCd} -- 削除パラメータ１.BONDEDWAREHOUSECD
+          AND FLT1 = #{arrFtl1} -- 削除パラメータ１.FLT1
+          AND FLT2 = #{arrFtl2} -- 削除パラメータ１.FLT2
+          AND AWBNO = #{awbNo} -- 削除パラメータ１.AWBNO
+          AND CARGOOUTDATE = #{cargoOutDate} -- 削除パラメータ１.CARGOOUTDATE
+    </delete>
+
+    <!-- 2.1.8.5 更新パラメータ１(輸入データカレント貨物ステータス)に対して輸入通関データ(AI_DATA)を更新する。 -->
+    <update id="updateAiData3" parameterType="com.kse.wmsv2.oa_iw_002.dao.OAIW002UpdateAiData3Dao">
+        UPDATE AI_DATA SET
+           CURRENTCARGOSTATUSCD = #{currentCargoStatusCd}, -- 更新パラメータ１.CURRENTCARGOSTATUSCD,
+           CARGOOUTPIECE = #{cargoOutPiece}, -- 更新パラメータ１.CARGOOUTPIECE
+           CARRYOUTDATE = #{carryOutDate}, -- 更新パラメータ１.CARRYOUTDATE
+           UPDATEUSERCD = #{userCd},
+           UPDATEDATE = #{updateDate}
+        WHERE
+               AWBNO = #{awbNo} -- 更新パラメータ１.AWBNO
+           AND CWBNO = #{cwbNo} -- 更新パラメータ１.CWBNO
+           AND CWBNODEPTCD = #{cwbNoDeptCd} -- 更新パラメータ１.CWBNODEPTCD
+    </update>
+
+    <!-- 2.1.8.6 OUT電文作成パラメータに対して輸入申告状況履歴(HISTORY)を登録する。-->
+    <!-- 1.10 輸入申告状況履歴（HISTORY）に履歴情報を登録する。-->
+    <!-- ① IB00730(搬出終了) -->
+    <!-- ➁ IB00800(OUT送信) -->
+    <insert id="insertAiStatusHistory3" parameterType="java.util.List">
+        INSERT INTO AI_STATUS_HISTORY
+        (
+          BUSINESSCLASS,
+          IMPORTEXPORTCLASS,
+          AWBNO,
+          BWBNO,
+          CWBNO,
+          CWBNODEPTCD,
+          STATUSCD,
+          PERMITFLG,
+          REGUSERCD,
+          REGDATE,
+          UPDATEUSERCD,
+          UPDATEDATE
+        )
+        VALUES
+        <foreach collection="insertAiStatusHistory3DaoList" item="aiStatusHistory" separator=",">
+        (
+          '02',
+          '1',
+          #{aiStatusHistory.awbNo},
+          #{aiStatusHistory.bwbNo},
+          #{aiStatusHistory.cwbNo},
+          #{aiStatusHistory.cwbNoDeptCd},
+          'IB00730',
+          '0',
+          #{aiStatusHistory.userCd},
+          #{aiStatusHistory.updateDate},
+          #{aiStatusHistory.userCd},
+          #{aiStatusHistory.updateDate}
+        ),
+        (
+          '02',
+          '1',
+          #{aiStatusHistory.awbNo},
+          #{aiStatusHistory.bwbNo},
+          #{aiStatusHistory.cwbNo},
+          #{aiStatusHistory.cwbNoDeptCd},
+          'IB00800',
+          '0',
+          #{aiStatusHistory.userCd},
+          #{aiStatusHistory.updateDate},
+          #{aiStatusHistory.userCd},
+          #{aiStatusHistory.updateDate}
+        )
+        </foreach>
+    </insert>
+
+    <!-- 2.1.8.7 OUT電文作成パラメータに対してOUT電文ファイルを作成する。-->
+    <!-- ➆	送信電文管理(CS_SEND_MESSAGE)登録用データを登録する。-->
+    <insert id="insertCsSendMessage" parameterType="com.kse.wmsv2.oa_iw_002.dao.OAIW002InsertCsSendMessageDao">
+        INSERT INTO CS_SEND_MESSAGE
+        (
+          MESSAGEFILENAME
+         ,IMPORTEXPORTCLASS
+         ,MESSAGETYPE
+         ,MESSAGECREATEDATE
+         ,CUSTOMSPLACECD
+         ,BONDEDWAREHOUSECD
+         ,FILEPATH
+         ,REGUSERCD
+         ,REGDATE
+         ,UPDATEUSERCD
+         ,UPDATEDATE
+        )
+        VALUES
+        (
+            #{MessageFileName}, -- 送信電文管理(CS_SEND_MESSAGE)登録用データ.MessageFileName
+            '1',
+            #{MessageType}, -- 送信電文管理(CS_SEND_MESSAGE)登録用データ.MessageType
+            #{MessageCreateDATE}, -- 送信電文管理(CS_SEND_MESSAGE)登録用データ.MessageCreateDATE
+            #{CustomsPlaceCD}, -- 送信電文管理(CS_SEND_MESSAGE)登録用データ.CustomsPlaceCD
+            #{BondedWarehouseCD}, -- 送信電文管理(CS_SEND_MESSAGE)登録用データ.BondedWarehouseCD
+            #{FilePath}, -- 送信電文管理(CS_SEND_MESSAGE)登録用データ.FilePath
+            #{userCd},
+            #{updateDate},
+            #{userCd},
+            #{updateDate}
+        )
+    </insert>
+</mapper>

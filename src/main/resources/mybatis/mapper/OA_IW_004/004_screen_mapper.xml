@@ -1,0 +1,449 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="com.kse.wmsv2.oa_iw_004.mapper.OAIW004ScreenMapper">
+    <!--蔵置場確認-->
+    <select id="searchWarehouse" resultType="com.kse.wmsv2.oa_iw_004.dao.OAIW004SearchWarehouseDao" parameterType="com.kse.wmsv2.oa_iw_004.dto.OAIW004SearchDto">
+        SELECT
+            CS_TERMINAL_ID.HANDYTERMINALID,
+            AM_NAME.`NAME` as BONDEDWAREHOUSENAME,
+            CS_TERMINAL_ID.BONDEDWAREHOUSECD,
+            CS_TERMINAL_ID.REGUSERCD
+        FROM
+            CS_TERMINAL_ID
+            LEFT JOIN AM_NAME
+                ON CS_TERMINAL_ID.BONDEDWAREHOUSECD = AM_NAME.NAMECD
+        WHERE
+            CS_TERMINAL_ID.HANDYTERMINALID = #{termNo}
+            AND AM_NAME.NAMECLASS = "0029"
+        GROUP BY
+            CS_TERMINAL_ID.HANDYTERMINALID
+    </select>
+
+    <!--搬入チェック-->
+    <select id="inSearchCount" resultType="com.kse.wmsv2.oa_iw_004.dao.OAIW004InCountDao" parameterType="com.kse.wmsv2.oa_iw_004.dto.OAIW004SearchDto">
+        SELECT
+            COUNT(OVERFLG = '1' OR NULL) AS SCANCNT,
+            COUNT(CWBNO) AS TOTALCNT
+        FROM
+            AI_CARGO_IN_DATA
+        WHERE
+            AWBNO = #{mawbNo}
+    </select>
+    <select id="inSearchMawb" resultType="com.kse.wmsv2.oa_iw_004.dao.OAIW004InSearchMawbDao" parameterType="com.kse.wmsv2.oa_iw_004.dto.OAIW004SearchDto">
+        SELECT
+            CONCAT(
+                ARRFLT_1,
+                '/',
+                ARRFLT_2,
+                ' ',
+                AWBNO
+            ) as awbNoDisplay,
+            AWBNO as awbNo
+        FROM
+            AI_HEAD
+        WHERE
+            CARRYINACTIONFLG = "1"
+            AND CLEARPLANPLACECD = (SELECT BONDEDWAREHOUSECD FROM CS_TERMINAL_ID WHERE HANDYTERMINALID = #{termNo})
+    </select>
+    <select id="inSearch" parameterType="com.kse.wmsv2.oa_iw_004.dto.OAIW004SearchDto" resultType="com.kse.wmsv2.oa_iw_004.dao.OAIW004InResultDao">
+        SELECT
+            AI_CARGO_IN_DATA.BONDEDWAREHOUSECD,
+            AI_CARGO_IN_DATA.FLT1 AS FLIGHT1,
+            AI_CARGO_IN_DATA.FLT2 AS FLIGHT2,
+            AI_CARGO_IN_DATA.AWBNO,
+            AI_CARGO_IN_DATA.CWBNO,
+            AI_CARGO_IN_DATA.REGDATE,
+            AI_CARGO_IN_DATA.CWBNODEPTCD,
+            AI_STATUS.BONDEDSTATUSCD,
+            AI_STATUS.UPDATEDATE,
+            AI_CARGO_IN_DATA.OVERFLG,
+            AI_CARGO_IN_DATA.DATAPICEC,
+            AI_CARGO_IN_DATA.SCANPICEC
+        FROM
+            AI_CARGO_IN_DATA
+            LEFT JOIN AI_STATUS
+                ON AI_CARGO_IN_DATA.AWBNO = AI_STATUS.AWBNO
+                AND AI_CARGO_IN_DATA.CWBNO = AI_STATUS.CWBNO
+        <where>
+            1 = 1
+            <if test="mawbNo != ''">
+                AND AI_CARGO_IN_DATA.AWBNO = #{mawbNo}
+                <!--オーバー判定用-->
+            </if>
+            AND AI_CARGO_IN_DATA.CWBNO = #{hawbNo}
+        </where>
+        ORDER BY
+            AI_STATUS.UPDATEDATE,AI_STATUS.BONDEDSTATUSCD DESC
+        LIMIT 1
+    </select>
+    <update id="inUpdateScanpiece" parameterType="com.kse.wmsv2.oa_iw_004.dto.OAIW004SearchDto">
+        UPDATE
+            AI_CARGO_IN_DATA
+        SET
+            SCANPICEC = #{inputScanPicec},
+            OVERFLG = IF(
+                SCANPICEC = DATAPICEC, '1', OVERFLG)
+        WHERE
+            AWBNO = #{mawbNo} -- マスター番号
+            AND CWBNO = #{hawbNo} -- ハウス番号(バーコード)
+    </update>
+    <update id="inUpdateOverFlg" parameterType="com.kse.wmsv2.oa_iw_004.dto.OAIW004SearchDto">
+        UPDATE
+            AI_CARGO_IN_DATA
+        SET
+            OVERFLG = '1'
+        WHERE
+            AWBNO = #{mawbNo} -- マスター番号
+            AND CWBNO = #{hawbNo} -- ハウス番号(バーコード)
+    </update>
+    <update id="inUpdateStatus" parameterType="com.kse.wmsv2.oa_iw_004.dto.OAIW004SearchDto">
+        UPDATE
+            AI_STATUS
+        SET
+            HANDYTERMINALID = #{termNo},
+            BONDEDSTATUSCD = 'IB00120',
+            UPDATEDATE = CURRENT_TIMESTAMP(2),
+            UPDATEUSERCD = IFNULL((SELECT REGUSERCD FROM CS_TERMINAL_ID WHERE HANDYTERMINALID = #{termNo}),"SYSTEM")
+        WHERE
+            AWBNO = #{mawbNo}
+            AND CWBNO = #{hawbNo}
+        ORDER BY
+            BONDEDSTATUSCD DESC
+        LIMIT
+            1
+    </update>
+    <update id="inUpdateAiData" parameterType="com.kse.wmsv2.oa_iw_004.dto.OAIW004SearchDto">
+        UPDATE
+            AI_DATA
+        SET
+            CURRENTCARGOSTATUSCD = 'IB00120'
+        WHERE
+            AWBNO = #{mawbNo}
+            AND CWBNO = #{hawbNo}
+    </update>
+    <insert id="inInsertHistory" parameterType="com.kse.wmsv2.oa_iw_004.dto.OAIW004SearchDto">
+        INSERT INTO AI_STATUS_HISTORY (
+            BUSINESSCLASS, AWBNO, BWBNO, CWBNO, CWBNODEPTCD, STATUSCD, HANDYTERMINALID, REGUSERCD, UPDATEUSERCD, REGDATE, UPDATEDATE
+        )
+        VALUES
+            (
+                "02",
+                #{mawbNo},
+                IFNULL((SELECT BWBNO FROM AI_STATUS WHERE AWBNO = #{mawbNo} AND CWBNO = #{hawbNo}),"00000000000"),
+                #{hawbNo},
+                IFNULL((SELECT CWBNODEPTCD FROM AI_STATUS WHERE AWBNO = #{mawbNo} AND CWBNO = #{hawbNo}),"000"),
+                "IB00120",
+                #{termNo},
+                IFNULL((SELECT REGUSERCD FROM CS_TERMINAL_ID WHERE HANDYTERMINALID = #{termNo}),"SYSTEM"),
+                IFNULL((SELECT REGUSERCD FROM CS_TERMINAL_ID WHERE HANDYTERMINALID = #{termNo}),"SYSTEM"),
+                IFNULL((SELECT UPDATEDATE FROM AI_STATUS WHERE AWBNO = #{mawbNo} AND CWBNO = #{hawbNo}),CURRENT_TIMESTAMP(2)),
+                CURRENT_TIMESTAMP(2)
+            );
+    </insert>
+    <update id="inUpdateHead" parameterType="com.kse.wmsv2.oa_iw_004.dto.OAIW004SearchDto">
+        UPDATE
+            AI_CARGO_IN_HEAD
+        SET
+            SCANCWBCOUNT = (SELECT COUNT(CWBNO) FROM AI_CARGO_IN_DATA WHERE AWBNO = #{mawbNo} AND OVERFLG = "1"),
+            SCANPICEC = (SELECT SUM(SCANPICEC) FROM AI_CARGO_IN_DATA WHERE AWBNO = #{mawbNo})
+        WHERE
+            AWBNO = #{mawbNo}
+    </update>
+    <insert id="inUpdateTemp" parameterType="com.kse.wmsv2.oa_iw_004.dto.OAIW004SearchDto">
+        INSERT INTO
+            AI_CARGO_IN_DATA_TMP
+        SELECT
+            *
+        FROM
+            AI_CARGO_IN_DATA AS dt
+        WHERE
+            dt.AWBNO = #{mawbNo}
+            AND dt.CWBNO = #{hawbNo}
+        ON DUPLICATE KEY UPDATE
+            BONDEDWAREHOUSECD = dt.BONDEDWAREHOUSECD,
+            FLT1 = dt.FLT1,
+            FLT2 = dt.FLT2,
+            AWBNO = dt.AWBNO,
+            CWBNO = dt.CWBNO,
+            CWBNODEPTCD = dt.CWBNODEPTCD,
+            REMODELINGFLG = dt.REMODELINGFLG,
+            BWBNO = dt.BWBNO,
+            SCANPICEC = dt.SCANPICEC,
+            DATAPICEC = dt.DATAPICEC,
+            DATAWEIGHT = dt.DATAWEIGHT,
+            CLASSIFYCLASSNAME = dt.CLASSIFYCLASSNAME,
+            SPECIALPREPARENAME01 = dt.SPECIALPREPARENAME01,
+            SPECIALPREPARENAME02 = dt.SPECIALPREPARENAME02,
+            SPECIALPREPARENAME03 = dt.SPECIALPREPARENAME03,
+            SPECIALPREPARENAME04 = dt.SPECIALPREPARENAME04,
+            SPECIALPREPARENAME05 = dt.SPECIALPREPARENAME05,
+            SPECIALPREPARENAME06 = dt.SPECIALPREPARENAME06,
+            SPECIALPREPARENAME07 = dt.SPECIALPREPARENAME07,
+            SPECIALPREPARENAME08 = dt.SPECIALPREPARENAME08,
+            SPECIALPREPARENAME09 = dt.SPECIALPREPARENAME09,
+            SPECIALPREPARENAME10 = dt.SPECIALPREPARENAME10,
+            OVERFLG = dt.OVERFLG,
+            REGUSERCD = dt.REGUSERCD,
+            REGDATE = dt.REGDATE,
+            UPDATEUSERCD = dt.UPDATEUSERCD,
+            UPDATEDATE = dt.UPDATEDATE,
+            CARGOPIECE = dt.CARGOPIECE
+    </insert>
+
+    <!--搬出チェック-->
+    <select id="outSearchCount" resultType="com.kse.wmsv2.oa_iw_004.dao.OAIW004OutCountDao" parameterType="com.kse.wmsv2.oa_iw_004.dto.OAIW004SearchDto">
+        SELECT
+            COUNT(OVERFLG = '1' OR NULL) AS SCANCNT,
+            COUNT(CWBNO) AS TOTALCNT
+        FROM
+            AI_CARGO_OUT_DATA
+        WHERE
+            AWBNO = #{mawbNo}
+    </select>
+    <select id="outSearchMawb" resultType="com.kse.wmsv2.oa_iw_004.dao.OAIW004OutSearchMawbDao" parameterType="com.kse.wmsv2.oa_iw_004.dto.OAIW004SearchDto">
+        SELECT
+            CONCAT(
+                FLT1,
+                '/',
+                FLT2,
+                ' ',
+                AWBNO
+            ) as awbNoDisplay,
+            AWBNO as awbNo
+        FROM
+            AI_CARGO_OUT_HEAD
+        WHERE
+            BONDEDWAREHOUSECD = (SELECT BONDEDWAREHOUSECD FROM CS_TERMINAL_ID WHERE HANDYTERMINALID = #{termNo})
+        GROUP BY
+            AWBNO
+    </select>
+    <!--
+    <select id="outSearchMawb" resultType="com.kse.wmsv2.oa_iw_004.dao.OAIW004InSearchMawbDao" parameterType="com.kse.wmsv2.oa_iw_004.dto.OAIW004SearchDto">
+        SELECT
+            CONCAT(
+                AI_HEAD.ARRFLT_1,
+                '/',
+                AI_HEAD.ARRFLT_2,
+                ' ',
+                AI_HEAD.AWBNO
+            ) as awbNoDisplay,
+            AI_HEAD.AWBNO as awbNo
+        FROM
+            AI_HEAD
+                LEFT JOIN AI_CARGO_IN_DATA
+                ON AI_HEAD.AWBNO = AI_CARGO_IN_DATA.AWBNO
+        WHERE
+            AI_CARGO_IN_DATA.OVERFLG = '1'
+            AND AI_HEAD.CLEARPLANPLACECD = (SELECT BONDEDWAREHOUSECD FROM CS_TERMINAL_ID WHERE HANDYTERMINALID = #{termNo})
+        GROUP BY
+            AI_HEAD.AWBNO
+    </select>
+    -->
+    <select id="outSearch" parameterType="com.kse.wmsv2.oa_iw_004.dto.OAIW004SearchDto" resultType="com.kse.wmsv2.oa_iw_004.dao.OAIW004OutResultDao">
+        SELECT
+            AI_CARGO_OUT_DATA.BONDEDWAREHOUSECD,
+            AI_CARGO_OUT_DATA.FLT1 AS FLIGHT1,
+            AI_CARGO_OUT_DATA.FLT2 AS FLIGHT2,
+            AI_CARGO_OUT_DATA.AWBNO,
+            AI_CARGO_OUT_DATA.CWBNO,
+            AI_CARGO_OUT_DATA.REGDATE,
+            AI_CARGO_OUT_DATA.CWBNODEPTCD,
+            AI_STATUS.CUSTOMSTATUSCD,
+            AI_STATUS.BONDEDSTATUSCD,
+            AI_CARGO_OUT_DATA.OVERFLG AS OVERFLGOUT,
+            AI_CARGO_IN_DATA.OVERFLG AS OVERFLGIN,
+            AI_CARGO_OUT_DATA.SCANPICEC,
+            AI_CARGO_OUT_DATA.DATAPICEC
+        FROM
+            AI_CARGO_OUT_DATA
+            LEFT JOIN AI_STATUS
+                ON AI_CARGO_OUT_DATA.AWBNO = AI_STATUS.AWBNO
+                AND AI_CARGO_OUT_DATA.CWBNO = AI_STATUS.CWBNO
+            LEFT JOIN AI_CARGO_IN_DATA
+                ON AI_CARGO_IN_DATA.AWBNO = AI_STATUS.AWBNO
+                AND AI_CARGO_IN_DATA.CWBNO = AI_STATUS.CWBNO
+        <where>
+            1 = 1
+            <if test="mawbNo != ''">
+                AND AI_CARGO_OUT_DATA.AWBNO = #{mawbNo}
+                <!--マスター・ハウス組む合わせ検索でヒットしない場合の判定用-->
+            </if>
+            AND AI_CARGO_OUT_DATA.CWBNO = #{hawbNo}
+        </where>
+        ORDER BY
+            AI_STATUS.BONDEDSTATUSCD DESC,
+            AI_STATUS.CUSTOMSTATUSCD DESC
+        LIMIT
+            1
+    </select>
+    <update id="outUpdateScanpiece" parameterType="com.kse.wmsv2.oa_iw_004.dto.OAIW004SearchDto">
+        UPDATE
+            AI_CARGO_OUT_DATA
+        SET
+            SCANPICEC = #{inputScanPicec},
+            OVERFLG = IF(
+                SCANPICEC = DATAPICEC, '1', OVERFLG)
+        WHERE
+            AWBNO = #{mawbNo} -- マスター番号
+            AND CWBNO = #{hawbNo} -- ハウス番号(バーコード)
+    </update>
+    <update id="outUpdateOverFlg" parameterType="com.kse.wmsv2.oa_iw_004.dto.OAIW004SearchDto">
+        UPDATE
+            AI_CARGO_OUT_DATA
+        SET
+            OVERFLG = '1'
+        WHERE
+            AWBNO = #{mawbNo} -- マスター番号
+            AND CWBNO = #{hawbNo} -- ハウス番号(バーコード)
+    </update>
+    <update id="outUpdateStatus" parameterType="com.kse.wmsv2.oa_iw_004.dto.OAIW004SearchDto">
+        UPDATE
+            AI_STATUS
+        SET
+            HANDYTERMINALID = #{termNo},
+            BONDEDSTATUSCD = 'IB00720',
+            UPDATEDATE = CURRENT_TIMESTAMP(2),
+            UPDATEUSERCD = IFNULL((SELECT REGUSERCD FROM CS_TERMINAL_ID WHERE HANDYTERMINALID = #{termNo}),"SYSTEM")
+        WHERE
+            AWBNO = #{mawbNo}
+            AND CWBNO = #{hawbNo}
+            AND (BONDEDSTATUSCD != NULL OR BONDEDSTATUSCD != '')
+            AND (HANDYTERMINALID != NULL OR HANDYTERMINALID != '')
+        ORDER BY
+            BONDEDSTATUSCD DESC,
+            CUSTOMSTATUSCD DESC
+        LIMIT
+            1
+    </update>
+    <update id="outUpdateAiData" parameterType="com.kse.wmsv2.oa_iw_004.dto.OAIW004SearchDto">
+        UPDATE
+            AI_DATA
+        SET
+            CURRENTCARGOSTATUSCD = 'IB00720'
+        WHERE
+            AWBNO = #{mawbNo}
+            AND CWBNO = #{hawbNo}
+    </update>
+    <insert id="outInsertHistory" parameterType="com.kse.wmsv2.oa_iw_004.dto.OAIW004SearchDto">
+        INSERT INTO AI_STATUS_HISTORY (
+            BUSINESSCLASS, AWBNO, BWBNO, CWBNO,
+            CWBNODEPTCD, STATUSCD, HANDYTERMINALID,
+            REGUSERCD,
+            UPDATEUSERCD,
+            REGDATE,
+            UPDATEDATE
+        )
+        VALUES
+            (
+                "02",#{mawbNo},"00000000000",#{hawbNo},
+                "000","IB00720",#{termNo},
+                IFNULL(
+                    (SELECT REGUSERCD FROM AI_CARGO_OUT_HEAD WHERE AWBNO = #{mawbNo}),
+                    (SELECT REGUSERCD FROM CS_TERMINAL_ID WHERE HANDYTERMINALID = #{termNo})
+                ),
+                (SELECT REGUSERCD FROM CS_TERMINAL_ID WHERE HANDYTERMINALID = #{termNo}),
+                IFNULL(
+                    (SELECT UPDATEDATE FROM AI_CARGO_OUT_HEAD WHERE AWBNO = #{mawbNo}),
+                    CURRENT_TIMESTAMP(2)
+                ),
+                CURRENT_TIMESTAMP(2)
+            );
+    </insert>
+    <update id="outUpdateHead" parameterType="com.kse.wmsv2.oa_iw_004.dto.OAIW004SearchDto">
+        UPDATE
+            AI_CARGO_OUT_HEAD
+        SET
+            SCANCWBCOUNT = (SELECT COUNT(CWBNO) FROM AI_CARGO_OUT_DATA WHERE AWBNO = #{mawbNo} AND OVERFLG = "1"),
+            SCANPICEC = (SELECT SUM(SCANPICEC) FROM AI_CARGO_OUT_DATA WHERE AWBNO = #{mawbNo})
+        WHERE
+            AWBNO = #{mawbNo}
+    </update>
+
+    <!--インベントリー処理-->
+    <select id="invSearchMawb" resultType="com.kse.wmsv2.oa_iw_004.dao.OAIW004InvSearchMawbDao" parameterType="com.kse.wmsv2.oa_iw_004.dto.OAIW004SearchDto">
+        SELECT
+            CONCAT(
+                AI_INVENTORY_HEAD.FLT1,
+                '/',
+                AI_INVENTORY_HEAD.FLT2,
+                ' ',
+                AI_INVENTORY_HEAD.AWBNO
+            ) as awbNoDisplay,
+            AI_INVENTORY_HEAD.AWBNO as awbNo
+        FROM
+            AI_INVENTORY_HEAD
+                LEFT JOIN CS_TERMINAL_ID
+                ON AI_INVENTORY_HEAD.BONDEDWAREHOUSECD = CS_TERMINAL_ID.BONDEDWAREHOUSECD
+        WHERE
+            CS_TERMINAL_ID.HANDYTERMINALID = #{termNo}
+    </select>
+    <select id="invSearch" parameterType="com.kse.wmsv2.oa_iw_004.dto.OAIW004SearchDto" resultType="com.kse.wmsv2.oa_iw_004.dao.OAIW004InvResultDao">
+        SELECT
+            AWBNO,
+            CWBNO,
+            SCANPICEC,
+            DATAPICEC,
+            OVERFLG
+        FROM
+            AI_INVENTORY
+        <where>
+            1 = 1
+            <if test="mawbNo != ''">
+                AND AWBNO = #{mawbNo}
+            </if>
+            AND CWBNO = #{hawbNo}
+        </where>
+    </select>
+    <update id="invUpdate" parameterType="com.kse.wmsv2.oa_iw_004.dto.OAIW004SearchDto">
+        UPDATE
+            AI_INVENTORY
+            LEFT JOIN AI_CARGO_IN_DATA
+                ON AI_INVENTORY.AWBNO = AI_CARGO_IN_DATA.AWBNO
+                AND AI_INVENTORY.CWBNO = AI_CARGO_IN_DATA.CWBNO
+        SET
+            AI_INVENTORY.UPDATEDATE = CURRENT_TIMESTAMP(2),
+            AI_INVENTORY.OVERFLG = CASE
+                WHEN AI_CARGO_IN_DATA.OVERFLG = '2'
+                THEN '2'
+                ELSE '1'
+            END,
+            AI_INVENTORY.UPDATEUSERCD = (SELECT REGUSERCD FROM CS_TERMINAL_ID WHERE HANDYTERMINALID = #{termNo}),
+            AI_INVENTORY.HANDYTERMINALID = #{termNo}
+        WHERE
+            AI_INVENTORY.AWBNO = #{mawbNo}
+            AND AI_INVENTORY.CWBNO = #{hawbNo}
+    </update>
+    <update id="invUpdatePiece" parameterType="com.kse.wmsv2.oa_iw_004.dto.OAIW004SearchDto">
+        UPDATE
+            AI_INVENTORY
+        SET
+            SCANPICEC = #{inputScanPicec}
+        WHERE
+            AWBNO = #{mawbNo}
+            AND CWBNO = #{hawbNo}
+    </update>
+    <update id="invUpdateHead" parameterType="com.kse.wmsv2.oa_iw_004.dto.OAIW004SearchDto">
+        UPDATE
+            AI_INVENTORY_HEAD
+        SET
+            CWBCOUNT = (SELECT COUNT(CWBNO) FROM AI_INVENTORY WHERE AWBNO = #{mawbNo}),
+            SCANCWBCOUNT = (SELECT COUNT(CWBNO) FROM AI_INVENTORY WHERE AWBNO = #{mawbNo} AND OVERFLG = "1" OR OVERFLG = "2"),
+            OVERCWBCOUNT = (SELECT COUNT(OVERFLG) FROM AI_INVENTORY WHERE AWBNO = #{mawbNo} AND OVERFLG = "2"),
+            SCANPIECE = (SELECT SUM(SCANPICEC) FROM AI_INVENTORY WHERE AWBNO = #{mawbNo})
+        WHERE
+            AWBNO = #{mawbNo}
+    </update>
+    <select id="invSearchCount" parameterType="com.kse.wmsv2.oa_iw_004.dto.OAIW004SearchDto" resultType="com.kse.wmsv2.oa_iw_004.dao.OAIW004InvCountDao">
+        SELECT
+            SCANCWBCOUNT as SCANCNT,
+            CWBCOUNT as TOTALCNT
+        FROM
+            AI_INVENTORY_HEAD
+        WHERE
+            AWBNO = #{mawbNo}
+    </select>
+
+</mapper>

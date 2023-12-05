@@ -1,0 +1,278 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="com.kse.wmsv2.oc_cm_001.mapper.CatererSenderMasterAmCCENumberMapper">
+
+   <select id="getDataAmConsignerCosigneeNumber" parameterType="com.kse.wmsv2.oc_cm_001.dto.request.CatererSenderMasterRequest" resultMap="amCCENumber">
+
+        SELECT CUSTOMERNO,
+                DEPTCD,
+                OCSDEPTCD,
+                SUBSTRING(OCSDEPTCD, 1, 1) AS CsrCseFlag,
+                SUBSTRING(OCSDEPTCD, 2, 1) AS ShiyoBashoFlag,
+                SUBSTRING(OCSDEPTCD, 3, 3) AS Seq,
+                CUSTOMERNAMEE,
+                CUSTOMERADDE1,
+                CUSTOMERADDE2,
+                CUSTOMERADDE3,
+                CUSTOMERADDE4,
+                CUSTOMERADDEBLANKET,
+                COUNTRYCD,
+                ZIPCD,
+                DIVISION,
+                CHARGER,
+                TELNO,
+                FAXNO,
+                EMAILADD,
+               (SELECT USERNAME
+               FROM CM_USER
+               WHERE USERCD = AM_CONSIGNER_COSIGNEE_NUMBER.REGUSERCD) REGUSERCD,
+                REGDATE,
+                (SELECT USERNAME
+                FROM CM_USER
+                WHERE USERCD = AM_CONSIGNER_COSIGNEE_NUMBER.UPDATEUSERCD) AS UPDATEUSERCD,
+                UPDATEDATE
+        FROM AM_CONSIGNER_COSIGNEE_NUMBER
+        WHERE 1 = 1
+        <if test="customerNo != ''">
+             AND CUSTOMERNO LIKE '%' #{customerNo} '%'
+        </if>
+        <if test="deptCd != ''">
+             AND DEPTCD LIKE '%' #{deptCd} '%'
+        </if>
+        <if test="csrCseFlag != ''">
+                AND (SUBSTRING(OCSDEPTCD, 1,1) = #{csrCseFlag}
+                OR SUBSTRING(OCSDEPTCD, 1,1) = '0') 
+        </if>
+        <if test="shiyoBashoFlag != ''">
+                AND ( SUBSTRING(OCSDEPTCD, 2,1) = #{shiyoBashoFlag}
+                OR SUBSTRING(OCSDEPTCD, 2,1) = '0') 
+        </if>
+        <if test="countryCd != ''">
+             AND COUNTRYCD LIKE '%' #{countryCd} '%'
+        </if>
+        <if test="customerNamee != ''">
+             AND CUSTOMERNAMEE LIKE '%' #{customerNamee} '%'
+        </if>
+        <if test="division != ''">
+             AND DIVISION LIKE '%' #{division} '%'
+        </if>
+        <if test="zipCd != ''">
+             AND ZIPCD LIKE '%' #{zipCd} '%'
+        </if>
+        <if test="customerAdde1 != ''">
+             AND CUSTOMERADDE1 LIKE '%' #{customerAdde1} '%'
+        </if>
+        <if test="customerAdde2 != ''">
+             AND CUSTOMERADDE2 LIKE '%' #{customerAdde2} '%'
+        </if>
+        <if test="customerAdde3 != ''">
+             AND CUSTOMERADDE3 LIKE '%' #{customerAdde3} '%'
+        </if>
+        <if test="customerAdde4 != ''">
+             AND CUSTOMERADDE4 LIKE '%' #{customerAdde4} '%'
+        </if>
+        <if test="customerAddeBlanket != ''">
+              AND (CUSTOMERADDE1 LIKE '%' #{customerAddeBlanket} '%'
+                OR CUSTOMERADDE2 LIKE '%' #{customerAddeBlanket} '%'
+                OR CUSTOMERADDE3 LIKE '%' #{customerAddeBlanket} '%'
+                OR CUSTOMERADDE4 LIKE '%' #{customerAddeBlanket} '%'
+                OR CUSTOMERADDEBLANKET LIKE '%' #{customerAddeBlanket} '%')
+        </if>
+        <if test="charger != ''">
+             AND CHARGER LIKE '%' #{charger} '%'
+        </if>
+        <if test="telNo != ''">
+             AND TELNO LIKE '%' #{telNo} '%'
+        </if>
+        <if test="faxNo != ''">
+             AND FAXNO LIKE '%' #{faxNo} '%'
+        </if>
+        <if test="emailAdd != ''">
+             AND EMAILADD LIKE '%' #{emailAdd} '%'
+        </if>
+        ORDER BY CUSTOMERNO, DEPTCD, OCSDEPTCD
+        <if test="page != null">
+                <if test="itemPerPage != null">
+                        LIMIT
+                        #{page},
+                        #{itemPerPage}
+                </if>
+        </if>
+  </select>
+
+  <select id="detailCatererSenderMaster" parameterType="com.kse.wmsv2.oc_cm_001.dto.request.CatererSenderMasterRequest" resultMap="amCCENumber">
+
+        SELECT CUSTOMERNO,
+                DEPTCD,
+                OCSDEPTCD,
+                SUBSTRING(OCSDEPTCD, 1, 1) AS CsrCseFlag,
+                SUBSTRING(OCSDEPTCD, 2, 1) AS ShiyoBashoFlag,
+                SUBSTRING(OCSDEPTCD, 3, 3) AS Seq,
+                CUSTOMERNAMEE,
+                CUSTOMERADDE1,
+                CUSTOMERADDE2,
+                CUSTOMERADDE3,
+                CUSTOMERADDE4,
+                CUSTOMERADDEBLANKET,
+                COUNTRYCD,
+                ZIPCD,
+                DIVISION,
+                CHARGER,
+                TELNO,
+                FAXNO,
+                EMAILADD,
+                REMARKS,
+                (SELECT USERNAME
+                FROM CM_USER
+                WHERE USERCD = AM_CONSIGNER_COSIGNEE_NUMBER.REGUSERCD) AS REGUSERCD,
+                REGDATE,
+                (SELECT USERNAME
+                FROM CM_USER
+                WHERE USERCD = AM_CONSIGNER_COSIGNEE_NUMBER.UPDATEUSERCD) AS UPDATEUSERCD,
+                UPDATEDATE
+        FROM AM_CONSIGNER_COSIGNEE_NUMBER
+        WHERE 1 = 1
+        <if test="customerNo != ''">
+             AND CUSTOMERNO = #{customerNo}
+        </if>
+        <if test="deptCd != ''">
+             AND DEPTCD = #{deptCd}
+        </if>
+        <if test="ocsdeptCd != ''">
+             AND OCSDEPTCD = #{ocsdeptCd}
+        </if>
+        
+        ORDER BY CUSTOMERNO, DEPTCD, OCSDEPTCD
+        
+  </select>
+
+  <resultMap id="amCCENumber" type="com.kse.wmsv2.oc_cm_001.dto.CatererSenderMasterDto">
+    <result column="CUSTOMERNO" jdbcType="VARCHAR" property="customerNo" />
+    <result column="DEPTCD" jdbcType="VARCHAR" property="deptCd" />
+    <result column="OCSDEPTCD" jdbcType="VARCHAR" property="ocsdeptCd" />
+    <result column="CsrCseFlag" jdbcType="VARCHAR" property="csrCseFlag" />
+    <result column="ShiyoBashoFlag" jdbcType="VARCHAR" property="shiyoBashoFlag" />
+    <result column="Seq" jdbcType="VARCHAR" property="seq" />
+    <result column="CUSTOMERNAMEE" jdbcType="VARCHAR" property="customerNamee" />
+    <result column="CUSTOMERADDE1" jdbcType="VARCHAR" property="customerAdde1" />
+    <result column="CUSTOMERADDE2" jdbcType="VARCHAR" property="customerAdde2" />
+    <result column="CUSTOMERADDE3" jdbcType="VARCHAR" property="customerAdde3" />
+    <result column="CUSTOMERADDE4" jdbcType="VARCHAR" property="customerAdde4" />
+    <result column="CUSTOMERADDEBLANKET" jdbcType="VARCHAR" property="customerAddeblAnket" />
+    <result column="COUNTRYCD" jdbcType="VARCHAR" property="countryCd" />
+    <result column="ZIPCD" jdbcType="VARCHAR" property="zipCd" />
+    <result column="DIVISION" jdbcType="VARCHAR" property="division" />
+    <result column="CHARGER" jdbcType="VARCHAR" property="charger" />
+    <result column="TELNO" jdbcType="VARCHAR" property="telNo" />
+    <result column="FAXNO" jdbcType="VARCHAR" property="faxNo" />
+    <result column="EMAILADD" jdbcType="VARCHAR" property="emailAdd" />
+    <result column="REMARKS" jdbcType="VARCHAR" property="remarks" />
+    <result column="REGUSERCD" jdbcType="VARCHAR" property="regUserCd" />
+    <result column="REGDATE" jdbcType="TIMESTAMP" property="regDate" />
+    <result column="UPDATEUSERCD" jdbcType="VARCHAR" property="updateUserCd" />
+    <result column="UPDATEDATE" jdbcType="TIMESTAMP" property="updateDate" />
+  </resultMap>
+
+  <select id="getOcsDeptCdAmCCENumber" parameterType="com.kse.wmsv2.oc_cm_001.dto.CatererSenderMasterDto" resultType="string">
+        SELECT 
+                IFNULL(MAX(SUBSTRING(OCSDEPTCD, 3, 3)), '000')
+        FROM AM_CONSIGNER_COSIGNEE_NUMBER
+        WHERE 
+                CUSTOMERNO = #{customerNo}
+                AND DEPTCD = #{deptCd}
+                AND SUBSTRING(OCSDEPTCD, 1, 2) = CONCAT(#{csrCseFlag}, #{shiyoBashoFlag})
+  </select>
+  <insert id="registCatererSenderMaster" parameterType="com.kse.wmsv2.oc_cm_001.dto.CatererSenderMasterDto">
+          INSERT INTO AM_CONSIGNER_COSIGNEE_NUMBER 
+               (
+                CUSTOMERNO
+                ,DEPTCD
+                ,OCSDEPTCD
+                ,COUNTRYCD
+                ,CUSTOMERNAMEE
+                ,DIVISION
+                ,ZIPCD
+                ,CUSTOMERADDE1
+                ,CUSTOMERADDE2
+                ,CUSTOMERADDE3
+                ,CUSTOMERADDE4
+                ,CUSTOMERADDEBLANKET
+                ,CHARGER
+                ,TELNO
+                ,FAXNO
+                ,EMAILADD
+                ,REMARKS
+                ,REGUSERCD
+                ,REGDATE
+               )
+          VALUES 
+               (
+               #{customerNo}
+               ,#{deptCd}
+               ,#{ocsdeptCd}
+               ,#{countryCd}
+               ,#{customerNamee}
+               ,#{division}
+               ,#{zipCd}
+               ,#{customerAdde1}
+               ,#{customerAdde2}
+               ,#{customerAdde3}
+               ,#{customerAdde4}
+               ,#{customerAddeblAnket}
+               ,#{charger}
+               ,#{telNo}
+               ,#{faxNo}
+               ,#{emailAdd}
+               ,#{remarks}
+               ,#{regUserCd}
+               ,#{regDate}
+               );
+     </insert>
+
+     <update id="updateCatererSenderMaster" parameterType="com.kse.wmsv2.oc_cm_001.dto.CatererSenderMasterDto">
+          UPDATE AM_CONSIGNER_COSIGNEE_NUMBER 
+          SET
+                COUNTRYCD = #{countryCd}
+                ,CUSTOMERNAMEE = #{customerNamee}
+                ,DIVISION = #{division}
+                ,ZIPCD = #{zipCd}
+                ,CUSTOMERADDE1 = #{customerAdde1}
+                ,CUSTOMERADDE2 = #{customerAdde2}
+                ,CUSTOMERADDE3 = #{customerAdde3}
+                ,CUSTOMERADDE4 = #{customerAdde4}
+                ,CUSTOMERADDEBLANKET = #{customerAddeblAnket}
+                ,CHARGER = #{charger}
+                ,TELNO = #{telNo}
+                ,FAXNO = #{faxNo}
+                ,EMAILADD = #{emailAdd}
+                ,REMARKS = #{remarks}
+                ,UPDATEUSERCD = #{updateUserCd}
+                ,UPDATEDATE = #{updateDate}
+           WHERE CUSTOMERNO = #{customerNo}
+         AND DEPTCD = #{deptCd}
+         AND OCSDEPTCD = #{ocsdeptCd}
+     </update>
+
+     <delete id="deleteCatererSenderMaster" parameterType="com.kse.wmsv2.oc_cm_001.dto.request.CatererSenderMasterRequest">
+        DELETE FROM AM_CONSIGNER_COSIGNEE_NUMBER
+        WHERE CUSTOMERNO = #{customerNo}
+         AND DEPTCD = #{deptCd}
+         AND OCSDEPTCD = #{ocsdeptCd}
+     </delete>
+
+     <select id="countCatererSenderMaster" parameterType="com.kse.wmsv2.oc_cm_001.dto.CatererSenderMasterDto" resultType="int">
+          SELECT 
+               COUNT(*) 
+          FROM 
+               AM_CONSIGNER_COSIGNEE_NUMBER
+          WHERE 
+               CUSTOMERNO = #{customerNo}
+               AND DEPTCD = #{deptCd}
+               AND OCSDEPTCD = #{ocsdeptCd}
+     </select>
+</mapper>
+
+ 

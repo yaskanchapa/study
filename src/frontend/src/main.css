@@ -1,0 +1,32 @@
+/* ./src/index.css */
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* Disable increase/decrease arrow on number input field */
+/* Chrome, Safari, Edge, Opera */
+input.hide-input-number-arrow::-webkit-outer-spin-button,
+input.hide-input-number-arrow::-webkit-inner-spin-button {
+  -webkit-appearance: none;
+  margin: 0;
+}
+
+/* Firefox */
+input.hide-input-number-arrow[type="number"] {
+  -moz-appearance: textfield;
+}
+
+/* Increase Vuestic UI's default modal width (large) */
+.va-modal--size-large,
+.va-modal--size-large .va-modal__inner {
+  max-width: 1400px;
+}
+
+/* Increase Vuestic UI's default modal title font size */
+.va-modal__title {
+  font-size: 1rem;  
+}
+
+.va-input-wrapper {
+  flex: 1 1 auto !important;
+}

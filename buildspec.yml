@@ -1,0 +1,64 @@
+version: 0.2
+
+phases:
+  pre_build:
+    commands:
+      - echo start pre build.
+      
+      # ログインユーザーの確認
+      - id
+      # OS情報の確認
+      - cat /etc/system-release
+      - cat /etc/os-release
+      # 各種パッケージの最新化
+      #- yum update -y
+      # タイムゾーンの変更
+      - date
+      - cp /usr/share/zoneinfo/Japan /etc/localtime
+      - date
+
+      # Javaのインストール
+      - yum install -y java-17-amazon-corretto
+      - java -version
+      - /usr/sbin/alternatives --set java /usr/lib/jvm/java-17-amazon-corretto.aarch64/bin/java
+      - java -version
+      - /usr/sbin/alternatives --display java
+      # JAVA_HOME環境変数の設定
+      - export JAVA_HOME=/usr/lib/jvm/java-17-amazon-corretto.aarch64
+
+      - echo finish pre build.
+
+  build:
+    commands:
+      - echo start build.
+
+      - chmod 755 wms-v2/gradlew
+      - ls -ltr wms-v2/gradlew
+
+      # Spring Bootプロジェクトのビルド（jarの作成）      
+      - cd wms-v2
+      - pwd
+      - ./gradlew build
+      - cd ..
+      - pwd
+      #ビルドされたJarファイル確認
+      - ls -l wms-v2/build/libs
+
+      - echo finish build.
+
+  post_build:
+    commands:
+      - echo start post build.
+      - mkdir artifacts
+      - cp wms-v2/build/libs/wms-v2-0.0.1-SNAPSHOT.jar artifacts/wms-v2-0.0.1-SNAPSHOT.jar
+      - cp wms-v2/codedeploy/appspec.yml artifacts
+      - ls -l artifacts
+      - echo finish post build.
+
+artifacts:
+  # S3にアップロードするファイルを指定
+  files:
+    - wms-v2-0.0.1-SNAPSHOT.jar
+    - appspec.yml
+  # ベースディレクトリ
+  base-directory: artifacts

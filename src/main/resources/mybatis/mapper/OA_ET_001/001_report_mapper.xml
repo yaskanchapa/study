@@ -1,0 +1,750 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="com.kse.wmsv2.oa_et_001.mapper.OAET001ReportMapper">
+    <select id="getMecDataNew" parameterType="hashMap" resultType="com.kse.wmsv2.oa_et_001.dao.OAET001ReportMecDao">
+        SELECT
+            AED.EXPREPORTNO,
+            AED.REPORTCONDITION,
+            AED.CUSTOMSKINDCD_1,
+            AED.DISCERNMENTMARK,
+            AED.REPORTDEPCD,
+            AED.REPORTDIVISIONCD,
+            AED.EXPREPORTPLANDATE,
+            AED.EXPCUSTOMERNO,
+            AED.EXPCUSTOMERDEPTCD,
+            AED.EXPCUSTOMERNAME,
+            AED.EXPCUSTOMERPOSTCODE,
+            AED.EXPCUSTOMERADD_1,
+            AED.EXPCUSTOMERADD_2,
+            AED.EXPCUSTOMERADD_3,
+            AED.EXPCUSTOMERADD_4,
+            AED.EXPCUSTOMERTELNO,
+            AED.EXPCUSTOMERADD_LUMP,
+            AED.CUSTOMSOFFICEJANITORCD,
+            AED.CUSTOMSOFFICEJANITORRENO,
+            AED.CUSTOMSOFFICEJANITORNAME,
+            AED.BONDEDWAREHOUSECD,
+            AED.INSPECTIONWITNESS,
+            AED.CONSIGNEENO,
+            AED.CONSIGNEEDEPTCD,
+            AED.CONSIGNEENAME,
+            AED.CONSIGNEEADD_1,
+            AED.CONSIGNEEADD_2,
+            AED.CONSIGNEEADD_3,
+            AED.CONSIGNEEADD_4,
+            AED.CONSIGNEEPOSTCODE,
+            AED.CONSIGNEECOUNTRY,
+            AED.CONSIGNEEADD_LUMP,
+            AED.CWBNO,
+            AED.CARRYINGPIECE,
+            AED.CARRYINGWEIGHT,
+            AED.LASTDESTINATIONCD,
+            AED.DEPPORT,
+            AED.FOBCURRENCYCD,
+            FLOOR(AED.FOBAMO) AS FOBAMO,
+            AED.REPORTVALUE,
+            AED.ITEM,
+            AED.NEWS_2,
+            AED.SHIPPERSSECCD,
+            AED.SHIPPERSREFNO,
+            AED.INHOUSEREFNUMBER,
+            AED.AWBNO,
+            AED.BWBNO,
+            IFNULL(OCSM02.MAXDATE,'1900/1/1') AS MAXDATE1,
+            IFNULL(OCSM03.MAXDATE,'1900/1/2') as MAXDATE2
+        FROM
+            AE_DATA AS AED
+        LEFT JOIN
+            (SELECT
+                CWBNO,
+                MAX(UPDATEDATE) AS MAXDATE
+            FROM
+                AE_STATUS
+            WHERE
+                CUSTOMSTATUSCD IN ('EC90010','EB90010')
+            GROUP BY
+                CWBNO
+            ) OCSM02
+        ON
+            AED.CWBNO = OCSM02.CWBNO
+        LEFT JOIN
+            (SELECT
+                CWBNO,
+                MAX(UPDATEDATE) AS MAXDATE
+            FROM
+                AE_STATUS
+            WHERE
+                CUSTOMSTATUSCD IN ('EC90020','EB90020')
+            GROUP BY
+                CWBNO
+            ) OCSM03
+        ON
+            AED.CWBNO = OCSM03.CWBNO
+        <if test=" depCd == '1'  ">
+        LEFT JOIN
+            (SELECT DISTINCT
+                CWBNO,
+                1 AS CDBFLG
+            FROM
+                AE_STATUS
+            WHERE
+                CUSTOMSTATUSCD = 'EC00700'
+            ) OCSM04
+        ON
+            AED.CWBNO = OCSM04.CWBNO
+        </if>
+        WHERE
+            AED.ESAFLG = '1'
+        <if test=" depCd == '1'  ">
+            AND ( OCSM04.CDBFLG = 1
+                    OR EXISTS
+                        (SELECT
+                            NAMECD
+                        FROM
+                            AM_NAME
+                        WHERE
+                            1 = 1
+                            AND DEPARTMENTCD = 'ALL'
+                            AND NAMECLASS = '0189'
+                            AND NAMECD = AED.REPORTCONDITION
+                        )
+            )
+        </if>
+        AND IFNULL(OCSM02.MAXDATE,'1900/1/1') <![CDATA[ < ]]> IFNULL(OCSM03.MAXDATE,'1900/1/2')
+        AND AED.CWBNO NOT IN
+            (SELECT
+                SM1.CWBNO
+            FROM
+                AE_STATUS AS SM1
+            WHERE
+                CUSTOMSTATUSCD = 'EC00900'
+            )
+        AND AED.REPORTNAYCLASSCD = '00'
+        AND AED.DELETEDATE IS NULL
+        AND AED.SPSDOCCLASSCD IN ('0', '2')
+        AND AED.AWBNO = #{awbNo}
+        <choose>
+            <when test="userAuth == '02' ">
+                AND AED.CUSTOMSPLACECD = #{deptCd}
+            </when>
+            <when test="userAuth == '04' ">
+                AND AED.BONDEDWAREHOUSECD = #{deptCd}
+            </when>
+        </choose>
+    </select>
+
+    <select id="getMecDataReMake" parameterType="hashMap" resultType="com.kse.wmsv2.oa_et_001.dao.OAET001ReportMecDao">
+        SELECT
+            AED.EXPREPORTNO,
+            AED.REPORTCONDITION,
+            AED.CUSTOMSKINDCD_1,
+            AED.DISCERNMENTMARK,
+            AED.REPORTDEPCD,
+            AED.REPORTDIVISIONCD,
+            AED.EXPREPORTPLANDATE,
+            AED.EXPCUSTOMERNO,
+            AED.EXPCUSTOMERDEPTCD,
+            AED.EXPCUSTOMERNAME,
+            AED.EXPCUSTOMERPOSTCODE,
+            AED.EXPCUSTOMERADD_1,
+            AED.EXPCUSTOMERADD_2,
+            AED.EXPCUSTOMERADD_3,
+            AED.EXPCUSTOMERADD_4,
+            AED.EXPCUSTOMERTELNO,
+            AED.EXPCUSTOMERADD_LUMP,
+            AED.CUSTOMSOFFICEJANITORCD,
+            AED.CUSTOMSOFFICEJANITORRENO,
+            AED.CUSTOMSOFFICEJANITORNAME,
+            AED.BONDEDWAREHOUSECD,
+            AED.INSPECTIONWITNESS,
+            AED.CONSIGNEENO,
+            AED.CONSIGNEEDEPTCD,
+            AED.CONSIGNEENAME,
+            AED.CONSIGNEEADD_1,
+            AED.CONSIGNEEADD_2,
+            AED.CONSIGNEEADD_3,
+            AED.CONSIGNEEADD_4,
+            AED.CONSIGNEEPOSTCODE,
+            AED.CONSIGNEECOUNTRY,
+            AED.CONSIGNEEADD_LUMP,
+            AED.CWBNO,
+            AED.CARRYINGPIECE,
+            AED.CARRYINGWEIGHT,
+            AED.LASTDESTINATIONCD,
+            AED.DEPPORT,
+            AED.FOBCURRENCYCD,
+            FLOOR(AED.FOBAMO) AS FOBAMO,
+            AED.REPORTVALUE,
+            AED.ITEM,
+            AED.NEWS_2,
+            AED.SHIPPERSSECCD,
+            AED.SHIPPERSREFNO,
+            AED.INHOUSEREFNUMBER,
+            AED.AWBNO,
+            AED.BWBNO,
+            IFNULL(OCSM02.MAXDATE,'1900/1/1') AS MAXDATE1,
+            IFNULL(OCSM03.MAXDATE,'1900/1/2') as MAXDATE2
+        FROM
+            AE_DATA AS AED
+        LEFT JOIN
+            (SELECT
+                CWBNO,
+                MAX(UPDATEDATE) AS MAXDATE
+            FROM
+                AE_STATUS
+            WHERE
+                CUSTOMSTATUSCD IN ('EC90010','EB90010')
+            GROUP BY
+                CWBNO
+            ) OCSM02
+        ON
+            AED.CWBNO = OCSM02.CWBNO
+        LEFT JOIN
+            (SELECT
+                CWBNO,
+                MAX(UPDATEDATE) AS MAXDATE
+            FROM
+                AE_STATUS
+            WHERE
+                CUSTOMSTATUSCD IN ('EC90020','EB90020')
+            GROUP BY
+                CWBNO
+            ) OCSM03
+        ON
+            AED.CWBNO = OCSM03.CWBNO
+        WHERE
+            AED.ESAFLG = '1'
+            AND AED.CWBNO IN
+                (SELECT
+                    SM1.CWBNO
+                FROM
+                    AE_STATUS AS SM1
+                WHERE
+                    SM1.CUSTOMSTATUSCD = 'EC00900'
+                GROUP BY
+                    CWBNO
+                )
+        AND AED.REPORTNAYCLASSCD = '00'
+        AND IFNULL(OCSM02.MAXDATE,'1900/1/1') <![CDATA[ < ]]> IFNULL(OCSM03.MAXDATE,'1900/1/2')
+        AND AED.DELETEDATE IS NULL
+        AND AED.SPSDOCCLASSCD IN ('0', '2')
+        AND AED.AWBNO = #{awbNo}
+        <choose>
+            <when test="userAuth == '02' ">
+                AND AED.CUSTOMSPLACECD = #{deptCd}
+            </when>
+            <when test="userAuth == '04' ">
+                AND AED.BONDEDWAREHOUSECD = #{deptCd}
+            </when>
+        </choose>
+    </select>
+
+    <select id="getEdcDataNew" parameterType="hashMap" resultType="com.kse.wmsv2.oa_et_001.dao.OAET001ReportEdcDao">
+        SELECT
+            AED.EXPREPORTNO,
+            AED.REPORTCONDITION,
+            AED.AWBNO,
+            AED.BWBNO,
+            AED.CWBNO,
+            IFNULL(OCSM02.MAXDATE,'1900/1/1') AS MAXDATE1,
+            IFNULL(OCSM03.MAXDATE,'1900/1/2') as MAXDATE2
+        FROM
+            AE_DATA AS AED
+        LEFT JOIN
+            (SELECT
+                CWBNO,
+                MAX(UPDATEDATE) AS MAXDATE
+            FROM
+                AE_STATUS
+            WHERE
+                CUSTOMSTATUSCD IN ('EC90010','EB90010')
+            GROUP BY
+                CWBNO
+            ) OCSM02
+        ON
+            AED.CWBNO = OCSM02.CWBNO
+        LEFT JOIN
+            (SELECT
+                CWBNO,
+                MAX(UPDATEDATE) AS MAXDATE
+            FROM
+                AE_STATUS
+            WHERE
+                CUSTOMSTATUSCD IN ('EC90020','EB90020')
+            GROUP BY
+                CWBNO
+            ) OCSM03
+        ON
+            AED.CWBNO = OCSM03.CWBNO
+        <if test=" depCd == '1'  ">
+            LEFT JOIN
+            (SELECT DISTINCT
+            CWBNO,
+            1 AS CDBFLG
+            FROM
+            AE_STATUS
+            WHERE
+            CUSTOMSTATUSCD = 'EC00700'
+            ) OCSM04
+            ON
+            AED.CWBNO = OCSM04.CWBNO
+        </if>
+        WHERE
+            AED.ESAFLG = '2'
+            AND AED.EXPREPORTNO IS NOT NULL
+        <if test=" depCd == '1'  ">
+            AND (
+                OCSM04.CDBFLG = 1
+                OR EXISTS
+                    (SELECT
+                        NAMECD
+                    FROM
+                        AM_NAME
+                    WHERE
+                        DEPARTMENTCD = 'ALL'
+                        AND NAMECLASS = '0189'
+                        AND NAMECD = AED.REPORTCONDITION)
+                )
+        </if>
+            AND IFNULL(OCSM02.MAXDATE,'1900/1/1') <![CDATA[ < ]]> IFNULL(OCSM03.MAXDATE,'1900/1/2')
+            AND AED.CWBNO NOT IN
+                (SELECT
+                    SM1.CWBNO
+                FROM
+                    AE_STATUS AS SM1
+                WHERE
+                    CUSTOMSTATUSCD = 'EC01100'
+                )
+            AND AED.REPORTNAYCLASSCD = '00'
+            AND AED.DELETEDATE IS NULL
+            AND AED.SPSDOCCLASSCD IN ('0', '2')
+            AND AED.AWBNO = #{awbNo}
+        <choose>
+            <when test="userAuth == '02' ">
+                AND AED.CUSTOMSPLACECD = #{deptCd}
+            </when>
+            <when test="userAuth == '04' ">
+                AND AED.BONDEDWAREHOUSECD = #{deptCd}
+            </when>
+        </choose>
+    </select>
+
+    <select id="getEdcDataReMake" parameterType="hashMap" resultType="com.kse.wmsv2.oa_et_001.dao.OAET001ReportEdcDao">
+        SELECT
+            AED.EXPREPORTNO,
+            AED.REPORTCONDITION,
+            AED.AWBNO,
+            AED.BWBNO,
+            AED.CWBNO,
+            IFNULL(OCSM02.MAXDATE,'1900/1/1') AS MAXDATE1,
+            IFNULL(OCSM03.MAXDATE,'1900/1/2') as MAXDATE2
+        FROM
+            AE_DATA AS AED
+        LEFT JOIN
+            (SELECT
+                CWBNO,
+                MAX(UPDATEDATE) AS MAXDATE
+            FROM
+                AE_STATUS
+            WHERE
+                CUSTOMSTATUSCD IN ('EC90010','EB90010')
+            GROUP BY
+                CWBNO
+            ) OCSM02
+        ON
+            AED.CWBNO = OCSM02.CWBNO
+        LEFT JOIN
+            (SELECT
+                CWBNO,
+                MAX(UPDATEDATE) AS MAXDATE
+            FROM
+                AE_STATUS
+            WHERE
+                CUSTOMSTATUSCD IN ('EC90020','EB90020')
+            GROUP BY
+                CWBNO
+            ) OCSM03
+        ON
+            AED.CWBNO = OCSM03.CWBNO
+        WHERE
+            AED.ESAFLG = '2'
+            AND AED.EXPREPORTNO IS NOT NULL
+            AND AED.CWBNO IN
+                (SELECT
+                    SM1.CWBNO
+                FROM
+                    AE_STATUS AS SM1
+                WHERE
+                    SM1.CUSTOMSTATUSCD = 'EC01100'
+                GROUP BY
+                CWBNO
+                )
+            AND AED.REPORTNAYCLASSCD = '00'
+            AND IFNULL(OCSM02.MAXDATE,'1900/1/1') <![CDATA[ < ]]> IFNULL(OCSM03.MAXDATE,'1900/1/2')
+            AND AED.DELETEDATE IS NULL
+            AND AED.SPSDOCCLASSCD IN ('0', '2')
+            AND AED.AWBNO = #{awbNo}
+        <choose>
+            <when test="userAuth == '02' ">
+                AND AED.CUSTOMSPLACECD = #{deptCd}
+            </when>
+            <when test="userAuth == '04' ">
+                AND AED.BONDEDWAREHOUSECD = #{deptCd}
+            </when>
+        </choose>
+    </select>
+
+    <select id="getEdaDataNew" parameterType="hashMap" resultType="String">
+        SELECT
+            OTED.CWBNO
+        FROM
+            AE_DATA OTED
+        LEFT JOIN
+            (SELECT
+                CWBNO,
+                MAX(UPDATEDATE) AS MAXDATE
+            FROM
+                AE_STATUS
+            WHERE
+                CUSTOMSTATUSCD IN ('EC90010','EB90010')
+            GROUP BY
+                CWBNO
+            ) OCSM02
+        ON
+            OTED.CWBNO = OCSM02.CWBNO
+        LEFT JOIN
+        (SELECT
+                CWBNO,
+                MAX(UPDATEDATE) AS MAXDATE
+            FROM
+                AE_STATUS
+            WHERE
+                CUSTOMSTATUSCD IN ('EC90020','EB90020')
+            GROUP BY
+                CWBNO
+            ) OCSM03
+        ON
+            OTED.CWBNO = OCSM03.CWBNO
+        WHERE
+            OTED.ESAFLG = '2'
+            AND IFNULL(OCSM02.MAXDATE,'1900/1/1') <![CDATA[ < ]]> IFNULL(OCSM03.MAXDATE,'1900/1/2')
+            AND OTED.CWBNO NOT IN
+                (SELECT
+                    SM1.CWBNO
+                FROM
+                    AE_STATUS AS SM1
+                WHERE
+                    CUSTOMSTATUSCD = 'EC01000'
+                )
+            AND OTED.REPORTNAYCLASSCD = '00'
+            AND OTED.DELETEDATE IS NULL
+            AND OTED.SPSDOCCLASSCD IN ('0', '2')
+            AND OTED.AWBNO = #{awbNo}
+    </select>
+
+    <select id="getEdaDataReMake" parameterType="hashMap" resultType="String">
+        SELECT
+            OTED.CWBNO
+        FROM
+            AE_DATA OTED
+        LEFT JOIN
+            (SELECT
+                CWBNO,
+                MAX(UPDATEDATE) AS MAXDATE
+            FROM
+                AE_STATUS
+            WHERE
+                CUSTOMSTATUSCD IN ('EC90010','EB90010')
+            GROUP BY
+                CWBNO
+            ) OCSM02
+        ON
+            OTED.CWBNO = OCSM02.CWBNO
+        LEFT JOIN
+            (SELECT
+                CWBNO,
+                MAX(UPDATEDATE) AS MAXDATE
+            FROM
+                AE_STATUS
+            WHERE
+                CUSTOMSTATUSCD IN ('EC90020','EB90020')
+            GROUP BY
+                CWBNO
+            ) OCSM03
+        ON
+            OTED.CWBNO = OCSM03.CWBNO
+        WHERE
+            OTED.ESAFLG = '2'
+            AND OTED.CWBNO IN
+                (SELECT
+                    SM1.CWBNO
+                FROM
+                    AE_STATUS AS SM1
+                WHERE
+                    SM1.CUSTOMSTATUSCD = 'EC01100'
+                GROUP BY
+                    CWBNO
+                )
+            AND OTED.REPORTNAYCLASSCD = '00'
+            AND IFNULL(OCSM02.MAXDATE,'1900/1/1') <![CDATA[ < ]]> IFNULL(OCSM03.MAXDATE,'1900/1/2')
+            AND OTED.DELETEDATE IS NULL
+            AND OTED.SPSDOCCLASSCD IN ('0', '2')
+            AND OTED.AWBNO = #{awbNo}
+        <choose>
+            <when test="userAuth == '02' ">
+                AND OTED.CUSTOMSPLACECD = #{deptCd}
+            </when>
+            <when test="userAuth == '04' ">
+                AND OTED.BONDEDWAREHOUSECD = #{deptCd}
+            </when>
+        </choose>
+    </select>
+
+    <select id="getEdaHeader" parameterType="String" resultType="com.kse.wmsv2.oa_et_001.dao.OAET001ReportEdaHeadDao">
+        SELECT
+            CWBNO ,EXPREPORTNO ,LARGESMALLFLG ,REPORTKINDCD ,CUSTOMSKINDCD_1 ,CUSTOMSKINDCD_2 ,DISCERNMENTMARK
+            ,REPORTDEPCD ,REPORTDIVISIONCD ,EXPREPORTPLANDATE ,EXPCUSTOMERNO ,EXPCUSTOMERDEPTCD ,EXPCUSTOMERNAME
+            ,EXPCUSTOMERPOSTCODE ,EXPCUSTOMERADD_1 ,EXPCUSTOMERADD_2 ,EXPCUSTOMERADD_3 ,EXPCUSTOMERADD_4
+            ,EXPCUSTOMERTELNO ,CUSTOMSOFFICEJANITORCD ,CUSTOMSOFFICEJANITORRENO ,CUSTOMSOFFICEJANITORNAME
+            ,REPORTPLANPERSONCD ,BONDEDWAREHOUSECD ,CONSIGNEENAME ,CONSIGNEEADD_1 ,CONSIGNEEADD_2 ,CONSIGNEEADD_3
+            ,CONSIGNEEADD_4 ,CONSIGNEEPOSTCODE ,CONSIGNEECOUNTRY ,INSPECTIONWITNESS ,CARRYINGPIECE ,LASTDESTINATIONCD
+            ,LASTDESTNAME ,DEPPORT ,TRADETYPEMARK ,DEPPLANINGDATE ,CUSTOMSEXAMMARK ,EXPRECOFLG ,PREEXAMCARGODISC
+            ,EXPRECDISC_1 ,EXPRECNO_1 ,EXPRECDISC_2 ,EXPRECNO_2 ,EXPRECDISC_3 ,EXPRECNO_3 ,EXPRECDISC_4 ,EXPRECNO_4
+            ,EXPRECDISC_5 ,EXPRECNO_5 ,EXPRECDISC_6 ,EXPRECNO_6 ,EXPRECDISC_7 ,EXPRECNO_7 ,EXPRECDISC_8 ,EXPRECNO_8
+            ,EXPRECDISC_9 ,EXPRECNO_9,EXPRECDISC_10 ,EXPRECNO_10 ,EXPRECDISC_11 ,EXPRECNO_11 ,EXPRECDISC_12
+            ,EXPRECNO_12 ,EXPRECDISC_13 ,EXPRECNO_13 ,EXPRECDISC_14 ,EXPRECNO_14 ,EXPRECDISC_15 ,EXPRECNO_15
+            ,INVOICEDISCERNMENT ,ELEINVOICERENO ,INVOICENO ,INVOICEVALCONCD ,INVOICECURCD ,INVOICEVALUE
+            ,INVOICEVALCLASSCD ,FOBCURRENCYCD ,FLOOR(FOBAMO) AS FOBAMO ,BASICPRICETOTAL ,NEEDLOADINGRECDISC ,NEWS_1 ,NEWS_2
+            ,NEWSSHIPPER ,SHIPPERSSECCD ,SHIPPERSREFNO ,INHOUSEREFNUMBER ,ITEM
+        FROM
+            AE_DATA
+        WHERE
+            CWBNO = #{value}
+            AND DELETEDATE IS NULL
+            AND SPSDOCCLASSCD IN ('0', '2')
+    </select>
+
+    <select id="getEdaDetail" parameterType="String" resultType="com.kse.wmsv2.oa_et_001.dao.OAET001EDADetailDao">
+        SELECT
+            EXPSTATITEMNO,NACCSCD,ITEM,AMO_1,AMOUNIT_1,AMO_2,AMOUNIT_2,BASICPRICEDIVCOEF,BASICPRICECURCD,BASICPRICEAMO
+            ,OTHERLAWCD_1,OTHERLAWCD_2,OTHERLAWCD_3,OTHERLAWCD_4,OTHERLAWCD_5,EXPTRADECONTCD,FOREXCHLOW48
+            ,CUSTOMSEXEMPTCD,INCONSTAXEXEMPCD,INCONSTAXEXEMPDISC
+        FROM
+            AE_DATA_DETAIL
+        WHERE
+            CWBNO = #{value}
+    </select>
+
+    <select id="getCdbData" parameterType="hashMap" resultType="com.kse.wmsv2.oa_et_001.dao.OAET001ReportCdbDao">
+        SELECT
+            OTEH.FLTDESTINATION AS FLTDESTINATION,
+            OTED.BONWAREHOCURDATE AS BONWAREHOCURDATE,
+            OTED.BONDEDWAREHOUSECD AS BONDEDWAREHOUSECD,
+            OTED.CARSLIPMAKEFLG AS CARSLIPMAKEFLG,
+            OTED.AGENT AS AGENT,
+            NULL AS CARRYINGSLIPNO,
+            OTED.DEPPORT AS DEPPORTCD,
+            OTED.CWBNO,
+            OTED.CARGODISC,
+            OTED.CARRYINGPIECE,
+            OTED.CARRYINGWEIGHT,
+            IFNULL(CONVDEPP.CHARACTERITEM1, OTED.DEPPORT) AS DEPPORT,
+            IFNULL(CONVDEST.CHARACTERITEM1, RIGHT(OTED.LASTDESTINATIONCD,3)) AS DESTINATION,
+            OTED.AIRLINE,
+            OTED.MIXEDFORWARDER,
+            OTED.AGENTDIV,
+            OTED.CUSTOMSREQUEST,
+            OTED.EXPREPORTPLANDATE,
+            OTED.AWBNO,
+            OTED.CARGOTYPE,
+            OTED.SPECIALCARGOSIGN,
+            'SPS' AS ITEM,
+            OTED.BWBNO,
+            IFNULL(OCSM02.MAXDATE,'1900/1/1') AS MAXDATE1,
+            IFNULL(OCSM03.MAXDATE,'1900/1/2') AS MAXDATE2
+        FROM
+            AE_HEAD AS OTEH
+        INNER JOIN
+            AE_DATA AS OTED
+        ON
+            1 = 1
+            AND OTEH.AWBNO = OTED.AWBNO
+            AND OTEH.DELETEDATE IS NULL
+        LEFT JOIN
+            (SELECT
+                NAMECD,
+                CHARACTERITEM1
+            FROM
+                AM_NAME
+            WHERE
+                1 = 1
+                AND DEPARTMENTCD = 'ALL'
+                AND NAMECLASS = '0177'
+            ) CONVDEST
+        ON
+            1 = 1
+            AND OTED.LASTDESTINATIONCD = CONVDEST.NAMECD
+        LEFT JOIN
+            AM_NAME AS CONVDEPP
+        ON
+            CONVDEPP.DEPARTMENTCD = 'ALL'
+            AND CONVDEPP.NAMECLASS = '0283'
+            AND CONVDEPP.NAMECD = OTED.DEPPORT
+        LEFT JOIN
+            (SELECT
+                CWBNO,
+                MAX(UPDATEDATE) AS MAXDATE
+            FROM
+                AE_STATUS
+            WHERE
+                CUSTOMSTATUSCD = 'EC90010'
+                AND BONDSTATUSCD = 'EB90010'
+            GROUP BY
+                CWBNO
+            ) OCSM02
+        ON
+            1 = 1
+            AND OTED.CWBNO = OCSM02.CWBNO
+        LEFT JOIN
+            (SELECT
+                CWBNO,
+                MAX(UPDATEDATE) AS MAXDATE
+            FROM
+                AE_STATUS
+            WHERE
+                CUSTOMSTATUSCD = 'EC90020'
+                AND BONDSTATUSCD = 'EB90020'
+            GROUP BY
+                CWBNO
+            ) OCSM03
+        ON
+            1 = 1
+            AND OTED.CWBNO = OCSM03.CWBNO
+<!--        INNER JOIN-->
+<!--            (SELECT DISTINCT-->
+<!--                CWBNO-->
+<!--            FROM-->
+<!--                AE_STATUS-->
+<!--            WHERE-->
+<!--                BUSINESSCLASS = '02'-->
+<!--                AND BONDSTATUSCD = 'EB00200'-->
+<!--            ) OCSM04-->
+<!--        ON-->
+<!--            1 = 1-->
+<!--            AND OTED.CWBNO = OCSM04.CWBNO-->
+<!--        LEFT JOIN-->
+<!--            (SELECT DISTINCT-->
+<!--                CWBNO,-->
+<!--                1 AS REPORTCNT-->
+<!--            FROM-->
+<!--                AE_STATUS-->
+<!--            WHERE-->
+<!--                1 = 1-->
+<!--                AND BUSINESSCLASS = '01'-->
+<!--                AND CUSTOMSTATUSCD IN ('EC01210', 'EC01220', 'EC01310', 'EC01320', 'EC01400')-->
+<!--            ) OCSM05-->
+<!--        ON-->
+<!--            1 = 1-->
+<!--            AND OTED.CWBNO = OCSM05.CWBNO-->
+        WHERE
+            1 = 1
+            AND OTED.AWBNO = #{awbNo}
+<!--            AND (NOT EXISTS-->
+<!--                    (SELECT-->
+<!--                    NAMECD-->
+<!--                    FROM-->
+<!--                    AM_NAME-->
+<!--                    WHERE 1 = 1-->
+<!--                    AND DEPARTMENTCD = 'ALL'-->
+<!--                    AND NAMECLASS = '0189'-->
+<!--                    AND NAMECD = OTED.REPORTCONDITION)-->
+<!--                OR-->
+<!--                    (OCSM05.REPORTCNT = 1-->
+<!--                    AND EXISTS-->
+<!--                        (SELECT-->
+<!--                        NAMECD-->
+<!--                        FROM-->
+<!--                        AM_NAME-->
+<!--                        WHERE-->
+<!--                        1 = 1-->
+<!--                        AND DEPARTMENTCD = 'ALL'-->
+<!--                        AND NAMECLASS = '0189'-->
+<!--                        AND NAMECD = OTED.REPORTCONDITION)-->
+<!--                    )-->
+<!--                )-->
+            AND IFNULL(OCSM02.MAXDATE,'1900/1/1') <![CDATA[ < ]]> IFNULL(OCSM03.MAXDATE,'1900/1/2')
+            <choose>
+                <when test="remakeFlg == 'false' ">
+                    AND OTED.CWBNO NOT IN
+                </when>
+                <when test="remakeFlg == 'true' ">
+                    AND OTED.CWBNO IN
+                </when>
+            </choose>
+                (SELECT
+                    SM1.CWBNO
+                FROM
+                    AE_STATUS_HISTORY AS SM1
+                WHERE
+                    SM1.STATUSCD = 'EC00700')
+            AND OTED.REPORTNAYCLASSCD = '00'
+            AND OTED.DELETEDATE IS NULL
+            AND OTED.SPSDOCCLASSCD IN ('0', '2')
+        <choose>
+            <when test="userAuth == '02' ">
+                AND OTED.CUSTOMSPLACECD = #{deptCd}
+            </when>
+            <when test="userAuth == '04' ">
+                AND OTED.BONDEDWAREHOUSECD = #{deptCd}
+            </when>
+        </choose>
+
+    </select>
+
+    <update id="updateAEDATA" parameterType="hashMap">
+        UPDATE
+            AE_DATA
+        SET
+            CURRENTCUSTOMSSTATUSCD = #{statusCd}
+        <if test="esaFlg != '' and esaFlg != null">
+            ,ESAFLG = #{esaFlg}
+        </if>
+        WHERE
+            cwbNo = #{cwbNo}
+    </update>
+
+    <select id="getDeptCd" parameterType="String" resultType="String">
+        SELECT
+            CHARACTERITEM1
+        FROM
+            AM_NAME
+        WHERE
+            NAMECLASS = '0008'
+            AND NAMECD = #{value}
+    </select>
+    <select id="getReportAwbList" parameterType="com.kse.wmsv2.oa_et_001.dto.OAET001SearchDto" resultType="String">
+        SELECT DISTINCT
+            AWBNO
+        FROM
+            AE_DATA
+        WHERE
+            DELETEDATE IS NULL
+            AND SPSDOCCLASSCD IN ('0', '2')
+            AND LINKTRUCKNO BETWEEN #{truckNoFrom} and #{truckNoTo}
+            AND TRUCKNODATE = #{truckNoDate}
+            AND CUSTOMSPLACECD = #{deptCd}
+    </select>
+    <update id="updateMasterStatus" parameterType="hashMap">
+        UPDATE
+            AE_DATA
+        SET
+            CURRENTCUSTOMSSTATUSCD = #{statusCd}
+            ,UPDATEUSERCD = #{userCd}
+            ,UPDATEDATE = #{date}
+        WHERE
+            CWBNO = #{cwbNo}
+    </update>
+</mapper>

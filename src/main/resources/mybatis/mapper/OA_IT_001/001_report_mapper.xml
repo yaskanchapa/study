@@ -1,0 +1,558 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="com.kse.wmsv2.oa_it_001.mapper.OAIT001ReportMapper">
+    <select id="getIDAData" parameterType="hashMap" resultType="com.kse.wmsv2.oa_it_001.dao.OAIT001IDAReportDao">
+        SELECT
+            BIGSMALLFLG,REPORTKINDCD_1,REPORTKINDCD_2,CARGODISC,DISCERNMENTMARK,REPORTDIVCD,REPORTDEPCD,CUSTOMSPLACECD
+            ,EXCEPTIONALDIVCD,EXCEPTIONALDEPCD,REPORTPLANINGDATE,IMPCUSTOMERNO,IMPCUSTOMERNAME,IMPPOSTCODE
+            ,IMPCUSTOMERADD_1,IMPCUSTOMERADD_2,IMPCUSTOMERADD_3,IMPCUSTOMERADD_4,IMPCUSTOMERTELNO,CUSTOMSOFFICEJANITORCD
+            ,CUSTOMSOFFICEJANITORRENO,CUSTOMSOFFICEJANITORNAME,CARBONDEDWAREHOUSE,REPORTPERSONCD,IMPDEALINGSCD
+            ,IMPDEALINGSDEPTCD,IMPDEALINGSNAME,EXPCUSTOMERNAME,EXPCUSTOMERADD_1,EXPCUSTOMERADD_2,EXPCUSTOMERADD_3
+            ,EXPCUSTOMERADD_4,EXPCUSTOMERPOSTCODE,EXPCUSTOMERCOUNTRY,INSPECTIONWITNESS,CWBNO,CARGOPIECE,CARGOWEIGHT
+            ,WEIGHTUNITCD,CURRENTARRFLT_1,CURRENTARRFLT_2,ARRPORTDATE,GETPORT,SHIPMENTCD,SHIPMENTPLACENAME,TRADETYPEMARK
+            ,BACKTAXREPORTDISC,IMPTRADECONT3DISC,IMPRECOATTACHDISC,CONTCHECKREOTHER,CUSTOMSEXAMMARK,OTHERLAW_1,OTHERLAW_2
+            ,OTHERLAW_3,OTHERLAW_4,OTHERLAW_5,OTHERMINICONTNO,FHPROOFDISC,PLANTPEDISC,ANIMALQUARADISC,OTHERLAWRECDISC_1
+            ,OTHERLAWRECNO_1,OTHERLAWRECDISC_2,OTHERLAWRECNO_2,OTHERLAWRECDISC_3,OTHERLAWRECNO_3,OTHERLAWRECDISC_4
+            ,OTHERLAWRECNO_4,OTHERLAWRECDISC_5,OTHERLAWRECNO_5,OTHERLAWRECDISC_6,OTHERLAWRECNO_6,OTHERLAWRECDISC_7
+            ,OTHERLAWRECNO_7,OTHERLAWRECDISC_8,OTHERLAWRECNO_8,OTHERLAWRECDISC_9,OTHERLAWRECNO_9,OTHERLAWRECDISC_10
+            ,OTHERLAWRECNO_10,INVOICEDISCERNMENT,INVOICERECEIPTNO,INVOICENO,INVOICEVALCLASSCD,INVOICEVALCONCD,INVOICECURCD
+            ,INVOICEVALUE,FAREFLG,FARECURRENCYCD,FARE,INSURANCECLASSCD,INSURANCECURCD,INSURANCEAMOUNT,INCINSUREGNO
+            ,ESTIMATIONFLGCD,INCESTREPRENO,INCESTREPRENO_2,INCESTREPRENO_3,INCREVISEFLGCD,INCREVBASECURCD,INCREVBASEAMO
+            ,INCREVBASE,ADVANCERULINGVALUATION_1,ADVANCERULINGVALUATION_2,TAXABLESAMOPDIVTO,FIRSTCARBONDEDDATE
+            ,LONGKEEPBONDEDWAREHOUSE,DELIVERYDATEEXTCD,BPAPPLICATIONCD,PAYMETHODDISC,ACCOUNTNO,SECURITYREGNO_1
+            ,SECURITYREGNO_2,NEWS_1,NEWS_2,NEWSSHIPPER,SHIPPERSSECCD,SHIPPERSREFNO,INHOUSEREFNUMBER,CWBNODEPTCD
+        FROM
+            AI_DATA
+        WHERE
+            1 = 1
+            AND AWBNO = #{awbNo}
+        <if test ="cwbNo != '' or cwbNo != null " >
+            AND CWBNO = #{cwbNo}
+        </if>
+        <if test ="cwbNoDeptCd != '' or cwbNoDeptCd != null " >
+            AND CWBNODEPTCD = #{cwbNoDeptCd}
+        </if>
+            AND REMODELINGFLG != '1'
+            AND DELETEDATE IS NULL
+            AND SPSDOCCLASSCD = '0'
+    </select>
+    <select id="getIDARepData" parameterType="hashMap" resultType="com.kse.wmsv2.oa_it_001.dao.OAIT001IDASubDao">
+        SELECT
+            AWBNO,CWBNO,CWBNODEPTCD,SEQ,ITEMCD,NACCSCD,ITEM,COUNTRYOFORIGINCD,ORIGINCERTIFIDISC,AMO_1,AMOUNIT_1
+            ,AMO_2,AMOUNIT_2,IMPTRADECONTCD,TAXABLESAMOPDIVTO,FAREDIVDISC,FOBCURRENCYCD,TAXABLESAMO,CUSTOMSEXEMPTCD
+            ,CUSTOMSEXEMPTAMO,INCONSTAXKINDCD_1,INCONSTAXEXEMCD_1,INCONSTAXEXEMAMO_1,INCONSTAXKINDCD_2
+            ,INCONSTAXEXEMCD_2,INCONSTAXEXEMAMO_2,INCONSTAXKINDCD_3,INCONSTAXEXEMCD_3,INCONSTAXEXEMAMO_3
+            ,INCONSTAXKINDCD_4,INCONSTAXEXEMCD_4,INCONSTAXEXEMAMO_4,INCONSTAXKINDCD_5,INCONSTAXEXEMCD_5
+            ,INCONSTAXEXEMAMO_5,INCONSTAXKINDCD_6,INCONSTAXEXEMCD_6,INCONSTAXEXEMAMO_6,ADVANCERULINGCLASSIFICATION
+            ,ADVANCERULINGORIGIN,WAREHOUSECD
+        FROM
+            AI_DATA_DETAIL
+        WHERE
+            AWBNO = #{awbNo}
+            AND CWBNO = #{cwbNo}
+            AND CWBNODEPTCD = #{cwbNoDeptCd}
+    </select>
+    <select id="getMICDataList" parameterType="hashMap" resultType="hashMap">
+        SELECT
+            T1.AWBNO,
+            T1.CWBNO,
+            T1.CWBNODEPTCD,
+            T1.BWBNO
+        FROM
+            AI_DATA T1
+        LEFT JOIN
+            (SELECT
+                CWBNO,
+                CWBNODEPTCD,
+                MAX(UPDATEDATE) AS MAXDATE
+            FROM
+                AI_STATUS
+            WHERE
+                CUSTOMSTATUSCD = 'IC90010'
+                OR BONDEDSTATUSCD = 'IB90010'
+            GROUP BY
+                CWBNO,
+                CWBNODEPTCD
+            ) OCSM02
+        ON
+            T1.CWBNO = OCSM02.CWBNO
+            AND T1.CWBNODEPTCD = OCSM02.CWBNODEPTCD
+        LEFT JOIN
+            (SELECT
+                CWBNO,
+                CWBNODEPTCD,
+                MAX(UPDATEDATE) AS MAXDATE
+            FROM
+                AI_STATUS
+            WHERE
+                CUSTOMSTATUSCD = 'IC90020'
+                OR BONDEDSTATUSCD = 'IB90020'
+            GROUP BY
+                CWBNO,
+                CWBNODEPTCD
+            ) OCSM03
+        ON
+            T1.CWBNO = OCSM03.CWBNO
+            AND T1.CWBNODEPTCD = OCSM03.CWBNODEPTCD
+        WHERE
+            T1.AWBNO = #{awbNo}
+            AND T1.CURRENTARRFLT_1 = #{currentArrFlt1}
+            AND T1.CURRENTARRFLT_2 = #{currentArrFlt2}
+            AND T1.CUSTOMSPLACECD = #{deptCd}
+            AND T1.REMODELINGFLG != '1'
+            AND T1.SPSDOCCLASSCD = '0'
+            AND T1.EDITFLG = '1'
+            AND T1.IDAFLG = '0'
+            AND T1.CUSTOMSTRADERCD   = #{companyCd}
+            AND IFNULL(OCSM02.MAXDATE,'1900/1/1') <![CDATA[ < ]]> IFNULL(OCSM03.MAXDATE,'1900/1/2')
+            AND T1.DELETEDATE IS NULL
+        <choose>
+            <when test=" reCreate == 'true'">
+                AND EXISTS
+                    (SELECT
+                        *
+                    FROM
+                        AI_STATUS AS SM1
+                    WHERE
+                        1 = 1
+                        AND T1.CWBNO = SM1.CWBNO
+                        AND T1.CWBNODEPTCD = SM1.CWBNODEPTCD
+                        AND SM1.CUSTOMSTATUSCD = 'IC00700'
+                    )
+            </when>
+            <when test=" reCreate == 'false'">
+                AND NOT EXISTS
+                    (SELECT
+                        *
+                    FROM
+                        AI_STATUS AS SM1
+                    WHERE
+                        1 = 1
+                        AND T1.CWBNO = SM1.CWBNO
+                        AND T1.CWBNODEPTCD = SM1.CWBNODEPTCD
+                        AND SM1.CUSTOMSTATUSCD = 'IC00700'
+                    )
+            </when>
+        </choose>
+    </select>
+    <select id="getIDCDataList" parameterType="hashMap" resultType="com.kse.wmsv2.oa_it_001.dao.OAIT001IDCDao">
+        SELECT
+            AWBNO,CWBNO,BWBNO,CWBNODEPTCD,REPORTNO,REPORTCONDITION
+        FROM
+            AI_DATA
+        WHERE
+            AWBNO = #{awbNo}
+            AND CURRENTARRFLT_1 = #{currentArrFlt1}
+            AND CURRENTARRFLT_2 = #{currentArrFlt2}
+    </select>
+    <select id="getMICData" parameterType="hashMap" resultType="com.kse.wmsv2.oa_it_001.dao.OAIT001MICReportDao">
+        SELECT
+            AWBNO,CWBNODEPTCD
+            , CASE REMODELINGFLG
+                WHEN '0' THEN CWBNO
+                WHEN '2' THEN CWBNO + '/' + CWBNODEPTCD
+            END AS CWBNO, REPORTNO, REPORTCONDITION, REPORTKINDCD_2, DISCERNMENTMARK, REPORTDIVCD, REPORTDEPCD
+            , REPORTPLANINGDATE, IMPCUSTOMERNO, IMPCUSTOMERDEPTCD, IMPCUSTOMERNAME, IMPPOSTCODE, IMPCUSTOMERADD_1
+            , IMPCUSTOMERADD_2, IMPCUSTOMERADD_3, IMPCUSTOMERADD_4, IMPCUSTOMERTELNO, IMPCUSTOMERADD_LUMP
+            , BONDEDWAREHOUSECD, EXPCUSTOMERNO, EXPCUSTOMERDEPTNO, EXPCUSTOMERNAME, EXPCUSTOMERADD_1, EXPCUSTOMERADD_2
+            , EXPCUSTOMERADD_3, EXPCUSTOMERADD_4, EXPCUSTOMERPOSTCODE, EXPCUSTOMERCOUNTRY, EXPCUSTOMERADD_LUMP
+            , CARGOPIECE, CARGOWEIGHT, CURRENTARRFLT_1, CURRENTARRFLT_2, ARRPORTDATE, GETPORT, SHIPMENTCD
+            , INVOICEVALCLASSCD, INVOICEVALCONCD, INVOICECURCD, INVOICEVALUE, FAREFLG, FARECURRENCYCD, FARE
+            , INSURANCECLASSCD, INSURANCECURCD, INSURANCEAMOUNT, ITEM, COUNTRYOFORIGINCD, TAXABLESAMO, NEWS_2
+            , CUSTOMSPLACECD, CARBONDEDWAREHOUSE, CUSTOMSOFFICEJANITORCD, CUSTOMSOFFICEJANITORRENO
+            , CUSTOMSOFFICEJANITORNAME, INSPECTIONWITNESS, SHIPPERSSECCD, SHIPPERSREFNO, INHOUSEREFNUMBER
+        FROM
+            AI_DATA
+        WHERE
+            1 = 1
+            AND AWBNO = #{awbNo}
+            AND CWBNO = #{cwbNo}
+            AND CWBNODEPTCD = #{cwbNoDeptCd}
+            AND REMODELINGFLG != '1'
+            AND EDITFLG = '1'
+            AND DELETEDATE IS NULL
+            AND SPSDOCCLASSCD = '0'
+    </select>
+    <select id="getHCHData" parameterType="hashMap" resultType="com.kse.wmsv2.oa_it_001.dao.OAIT001HCHReportDao">
+        SELECT
+            T1.REQMIXEDFORWARDER,
+            (SELECT CHARACTERITEM1 FROM AM_NAME WHERE NAMECLASS = '0047'AND NAMECD = '017' AND DEPARTMENTCD = #{deptCd}) AS CUSTOMSDIV,
+            T1.AWBNO,
+            T1.GRANDCHILDMIXED,
+            T1.ARRFLT_1,
+            T1.ARRFLT_2,
+            T1.ARRAIRPORTCD,
+            T1.CATERERINGPLACE,
+            T1.JOINT,
+            T2.CWBNO,
+            CASE T2.REMODELINGFLG
+            WHEN '0' THEN T2.CWBNO
+            WHEN '2' THEN T2.CWBNO + '/' + T2.CWBNODEPTCD
+            END AS CWBNO2,
+            T2.CWBNODEPTCD,
+            T2.CARGOPIECE,
+            T2.CARGOWEIGHT,
+            T2.WEIGHTUNITCD,
+            T2.ITEM,
+            T2.SPECIALCARGOSIGN,
+            T2.DESTINATION,
+            T2.CARBONDEDWAREHOUSE,
+            T2.MANAGEDDATAFLG,
+            (SELECT CHARACTERITEM1 FROM AM_NAME WHERE NAMECLASS = '0047'AND NAMECD = '038' AND DEPARTMENTCD = #{deptCd}) AS MIXEDFORWARDER,
+            T2.EXPCUSTOMERNAME,
+            T2.EXPCUSTOMERADD_LUMP,
+            T2.EXPCUSTOMERTELNO,
+            CONCAT(IFNULL(T2.IMPCUSTOMERNO, ''),IFNULL(T2.IMPCUSTOMERDEPTCD, '')) AS IMPCUSTOMERNO,
+            T2.IMPCUSTOMERNAME,
+            T2.IMPCUSTOMERADD_LUMP,
+            T2.IMPCUSTOMERTELNO,
+            T2.BWBNO,
+            T2.IDAFLG
+        FROM
+            AI_HEAD T1
+        INNER JOIN
+            AI_DATA T2
+        ON
+            T1.AWBNO = T2.AWBNO
+            AND T1.ARRFLT_1 = T2.CURRENTARRFLT_1
+            AND T1.ARRFLT_2 = T2.CURRENTARRFLT_2
+        LEFT JOIN
+            (SELECT DISTINCT
+                CWBNO,
+                CWBNODEPTCD,
+                CUSTOMSTATUSCD
+            FROM
+                AI_STATUS
+            WHERE
+                BUSINESSCLASS = '01'
+                AND CUSTOMSTATUSCD = 'IC00300'
+            ) AS OCSM01
+        ON
+            T2.CWBNO = OCSM01.CWBNO
+            AND T2.CWBNODEPTCD = OCSM01.CWBNODEPTCD
+        LEFT JOIN
+            (SELECT
+                CWBNO,
+                CWBNODEPTCD,
+                MAX(UPDATEDATE) AS MAXDATE
+            FROM
+                AI_STATUS
+            WHERE
+                CUSTOMSTATUSCD IN ('IC90010')
+                AND BONDEDSTATUSCD IN ('IB90010')
+            GROUP BY
+                CWBNO,
+                CWBNODEPTCD
+            ) OCSM02
+        ON
+            T2.CWBNO = OCSM02.CWBNO
+            AND T2.CWBNODEPTCD = OCSM02.CWBNODEPTCD
+        LEFT JOIN
+            (SELECT
+                CWBNO,
+                CWBNODEPTCD,
+                MAX(UPDATEDATE) AS MAXDATE
+            FROM
+                AI_STATUS
+            WHERE
+                CUSTOMSTATUSCD IN ('IC90020')
+                AND BONDEDSTATUSCD IN ('IB90020')
+            GROUP BY
+                CWBNO,
+                CWBNODEPTCD
+            ) OCSM03
+        ON
+            T2.CWBNO = OCSM03.CWBNO
+            AND T2.CWBNODEPTCD = OCSM03.CWBNODEPTCD
+        WHERE
+            1 = 1
+            AND T1.AWBNO = #{awbNo}
+            AND T1.ARRFLT_1= #{arrFlt1}
+            AND T1.ARRFLT_2= #{arrFlt2}
+            AND T2.REMODELINGFLG!= '1'
+            AND T2.CUSTOMSPLACECD= #{deptCd}
+            AND T2.SPSDOCCLASSCD = '0'
+            AND T2.CUSTOMSTRADERCD = #{companyCd}
+            AND IFNULL(OCSM02.MAXDATE,'1900/1/1')  <![CDATA[ < ]]>  IFNULL(OCSM03.MAXDATE,'1900/1/2')
+        <choose>
+            <when test=" reCreate == 'true'">
+            AND OCSM01.CUSTOMSTATUSCD IS NOT NULL
+            </when>
+            <when test=" reCreate == 'false'">
+            AND OCSM01.CUSTOMSTATUSCD IS NULL
+            </when>
+        </choose>
+            AND T1.DELETEDATE IS NULL
+            AND T2.DELETEDATE IS NULL
+        ORDER BY
+            IDAFLG,
+            CWBNO,
+            CWBNODEPTCD
+    </select>
+    <select id="getHDMData" parameterType="hashMap" resultType="com.kse.wmsv2.oa_it_001.dao.OAIT001HDMReportDao">
+        SELECT
+            T1.REQMIXEDFORWARDER,
+            T1.CUSTOMSDIV,
+            T1.AWBNO,
+            T1.GRANDCHILDMIXED,
+            T1.ARRFLT_1,
+            T1.ARRFLT_2,
+            T1.ARRAIRPORTCD,
+            T1.CATERERINGPLACE,
+            T1.JOINT,
+            T2.CWBNO,
+            CASE T2.REMODELINGFLG
+            WHEN '0' THEN T2.CWBNO
+            WHEN '2' THEN T2.CWBNO + '/' + T2.CWBNODEPTCD
+            END AS CWBNO2,
+            T2.CWBNODEPTCD,
+            T2.CARGOPIECE,
+            T2.CARGOWEIGHT,
+            T2.WEIGHTUNITCD,
+            T2.ITEM,
+            T2.SPECIALCARGOSIGN,
+            T2.DESTINATION,
+            T2.CARBONDEDWAREHOUSE,
+            T2.MANAGEDDATAFLG,
+            T2.MIXEDFORWARDER,
+            T2.EXPCUSTOMERNAME,
+            T2.EXPCUSTOMERADD_LUMP,
+            T2.EXPCUSTOMERTELNO,
+            CONCAT(IFNULL(IMPCUSTOMERNO, '') ,IFNULL(IMPCUSTOMERDEPTCD, '')) AS IMPCUSTOMERNO,
+            T2.IMPCUSTOMERNAME,
+            T2.IMPCUSTOMERADD_LUMP,
+            T2.IMPCUSTOMERTELNO,
+            T2.BWBNO,
+            T2.IDAFLG
+            ,T2.BONDEDWAREHOUSECD
+            ,T2.CUSTOMSPLACECD
+            ,T1.AIRPORTCD
+            ,T2.EXPCUSTOMERADD_1
+            ,T2.EXPCUSTOMERADD_2
+            ,T2.EXPCUSTOMERADD_3
+            ,T2.EXPCUSTOMERADD_4
+            ,T2.IMPCUSTOMERADD_1
+            ,T2.IMPCUSTOMERADD_2
+            ,T2.IMPCUSTOMERADD_3
+            ,T2.IMPCUSTOMERADD_4
+        FROM
+            AI_HEAD T1
+        INNER JOIN
+            AI_DATA T2
+        ON
+            T1.AWBNO = T2.AWBNO
+            AND T1.ARRFLT_1 = T2.CURRENTARRFLT_1
+            AND T1.ARRFLT_2 = T2.CURRENTARRFLT_2
+        LEFT JOIN
+            (SELECT DISTINCT
+                CWBNO,
+                CWBNODEPTCD,
+                CUSTOMSTATUSCD
+            FROM
+                AI_STATUS
+            WHERE
+                BUSINESSCLASS = '01'
+                AND CUSTOMSTATUSCD = 'IC00301'
+            ) AS OCSM01
+        ON
+            T2.CWBNO = OCSM01.CWBNO
+            AND T2.CWBNODEPTCD = OCSM01.CWBNODEPTCD
+        LEFT JOIN
+            (SELECT
+                CWBNO,
+                CWBNODEPTCD,
+                MAX(UPDATEDATE) AS MAXDATE
+            FROM
+                AI_STATUS
+            WHERE
+                CUSTOMSTATUSCD IN ('IC90010')
+                AND BONDEDSTATUSCD IN ('IB90010')
+            GROUP BY
+                CWBNO,
+                CWBNODEPTCD
+            ) OCSM02
+        ON
+            T2.CWBNO = OCSM02.CWBNO
+            AND T2.CWBNODEPTCD = OCSM02.CWBNODEPTCD
+        LEFT JOIN
+            (SELECT
+                CWBNO,
+                CWBNODEPTCD,
+                MAX(UPDATEDATE) AS MAXDATE
+            FROM
+                AI_STATUS
+            WHERE
+                CUSTOMSTATUSCD IN ('IC90020')
+                AND BONDEDSTATUSCD IN ('IB90020')
+            GROUP BY
+                CWBNO,
+                CWBNODEPTCD
+            ) OCSM03
+        ON
+            T2.CWBNO = OCSM03.CWBNO
+            AND T2.CWBNODEPTCD = OCSM03.CWBNODEPTCD
+        WHERE
+            1 = 1
+            AND T1.AWBNO             = #{awbNo}
+            AND T1.ARRFLT_1          = #{arrFlt1}
+            AND T1.ARRFLT_2          = #{arrFlt2}
+            AND T2.CUSTOMSPLACECD    = #{deptCd}
+            AND T2.SPSDOCCLASSCD     = '0'
+            AND T2.CUSTOMSTRADERCD   = #{companyCd}
+            AND IFNULL(OCSM02.MAXDATE,'1900/1/1') <![CDATA[ < ]]> IFNULL(OCSM03.MAXDATE,'1900/1/2')
+    <choose>
+        <when test=" reCreate == 'true'">
+            AND OCSM01.CUSTOMSTATUSCD IS NOT NULL
+        </when>
+        <when test=" reCreate == 'false'">
+            AND OCSM01.CUSTOMSTATUSCD IS NULL
+        </when>
+    </choose>
+            AND T1.DELETEDATE IS NULL
+            AND T2.DELETEDATE IS NULL
+        ORDER BY
+            IDAFLG,
+            CWBNO,
+            CWBNODEPTCD
+    </select>
+    <select id="getCHAData" parameterType="hashMap" resultType="com.kse.wmsv2.oa_it_001.dao.OAIT001CHAReportDao">
+        SELECT
+            T1.REQMIXEDFORWARDER,
+            T1.CUSTOMSDIV,
+            T1.AWBNO,
+            T1.GRANDCHILDMIXED,
+            T1.ARRFLT_1,
+            T1.ARRFLT_2,
+            T1.ARRAIRPORTCD,
+            T1.CATERERINGPLACE,
+            T1.JOINT,
+            T2.CWBNO,
+            CASE T2.REMODELINGFLG
+            WHEN '0' THEN T2.CWBNO
+            WHEN '2' THEN T2.CWBNO + '/' + T2.CWBNODEPTCD
+            END AS CWBNO2,
+            T2.CWBNODEPTCD,
+            T2.CARGOPIECE,
+            T2.CARGOWEIGHT,
+            T2.WEIGHTUNITCD,
+            T2.ITEM,
+            T2.SPECIALCARGOSIGN,
+            T2.DESTINATION,
+            T2.CARBONDEDWAREHOUSE,
+            T2.MANAGEDDATAFLG,
+            T2.MIXEDFORWARDER,
+            T2.EXPCUSTOMERNAME,
+            T2.EXPCUSTOMERADD_LUMP,
+            T2.EXPCUSTOMERTELNO,
+            CONCAT(IFNULL(T2.IMPCUSTOMERNO, ''),IFNULL(T2.IMPCUSTOMERDEPTCD, '')) AS IMPCUSTOMERNO,
+            T2.IMPCUSTOMERNAME,
+            T2.IMPCUSTOMERADD_LUMP,
+            T2.IMPCUSTOMERTELNO,
+            T2.BWBNO,
+            T2.IDAFLG
+        FROM
+            AI_HEAD T1
+        INNER JOIN
+            AI_DATA T2
+        ON
+            T1.AWBNO = T2.AWBNO
+            AND T1.ARRFLT_1 = T2.CURRENTARRFLT_1
+            AND T1.ARRFLT_2 = T2.CURRENTARRFLT_2
+        LEFT JOIN
+            (SELECT DISTINCT
+                CWBNO,
+                CWBNODEPTCD,
+                CUSTOMSTATUSCD
+            FROM
+                AI_STATUS
+            WHERE
+                BUSINESSCLASS = '01'
+                AND CUSTOMSTATUSCD = 'IC00300'
+            ) AS OCSM01
+        ON
+            T2.CWBNO = OCSM01.CWBNO
+            AND T2.CWBNODEPTCD = OCSM01.CWBNODEPTCD
+        LEFT JOIN
+            (SELECT
+                CWBNO,
+                CWBNODEPTCD,
+                MAX(UPDATEDATE) AS MAXDATE
+            FROM
+                AI_STATUS
+            WHERE
+                CUSTOMSTATUSCD IN ('IC90010')
+                AND BONDEDSTATUSCD IN ('IB90010')
+            GROUP BY
+                CWBNO,
+                CWBNODEPTCD
+            ) OCSM02
+        ON
+            T2.CWBNO = OCSM02.CWBNO
+            AND T2.CWBNODEPTCD = OCSM02.CWBNODEPTCD
+        LEFT JOIN
+            (SELECT
+                CWBNO,
+                CWBNODEPTCD,
+                MAX(UPDATEDATE) AS MAXDATE
+            FROM
+                AI_STATUS
+            WHERE
+                CUSTOMSTATUSCD IN ('IC90020')
+                AND BONDEDSTATUSCD IN ('IB90020')
+            GROUP BY
+                CWBNO,
+                CWBNODEPTCD
+            ) OCSM03
+        ON
+            T2.CWBNO = OCSM03.CWBNO
+            AND T2.CWBNODEPTCD = OCSM03.CWBNODEPTCD
+        WHERE
+            1 = 1
+            AND T1.AWBNO             = #{awbNo}
+            AND T1.ARRFLT_1          = #{arrFlt1}
+            AND T1.ARRFLT_2          = #{arrFlt2}
+            AND T2.REMODELINGFLG    != '1'
+            AND T2.CUSTOMSPLACECD    = #{deptCd}
+            AND T2.SPSDOCCLASSCD     = '0'
+            AND T2.CUSTOMSTRADERCD   = #{companyCd}
+            AND IFNULL(OCSM02.MAXDATE,'1900/1/1') <![CDATA[ < ]]> IFNULL(OCSM03.MAXDATE,'1900/1/2')
+        <choose>
+            <when test=" reCreate == 'true'">
+                AND OCSM01.CUSTOMSTATUSCD IS NOT NULL
+            </when>
+            <when test=" reCreate == 'false'">
+                AND OCSM01.CUSTOMSTATUSCD IS NULL
+            </when>
+        </choose>
+            AND T1.DELETEDATE IS NULL
+            AND T2.DELETEDATE IS NULL
+        ORDER BY
+            IDAFLG,
+            CWBNO,
+            CWBNODEPTCD
+    </select>
+    <select id="getProhibitionList" resultType="string">
+        SELECT
+            NAME
+        FROM
+            AM_NAME
+        WHERE
+            DEPARTMENTCD = 'ALL'
+            AND NAMECLASS = '0141'
+    </select>
+    <update id="updateMasterStatus" parameterType="hashMap">
+        UPDATE
+            AI_DATA
+        SET
+            CURRENTCUSTOMSSTATUSCD = #{statusCd}
+            ,UPDATEUSERCD = #{userCd}
+            ,UPDATEDATE = #{date}
+        WHERE
+            AWBNO = #{awbNo}
+            AND CWBNO = #{cwbNo}
+            AND CWBNODEPTCD = #{cwbNoDeptCd}
+    </update>
+</mapper>

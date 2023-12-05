@@ -1,0 +1,45 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="com.kse.wmsv2.oa_it_002.mapper.AirImportAmNameMapper">
+  <select id="getListAmName" parameterType="java.lang.String" resultType="string">
+    SELECT 
+      NAME 
+    FROM AM_NAME 
+    WHERE NAMECLASS = #{nameClass}
+  </select>
+
+  <select id="getOperator" resultType="string">
+    SELECT
+      DISTINCT CONCAT(CHARACTERITEM1 , ' ' , CHARACTERITEM2)
+    FROM AM_NAME 
+    WHERE NAMECLASS = #{nameClass}
+    AND NAMECD = #{nameCd}
+  </select>
+
+  <select id="getListCodeAndAmName" parameterType="java.lang.String" resultMap="listCodeAndAmName">
+            SELECT 
+              NAMECD,
+              NAME 
+            FROM AM_NAME 
+            WHERE NAMECLASS = #{nameClass}
+  </select>
+
+  <select id="getListByNameClassAndDepartmentCd" resultMap="listCodeAndAmName">
+            SELECT 
+              NAMECD,
+              NAME 
+            FROM AM_NAME 
+            WHERE NAMECLASS = #{nameClass}
+            AND (DEPARTMENTCD = 'ALL' OR DEPARTMENTCD = #{departmentCd})
+  </select>
+
+  <resultMap id="listCodeAndAmName" type="com.kse.wmsv2.oa_it_002.dto.ComBoBoxDto">
+    <result column="NAMECD" jdbcType="VARCHAR" property="value" />
+    <result column="NAME" jdbcType="VARCHAR" property="name" />
+  </resultMap>
+</mapper>
+
+ 

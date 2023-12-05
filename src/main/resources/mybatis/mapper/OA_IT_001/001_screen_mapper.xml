@@ -1,0 +1,855 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="com.kse.wmsv2.oa_it_001.mapper.OAIT001ScreenMapper">
+    <select id="selectHeader"  parameterType="hashMap" resultType="com.kse.wmsv2.oa_it_001.dao.OAIT001HeaderDao">
+        SELECT 	DISTINCT
+        D.AWBNO
+        , IFNULL(D.REPORTPLANINGDATE,DATE_FORMAT(CURDATE(), '%Y-%m-%d')) AS REPORTPLANINGDATE
+        , D.INHOUSEREFNUMBER
+        , HD.REQMIXEDFORWARDER
+        , HD.CUSTOMSDIV
+        , HD.AIRPORTCD
+        , HD.ARRAIRPORTCD
+        , HD.ARRFLT_1
+        , HD.ARRFLT_2
+        , HD.REPORTCONDITION
+        , HD.GETPORT
+        , IFNULL(HD.ARRDATE,DATE_FORMAT(CURDATE(), '%Y-%m-%d')) AS ARRDATE
+        , HD.PRESENT
+        , IFNULL(HD.ARRPORTDATE,DATE_FORMAT(CURDATE(), '%Y-%m-%d')) AS ARRPORTDATE
+        , HD.GRANDCHILDMIXED
+        , HD.SPLIT
+        , HD.CATERERINGPLACE
+        , HD.SHIPMENTCD
+        , HD.CLEARPLANPLACECD
+        , HD.JOINT
+        FROM
+        AI_HEAD HD
+        LEFT JOIN
+        (SELECT
+        AWBNO
+        , REPORTPLANINGDATE
+        , INHOUSEREFNUMBER
+        , CWBNO
+        FROM
+        AI_DATA
+        WHERE
+        AWBNO = #{awbNo}
+        <if test="cwbNo != ''  ">
+            AND CWBNO = #{cwbNo}
+        </if>
+        ) D
+        ON
+        HD.AWBNO = D.AWBNO
+        WHERE
+        1=1
+        AND HD.AWBNO = #{awbNo}
+        <if test="cwbNo != '' ">
+            AND D.CWBNO = #{cwbNo}
+        </if>
+        ORDER BY
+        D.REPORTPLANINGDATE DESC
+        LIMIT 1
+    </select>
+    <select id="selectDefault" parameterType="hashMap" resultType="com.kse.wmsv2.oa_it_001.dao.OAIT001DefaultDao">
+        SELECT DISTINCT
+        NAMECD,
+        NAME
+        ,  IFNULL(CHARACTERITEM1,'') AS CHARACTERITEM
+        ,  IFNULL(CHARACTERITEM2,'') AS TABLENAME
+        ,  IFNULL(CHARACTERITEM3,'') AS COLUMNNAME
+        FROM
+        AM_NAME
+        WHERE
+        1 = 1
+        AND DEPARTMENTCD = #{deptCd}
+        AND NAMECLASS = #{nameClass}
+        ORDER BY
+        NAMECD ASC
+    </select>
+    <select id="selectSearchResult" parameterType="com.kse.wmsv2.oa_it_001.dto.OAIT001SearchDto" resultType="com.kse.wmsv2.oa_it_001.dao.OAIT001SearchResultDao">
+        SELECT DISTINCT
+        D.AWBNO
+        , D.CWBNODEPTCD
+        , D.BWBNO
+        , D.CUSTOMSPLACECD
+        , '0' as LINKDATACLASS
+        , D.PERMITCLASSCD as PERMITFLG
+        , D.DOCUMENTCHECK
+        , D.IDAFLG
+        , D.EDITFLG
+        , ( SELECT NAME FROM AM_NAME WHERE NAMECLASS IN ('0013','0015') AND NAMECD = D.CURRENTCUSTOMSSTATUSCD ) AS CURRENTCUSTOMSSTATUSCD
+        , ( SELECT NAME FROM AM_NAME WHERE NAMECLASS = '0014' AND NAMECD = D.CURRENTCARGOSTATUSCD ) AS CURRENTCARGOSTATUSCD
+        , (
+        SELECT
+        NAME
+        FROM
+        AM_NAME
+        WHERE
+        1=1
+        AND DEPARTMENTCD = 'ALL'
+        AND NAMECLASS = '0109'
+        AND NAMECD = (CASE WHEN ISNULL(IMG.IMGCNT) = 1  THEN '2' ELSE '1' END)
+        ) AS IMG
+        , '0' as CkPrint
+        , D.CWBNO
+        , CASE
+        WHEN (D.CARGOINPIECE + D.CARGOINSCANPIECE) <![CDATA[ < ]]> D.CARGOPIECE THEN '1' ELSE '0'	END AS SHORTFREIGHT
+        , D.CARGOINPIECE + D.CARGOINSCANPIECE AS CARGOINSCANPIECE
+        , D.CARGOPIECE
+        , D.CARGOWEIGHT
+        , D.ORIGIN
+        , D.ITEM
+        , D.INVOICEVALCONCD
+        , D.INVOICECURCD
+        , CASE
+        WHEN D.INVOICECURCD = 'JPY' THEN FORMAT(D.INVOICEVALUE, 0)
+        ELSE FORMAT(D.INVOICEVALUE, 2)
+        END AS INVOICEVALUE
+        , D.FARECURRENCYCD
+        , CASE
+        WHEN D.FARECURRENCYCD = 'JPY' THEN FORMAT(D.FARE, 0)
+        ELSE FORMAT(D.FARE, 2)
+        END AS FARE
+        , CONCAT(
+        COALESCE(D.IMPCUSTOMERNO,''),'-',COALESCE(D.IMPCUSTOMERDEPTCD,''),'-',COALESCE(D.IMPCUSTOMEROCSDEPTCD,'')
+        )  AS IMPORTCUSTOMERNO
+        , D.IMPCUSTOMERNAME
+        , D.IMPCUSTOMERADD_LUMP
+        , CONCAT(
+        COALESCE(D.EXPCUSTOMERNO,''),'-',COALESCE(D.EXPCUSTOMERDEPTNO,''),'-',COALESCE(D.EXPCUSTOMEROCSDEPTNO,'')
+        )  AS EXPORTCUSTOMERNO
+        , D.EXPCUSTOMERNAME
+        , D.EXPCUSTOMERADD_LUMP
+        , D.DESTINATION
+        , D.MIXEDFORWARDER
+        , D.MANAGEDDATAFLG
+        , D.PAYKIND
+        , D.SPECIALCARGOSIGN
+        , D.JPYFARE
+        , D.CARBONDEDWAREHOUSE
+        , D.DISCERNMENTMARK
+        , D.EDITREGUSERCD
+        , D.CURRENTARRFLT_1
+        , D.CURRENTARRFLT_2
+        FROM
+        AI_DATA AS D
+        LEFT JOIN
+        AI_HEAD AS HD
+        ON
+        D.AWBNO = HD.AWBNO
+        LEFT JOIN
+        (SELECT
+        CWBNO
+        , SUM( CASE WHEN IMAGECLASS IN ('IN','CW') THEN 1 ELSE 0 END) AS IMGCNT
+        FROM
+        CS_IMAGE_MANAGEMENT
+        WHERE
+        1=1
+        AND IMPORTEXPORTCLASS = '1'
+        GROUP BY
+        CWBNO) AS IMG
+        ON
+        D.CWBNO = IMG.CWBNO
+        WHERE
+        1 = 1
+        AND D.AWBNO = #{awbNo}
+        <if test="cwbNo != ''  ">
+            AND D.CWBNO = #{cwbNo}
+        </if>
+        <if test="currentArrFlt1 != '' ">
+            AND D.CURRENTARRFLT_1 = #{currentArrFlt1}
+        </if>
+        <if test="idaFlg != '' ">
+            <choose>
+                <when test="idaFlg == 'true'">
+                    AND D.IDAFLG = '1'
+                </when>
+            </choose>
+        </if>
+        <if test="micFlg != '' ">
+            <choose>
+                <when test="micFlg == 'true'">
+                    AND D.IDAFLG = '0'
+                </when>
+            </choose>
+        </if>
+    </select>
+    <select id="searchAllStatus" parameterType="hashMap" resultType="com.kse.wmsv2.oa_it_001.dao.OAIT001StatusDao">
+        SELECT
+        IH.REGDATE AS REGDATE, CU.USERNAME AS REGUSERCD, AN.NAME AS STATUSCD
+        FROM
+        AI_STATUS_HISTORY IH
+        LEFT JOIN
+        AM_NAME AN
+        ON
+        IH.STATUSCD = AN.NAMECD
+        AND AN.NAMECLASS IN ( '0013','0014','0015')
+        LEFT JOIN
+        CM_USER CU
+        ON
+        IH.REGUSERCD = CU.USERCD
+        WHERE
+        <choose>
+            <when test="businessClass == '01'">
+                BUSINESSCLASS IN ('01','03')
+            </when>
+            <otherwise>
+                BUSINESSCLASS IN ('02')
+            </otherwise>
+        </choose>
+        AND CWBNO = #{cwbNo}
+        <if test ="awbNo != '' " >
+            AND AWBNO IN ('00',#{awbNo})
+            <!--            AND AWBNO = #{awbNo}-->
+        </if>
+        ORDER BY
+        REGDATE,IH.STATUSCD ASC
+    </select>
+    <select id="selectDeptCdList" resultType="hashMap">
+        SELECT
+        NAMECD AS VALUE , NAME AS OPTION
+        FROM
+        AM_NAME
+        WHERE
+        NAMECLASS = '0008'
+        ORDER BY
+        NAMECD ASC
+    </select>
+    <select id="selectAgencyList" resultType="hashMap">
+        SELECT
+        NAMECD AS VALUE , NAME AS OPTION
+        FROM
+        AM_NAME
+        WHERE
+        NAMECLASS = '0403'
+        ORDER BY
+        NAMECD ASC
+    </select>
+    <select id="selectMICDetail" parameterType="hashMap" resultType="com.kse.wmsv2.oa_it_001.dao.OAIT001MICDao">
+        SELECT DISTINCT
+        AD.AWBNO,AD.BWBNO,AD.CWBNO,AD.CWBNODEPTCD,AD.REPORTCONDITION,AD.REPORTKINDCD_2,AD.DISCERNMENTMARK,AD.REPORTDIVCD
+        ,AD.REPORTDEPCD,AD.REPORTPLANINGDATE,AD.IMPCUSTOMERNO,AD.IMPCUSTOMERDEPTCD,AD.IMPCUSTOMEROCSDEPTCD
+        ,AD.IMPCUSTOMERNAME,AD.IMPPOSTCODE,AD.IMPCUSTOMERTELNO,AD.IMPCUSTOMERADD_1,AD.IMPCUSTOMERADD_2
+        ,AD.IMPCUSTOMERADD_3,AD.IMPCUSTOMERADD_4,AD.IMPCUSTOMERADD_LUMP,AD.IMPCUSTOMERADD,AD.EXPCUSTOMERNO,AD.EXPCUSTOMERDEPTNO
+        ,AD.EXPCUSTOMEROCSDEPTNO,AD.EXPCUSTOMERNAME,AD.EXPCUSTOMERPOSTCODE,AD.EXPCUSTOMERCOUNTRY,AD.EXPCUSTOMERADD_1
+        ,AD.EXPCUSTOMERADD_2,AD.EXPCUSTOMERADD_3,AD.EXPCUSTOMERADD_4,AD.EXPCUSTOMERADD_LUMP,AD.EXPCUSTOMERADD
+        ,AD.CARGOPIECE,AD.CARGOWEIGHT,AD.CURRENTARRFLT_1,AD.CURRENTARRFLT_2,AD.ARRPORTDATE,AD.GETPORT,AD.SHIPMENTCD
+        ,AD.INVOICEVALCLASSCD,AD.INVOICEVALCONCD,AD.INVOICECURCD
+        ,CASE
+        WHEN AD.INVOICECURCD = 'JPY' THEN FORMAT(AD.INVOICEVALUE,0)
+        ELSE FORMAT(AD.INVOICEVALUE,2)
+        END AS INVOICEVALUE
+        ,FORMAT(FLOOR(AD.TAXABLESAMO),0) AS TAXABLESAMO
+        ,AD.FAREFLG
+        ,AD.FARECURRENCYCD
+        ,CASE
+        WHEN AD.FARECURRENCYCD = 'JPY' THEN FORMAT(AD.FARE,0)
+        ELSE FORMAT(AD.FARE,2)
+        END AS FARE
+        ,AD.INSURANCECLASSCD
+        ,AD.INSURANCECURCD
+        ,CASE
+        WHEN AD.INSURANCECURCD = 'JPY' THEN FORMAT(AD.INSURANCEAMOUNT,0)
+        ELSE FORMAT(AD.INSURANCEAMOUNT,2)
+        END AS INSURANCEAMOUNT
+        ,AD.COUNTRYOFORIGINCD
+        ,AD.ITEM,AD.NEWS_2,AD.INHOUSEREFNUMBER,AD.CUSTOMSOFFICEJANITORCD,AD.CUSTOMSOFFICEJANITORNAME
+        ,AD.CustomsOfficeJanitorReNo,AD.InspectionWitness,AD.SHIPPERSSECCD,AD.SHIPPERSREFNO,AD.CUSTOMSPLACECD
+        ,IFNULL(
+        (SELECT
+        COUNT(*) AS CNT
+        FROM
+        CS_MESSAGE_ERROR AS ERR
+        WHERE
+        ERR.IMPORTEXPORTCLASS = '1'
+        AND ERR.AWBNO = AD.AWBNO
+        AND ERR.CWBNO = AD.CWBNO
+        AND ERR.CWBNODEPTCD = AD.CWBNODEPTCD
+        )
+        ,0) AS ERRORCNT,
+        IFNULL(
+        (SELECT
+        IMAGEPATH
+        FROM
+        CS_IMAGE_MANAGEMENT AS IMG
+        WHERE
+        IMG.IMPORTEXPORTCLASS = '1'
+        AND IMG.IMAGECLASS = 'CW'
+        AND IMG.AWBNO = '00'
+        AND IMG.CWBNO = AD.CWBNO
+        AND IMG.CWBNODEPTCD = AD.CWBNODEPTCD
+        LIMIT 1)
+        , '') AS PDFURL,
+        IFNULL(
+        (SELECT
+        IMAGEPATH
+        FROM
+        CS_IMAGE_MANAGEMENT AS IMG
+        WHERE
+        IMG.IMPORTEXPORTCLASS = '1'
+        AND IMG.IMAGECLASS = 'IN'
+        AND IMG.AWBNO = '00'
+        AND IMG.CWBNO = AD.CWBNO
+        AND IMG.CWBNODEPTCD = AD.CWBNODEPTCD
+        LIMIT 1)
+        , '') AS PDFURL2,
+        T2.REMARKS,T2.CONDITIONCOMMENT
+        ,CASE WHEN RIGHT(AD.CURRENTCUSTOMSSTATUSCD,5) >= '01200' THEN TRUE ELSE FALSE END AS DISABLEDFLG
+        , IFNULL(AD.EDITFLG,'0') AS EDITFLG
+        FROM
+        AI_DATA AS AD
+        LEFT JOIN
+        AM_CUSTOMER_NUMBER AS T2
+        ON
+        AD.IMPCUSTOMERNO = T2.CUSTOMERNO
+        AND AD.IMPCUSTOMERDEPTCD = T2.DEPTCD
+        AND AD.IMPCUSTOMEROCSDEPTCD = T2.OCSDEPTCD
+        WHERE
+        AWBNO = #{awbNo}
+        AND CWBNO = #{cwbNo}
+    </select>
+    <select id="selectIDAMain" parameterType="com.kse.wmsv2.oa_it_001.dto.OAIT001SearchDto" resultType="com.kse.wmsv2.oa_it_001.dao.OAIT001IDAMainDao">
+        SELECT
+        AD.AWBNO,
+        AD.BWBNO,
+        AD.CWBNO,
+        '1' as IDACHECKFLAG,
+        AD.CWBNODEPTCD,
+        AD.CARGOPIECE,
+        AD.CARGOWEIGHT,
+        AD.WEIGHTUNITCD,
+        AD.IMPCUSTOMERNO,
+        AD.IMPCUSTOMERDEPTCD,
+        AD.IMPCUSTOMEROCSDEPTCD,
+        AD.IMPCUSTOMERNAME,
+        AD.IMPPOSTCODE,
+        AD.IMPCUSTOMERTELNO,
+        AD.IMPCUSTOMERADD_1,
+        AD.IMPCUSTOMERADD_2,
+        AD.IMPCUSTOMERADD_3,
+        AD.IMPCUSTOMERADD_4,
+        AD.IMPCUSTOMERADD,
+        AD.EXPCUSTOMERNO,
+        AD.EXPCUSTOMERDEPTNO,
+        AD.EXPCUSTOMEROCSDEPTNO,
+        AD.EXPCUSTOMERNAME,
+        AD.EXPCUSTOMERPOSTCODE,
+        AD.EXPCUSTOMERCOUNTRY,
+        AD.EXPCUSTOMERADD_1,
+        AD.EXPCUSTOMERADD_2,
+        AD.EXPCUSTOMERADD_3,
+        AD.EXPCUSTOMERADD_4,
+        AD.EXPCUSTOMERADD,
+        AD.IMPDEALINGSCD,
+        AD.IMPDEALINGSDEPTCD,
+        AD.IMPDEALINGSOCSDEPTCD,
+        AD.IMPDEALINGSNAME,
+        AD.INVOICEDISCERNMENT,
+        AD.INVOICERECEIPTNO,
+        AD.INVOICENO,
+        AD.INVOICEVALCLASSCD,
+        AD.INVOICEVALCONCD,
+        AD.INVOICECURCD,
+        CASE
+        WHEN AD.INVOICECURCD = 'JPY' THEN FORMAT(AD.INVOICEVALUE,0)
+        ELSE FORMAT(AD.INVOICEVALUE,0)
+        END AS INVOICEVALUE,
+        AD.FAREFLG,
+        AD.FARECURRENCYCD,
+        CASE
+        WHEN AD.FARECURRENCYCD = 'JPY' THEN FORMAT(AD.FARE,0)
+        ELSE FORMAT(AD.FARE,2)
+        END AS FARE,
+        AD.INSURANCECLASSCD,
+        AD.INSURANCECURCD,
+        CASE
+        WHEN AD.INSURANCECURCD = 'JPY' THEN FORMAT(AD.INSURANCEAMOUNT,0)
+        ELSE FORMAT(AD.INSURANCEAMOUNT,2)
+        END AS INSURANCEAMOUNT,
+        AD.INCINSUREGNO,
+        FORMAT(AD.TAXABLESAMO,0) AS TAXABLESAMO,
+        AD.ESTIMATIONFLGCD,
+        AD.INCESTREPRENO,
+        AD.INCESTREPRENO_2,
+        AD.INCESTREPRENO_3,
+        AD.INCREVISEFLGCD,
+        AD.INCREVBASECURCD,
+        CASE
+        WHEN AD.INCREVBASECURCD = 'JPY' THEN FORMAT(AD.INCREVBASEAMO,0)
+        ELSE FORMAT(AD.INCREVBASEAMO,2)
+        END AS INCREVBASEAMO,
+        AD.INCREVBASE,
+        AD.TAXABLESAMOPDIVTO,
+        AD.LONGKEEPBONDEDWAREHOUSE,
+        AD.DELIVERYDATEEXTCD,
+        AD.BPAPPLICATIONCD,
+        AD.PAYMETHODDISC,
+        AD.ACCOUNTNO,
+        AD.SECURITYREGNO_1,
+        AD.SECURITYREGNO_2,
+        AD.BIGSMALLFLG,
+        AD.REPORTKINDCD_1,
+        AD.REPORTKINDCD_2,
+        AD.CARGODISC,
+        AD.DISCERNMENTMARK,
+        AD.REPORTDIVCD,
+        AD.REPORTDEPCD,
+        AD.REPORTPLANINGDATE,
+        AD.CURRENTARRFLT_1,
+        AD.CURRENTARRFLT_2,
+        AD.ARRPORTDATE,
+        AD.GETPORT,
+        AD.SHIPMENTCD,
+        AD.SHIPMENTPLACENAME,
+        AD.TRADETYPEMARK,
+        AD.BACKTAXREPORTDISC,
+        AD.IMPTRADECONT3DISC,
+        AD.IMPRECOATTACHDISC,
+        AD.CONTCHECKREOTHER,
+        AD.CUSTOMSEXAMMARK,
+        AD.OTHERLAW_1,
+        AD.OTHERLAW_2,
+        AD.OTHERLAW_3,
+        AD.OTHERLAW_4,
+        AD.OTHERLAW_5,
+        AD.OTHERMINICONTNO,
+        AD.FHPROOFDISC,
+        AD.PLANTPEDISC,
+        AD.ANIMALQUARADISC,
+        AD.CUSTOMSOFFICEJANITORCD,
+        AD.CUSTOMSOFFICEJANITORNAME,
+        AD.CUSTOMSOFFICEJANITORRENO,
+        AD.INSPECTIONWITNESS,
+        AD.SHIPPERSSECCD,
+        AD.SHIPPERSREFNO,
+        AD.ADVANCERULINGVALUATION_1,
+        AD.ADVANCERULINGVALUATION_2,
+        AD.OTHERLAWRECDISC_1,
+        AD.OTHERLAWRECNO_1,
+        AD.OTHERLAWRECDISC_2,
+        AD.OTHERLAWRECNO_2,
+        AD.OTHERLAWRECDISC_3,
+        AD.OTHERLAWRECNO_3,
+        AD.OTHERLAWRECDISC_4,
+        AD.OTHERLAWRECNO_4,
+        AD.OTHERLAWRECDISC_5,
+        AD.OTHERLAWRECNO_5,
+        AD.OTHERLAWRECDISC_6,
+        AD.OTHERLAWRECNO_6,
+        AD.OTHERLAWRECDISC_7,
+        AD.OTHERLAWRECNO_7,
+        AD.OTHERLAWRECDISC_8,
+        AD.OTHERLAWRECNO_8,
+        AD.OTHERLAWRECDISC_9,
+        AD.OTHERLAWRECNO_9,
+        AD.OTHERLAWRECDISC_10,
+        AD.OTHERLAWRECNO_10,
+        AD.BONDEDWAREHOUSECD,
+        AD.REPORTPERSONCD,
+        AD.NEWS_1,
+        AD.NEWS_2,
+        AD.NEWSSHIPPER,
+        AD.INHOUSEREFNUMBER,
+        IFNULL(
+        (SELECT
+        COUNT(*) AS CNT
+        FROM
+        CS_MESSAGE_ERROR AS ERR
+        WHERE
+        ERR.IMPORTEXPORTCLASS = '1'
+        AND ERR.AWBNO = AD.AWBNO
+        AND ERR.CWBNO = AD.CWBNO
+        AND ERR.CWBNODEPTCD = AD.CWBNODEPTCD
+        )
+        ,0) AS ERRORCNT,
+        IFNULL(
+        (SELECT
+        IMAGEPATH
+        FROM
+        CS_IMAGE_MANAGEMENT AS IMG
+        WHERE
+        IMG.IMPORTEXPORTCLASS = '1'
+        AND IMG.IMAGECLASS = 'CW'
+        AND IMG.AWBNO = '00'
+        AND IMG.CWBNO = AD.CWBNO
+        AND IMG.CWBNODEPTCD = AD.CWBNODEPTCD
+        LIMIT 1)
+        , '') AS PDFURL,
+        IFNULL(
+        (SELECT
+        IMAGEPATH
+        FROM
+        CS_IMAGE_MANAGEMENT AS IMG
+        WHERE
+        IMG.IMPORTEXPORTCLASS = '1'
+        AND IMG.IMAGECLASS = 'IN'
+        AND IMG.AWBNO = '00'
+        AND IMG.CWBNO = AD.CWBNO
+        AND IMG.CWBNODEPTCD = AD.CWBNODEPTCD
+        LIMIT 1)
+        , '') AS PDFURL2
+        ,T2.REMARKS,T2.CONDITIONCOMMENT
+        ,CASE WHEN RIGHT(AD.CURRENTCUSTOMSSTATUSCD,5) >= '01200' THEN TRUE ELSE FALSE END AS DISABLEDFLG
+        , IFNULL(AD.EDITFLG,'0') AS EDITFLG
+        FROM
+        AI_DATA AS AD
+        LEFT JOIN
+        AM_CUSTOMER_NUMBER AS T2
+        ON
+        AD.IMPCUSTOMERNO = T2.CUSTOMERNO
+        AND AD.IMPCUSTOMERDEPTCD = T2.DEPTCD
+        AND AD.IMPCUSTOMEROCSDEPTCD = T2.OCSDEPTCD
+        WHERE
+        AD.AWBNO = #{awbNo}
+        AND AD.CWBNO = #{cwbNo}
+    </select>
+    <select id="selectIDASub" parameterType="com.kse.wmsv2.oa_it_001.dto.OAIT001SearchDto" resultType="com.kse.wmsv2.oa_it_001.dao.OAIT001IDASubDao">
+        SELECT
+        AWBNO,
+        CWBNO,
+        CWBNODEPTCD,
+        SEQ,
+        ITEMCD,
+        NACCSCD,
+        ITEM,
+        COUNTRYOFORIGINCD,
+        ORIGINCERTIFIDISC,
+        AMO_1,
+        AMOUNIT_1,
+        AMO_2,
+        AMOUNIT_2,
+        IMPTRADECONTCD,
+        TAXABLESAMOPDIVTO,
+        FAREDIVDISC,
+        FOBCURRENCYCD,
+        CASE
+        WHEN FOBCURRENCYCD = 'JPY' THEN FORMAT(TAXABLESAMO,0)
+        ELSE FORMAT(TAXABLESAMO,2)
+        END AS TAXABLESAMO,
+        CUSTOMSEXEMPTCD,
+        CUSTOMSEXEMPTAMO,
+        INCONSTAXKINDCD_1,
+        INCONSTAXEXEMCD_1,
+        INCONSTAXEXEMAMO_1,
+        INCONSTAXKINDCD_2,
+        INCONSTAXEXEMCD_2,
+        INCONSTAXEXEMAMO_2,
+        INCONSTAXKINDCD_3,
+        INCONSTAXEXEMCD_3,
+        INCONSTAXEXEMAMO_3,
+        INCONSTAXKINDCD_4,
+        INCONSTAXEXEMCD_4,
+        INCONSTAXEXEMAMO_4,
+        INCONSTAXKINDCD_5,
+        INCONSTAXEXEMCD_5,
+        INCONSTAXEXEMAMO_5,
+        INCONSTAXKINDCD_6,
+        INCONSTAXEXEMCD_6,
+        INCONSTAXEXEMAMO_6,
+        ADVANCERULINGCLASSIFICATION,
+        ADVANCERULINGORIGIN
+        FROM
+        AI_DATA_DETAIL
+        WHERE
+        AWBNO = #{awbNo}
+        AND CWBNO = #{cwbNo}
+    </select>
+    <update id="editImportData" parameterType="hashMap">
+        UPDATE
+        AI_DATA
+        SET
+        EDITFLG = '1'
+        ,CURRENTCUSTOMSSTATUSCD = #{customCd}
+        ,INCLASSIFYCLASSNAME = #{inClassifyClassName}
+        ,OUTCLASSIFYCLASSNAME = #{outClassifyClassName}
+        ,DOMESTICCLASSIFYCLASSNAME = #{domesticClassifyClassName}
+        ,EDITREGUSERCD = #{userCd}
+        ,EDITREGDATE = #{date}
+        ,EDITUPDATEUSERCD = #{userCd}
+        ,EDITUPDATEDATE = #{date}
+        ,UPDATEUSERCD = #{userCd}
+        ,UPDATEDATE = #{date}
+        WHERE
+        1 = 1
+        AND AWBNO = #{awbNo}
+        AND CWBNO = #{cwbNo}
+    </update>
+    <update id="editHeadData" parameterType="com.kse.wmsv2.oa_it_001.dao.OAIT001HeaderDao">
+        UPDATE
+        AI_HEAD AS HD, AI_DATA AS D
+        SET
+        HD.AWBNO = #{awbNo}
+        , D.AWBNO = #{awbNo}
+        , D.REPORTPLANINGDATE = #{reportPlaningDate}
+        , D.INHOUSEREFNUMBER = #{inHouseRefNumber}
+        , D.ARRPORTDATE = #{arrPortDate}
+        , D.EXPCUSTOMERCOUNTRY = LEFT(#{shipmentCd},2)
+        , D.SHIPMENTCD = #{shipmentCd}
+        , HD.REQMIXEDFORWARDER = #{reqMixedForwarder}
+        , HD.CUSTOMSDIV = #{customsDiv}
+        , HD.ARRAIRPORTCD = #{arrAirportCd}
+        , HD.ARRFLT_1 = #{arrFlt1}
+        , HD.ARRFLT_2 = #{arrFlt2}
+        , HD.REPORTCONDITION = #{reportCondition}
+        , HD.GETPORT = #{getPort}
+        , HD.ARRDATE = #{arrDate}
+        , HD.PRESENT = #{present}
+        , HD.AIRPORTCD = #{airportCd}
+        , HD.ARRPORTDATE = #{arrPortDate}
+        , HD.GRANDCHILDMIXED = #{grandChildMixed}
+        <choose>
+            <when test="split == 'true'">
+                , HD.SPLIT = '1'
+            </when>
+            <otherwise>
+                , HD.SPLIT = '0'
+            </otherwise>
+        </choose>
+        , HD.CATERERINGPLACE = #{catereringPlace}
+        , HD.SHIPMENTCD = #{shipmentCd}
+        , HD.CLEARPLANPLACECD = #{clearPlanPlaceCd}
+        , HD.JOINT = #{joint}
+        , HD.UPDATEUSERCD = #{userCd}
+        , HD.UPDATEDATE = #{date}
+        , D.UPDATEUSERCD = #{userCd}
+        , D.UPDATEDATE = #{date}
+        WHERE
+        <choose>
+            <when test=" awbNoOriginal == '' || awbNoOriginal == null  ">
+                HD.AWBNO = #{awbNo}
+                AND D.AWBNO = #{awbNo}
+            </when>
+            <otherwise>
+                HD.AWBNO = #{awbNoOriginal}
+                AND D.AWBNO = #{awbNoOriginal}
+            </otherwise>
+        </choose>
+    </update>
+    <select id="getCwbImagePath" parameterType="com.kse.wmsv2.oa_it_001.dto.OAIT001ImageDto">
+        SELECT
+        IFNULL(IMAGEPATH,'0')
+        FROM
+        CS_IMAGE_MANAGEMENT
+        WHERE
+        IMPORTEXPORTCLASS = #{importExportClass}
+        AND AWBNO = #{awbNo}
+        AND CWBNO = #{cwbNo}
+        AND CWBNODEPTCD = #{cwbNoDeptCd}
+        AND IMAGECLASS = #{imageClass}
+        AND SEQ = #{seq}
+    </select>
+    <update id="resettingDefVal" parameterType="com.kse.wmsv2.oa_it_001.dao.OAIT001DefaultDao" >
+        UPDATE
+        AI_HEAD AS HD, AI_DATA AS D, AI_DATA_DETAIL AS DD
+        SET
+        ${sql}
+        HD.UPDATEUSERCD = #{userCd},
+        HD.UPDATEDATE = #{date},
+        D.UPDATEUSERCD = #{userCd},
+        D.UPDATEDATE = #{date},
+        DD.UPDATEUSERCD = #{userCd},
+        DD.UPDATEDATE = #{date}
+        WHERE
+        1=1
+        AND HD.AWBNO = #{awbNo}
+        AND D.AWBNO = #{awbNo}
+        AND DD.AWBNO = #{awbNo}
+    </update>
+    <select id="selectFltList" parameterType="hashMap" resultType="string">
+        SELECT DISTINCT
+        CONCAT(CURRENTARRFLT_1,"/",CURRENTARRFLT_2)
+        FROM
+        AI_DATA
+        WHERE
+        1=1
+        AND (DELETEDATE IS NULL or DELETEDATE = '')
+        AND AWBNO = #{awbNo}
+        AND SPSDOCCLASSCD = '0'
+        AND (CUSTOMSPLACECD = #{deptCd} or  CUSTOMSPLACECD IS NULL)
+        AND (CUSTOMSTRADERCD = #{companyCd} or  CUSTOMSTRADERCD IS NULL)
+    </select>
+    <select id="searchAwbNo" parameterType="String" resultType="Integer">
+        SELECT
+        COUNT(*)
+        FROM
+        AI_HEAD
+        WHERE
+        AWBNO = #{value}
+    </select>
+    <delete id="deleteImportData" parameterType="com.kse.wmsv2.oa_it_001.dao.OAIT001SearchResultDao">
+        DELETE
+        D,R,S,SH
+        FROM
+        AI_DATA AS D
+        LEFT JOIN
+        AI_DATA_DETAIL AS R
+        ON
+        D.CWBNO = R.CWBNO
+        LEFT JOIN
+        AI_STATUS AS S
+        ON
+        D.CWBNO = S.CWBNO
+        AND D.AWBNO = S.AWBNO
+        LEFT JOIN
+        AI_STATUS_HISTORY AS SH
+        ON
+        D.CWBNO = SH.CWBNO
+        AND D.AWBNO = SH.AWBNO
+        WHERE
+        D.AWBNO = #{awbNo}
+        AND D.CWBNO = #{cwbNo}
+        AND D.CWBNODEPTCD = #{cwbNoDeptCd}
+    </delete>
+    <update id="changeColumnValue" parameterType="com.kse.wmsv2.oa_it_001.dto.OAIT001UpdateCellDto">
+        UPDATE
+        AI_DATA
+        SET
+        ${targetCol} = #{newValue}
+        WHERE
+        AWBNO = #{awbNo}
+        AND CWBNO = #{cwbNo}
+        AND CWBNODEPTCD = #{cwbNoDeptCd}
+        <choose>
+            <when test="oldValue == null">
+                AND ${targetCol} IS NULL
+            </when>
+            <otherwise>
+                AND ${targetCol} = #{oldValue}
+            </otherwise>
+        </choose>
+    </update>
+    <update id="changeCheckBoxValue" parameterType="com.kse.wmsv2.oa_it_001.dto.OAIT001UpdateCellDto">
+        UPDATE
+        AI_DATA
+        SET
+        ${targetCol} = #{setVal}
+        WHERE
+        AWBNO = #{awbNo}
+        AND CWBNO = #{cwbNo}
+        AND CWBNODEPTCD = #{cwbNoDeptCd}
+    </update>
+    <select id="checkReportCondition" parameterType="String" resultType="Integer">
+        SELECT
+        COUNT(*)
+        FROM
+        AM_NAME
+        WHERE
+        DEPARTMENTCD = 'ALL'
+        AND NAMECLASS = '0157'
+        AND NAMECD = #{value}
+    </select>
+    <select id="checkMawbNumber" parameterType="com.kse.wmsv2.oa_it_001.dao.OAIT001HeaderDao" resultType="Integer">
+        SELECT
+        COUNT(*)
+        FROM
+        AI_DATA
+        WHERE
+        AWBNO = #{awbNo}
+        AND CURRENTARRFLT_1 = #{arrFlt1}
+        AND CURRENTARRFLT_2 = #{arrFlt2}
+        AND CURRENTCARGOSTATUSCD IN ('IB00310', 'IB00320', 'IB00330', 'IB00340', 'IB00350')
+    </select>
+    <select id="getPdfUrl" parameterType="com.kse.wmsv2.oa_it_001.dto.OAIT001ImageDto" resultType="com.kse.wmsv2.oa_it_001.dto.OAIT001ImageDto">
+        SELECT
+        PDF1.IMAGEPATH AS PDFURL1
+        ,PDF2.IMAGEPATH AS PDFURL2
+        FROM
+        CS_IMAGE_MANAGEMENT AS PDF1
+        LEFT JOIN
+        (SELECT
+        IMAGEPATH,CWBNO,CWBNODEPTCD
+        FROM
+        CS_IMAGE_MANAGEMENT
+        WHERE
+        IMAGECLASS = 'IN'
+        AND IMPORTEXPORTCLASS = '1') AS PDF2
+        ON
+        PDF1.CWBNO = PDF2.CWBNO
+        AND PDF1.CWBNODEPTCD = PDF2.CWBNODEPTCD
+        WHERE
+        PDF1.IMPORTEXPORTCLASS = '1'
+        AND PDF1.CWBNO = #{cwbNo}
+        AND PDF1.CWBNODEPTCD = #{cwbNoDeptCd}
+        AND PDF1.IMAGECLASS = 'CW'
+    </select>
+    <select id="getCountSearch" parameterType="com.kse.wmsv2.oa_it_001.dto.OAIT001SearchDto" resultType="hashMap">
+        SELECT
+            IFNULL(COUNT(*),0) AS CWBCOUNT
+            , IFNULL(SUM(CARGOPIECE),0) AS SUMCWBPIECE
+            , IFNULL(SUM(CARGOWEIGHT),0) AS SUMCWBWEIGHT
+        FROM
+            AI_DATA
+        WHERE
+            1 = 1
+        AND AWBNO = #{awbNo}
+        <if test="cwbNo != ''  ">
+            AND CWBNO = #{cwbNo}
+        </if>
+        <if test="currentArrFlt1 != '' ">
+            AND CURRENTARRFLT_1 = #{currentArrFlt1}
+        </if>
+        <if test="idaFlg == 'true'">
+            <choose>
+                <when test="idaFlg == 'true'">
+                    AND IDAFLG = '1'
+                </when>
+            </choose>
+        </if>
+        <if test="micFlg != '' ">
+            <choose>
+                <when test="micFlg == 'true'">
+                    AND IDAFLG = '0'
+                </when>
+            </choose>
+        </if>
+    </select>
+
+    <select id="countAiStatusHistory" parameterType="java.lang.String" resultType="Integer">
+        SELECT 																										
+        COUNT(*) 																										
+        FROM 																										
+        AI_STATUS_HISTORY																										
+        WHERE 1 = 1 																										
+        AND BUSINESSCLASS = '02'	
+        AND AWBNO = #{awbNo}	
+        AND CWBNO = #{cwbNo}	
+        AND CWBNODEPTCD = #{cwbNoDeptCD}	
+        AND STATUSCD = 'IB00120'	
+    </select>
+
+    <select id="countAiData" parameterType="java.lang.String" resultType="Integer">
+        SELECT 																										
+            COUNT(*)																									
+        FROM 																										
+            AI_DATA
+        WHERE 1 = 1
+        AND DELETEDATE IS NULL					
+        AND AWBNO = #{awbNo}	
+        AND CURRENTARRFLT_1 = #{arrFlt1}	
+        AND CURRENTARRFLT_2 = #{arrFlt2}	
+    </select>
+
+    <delete id="deleteAiDataRow" parameterType="java.lang.String">
+        DELETE
+        FROM
+            AI_DATA
+        WHERE
+            AWBNO = #{awbNo}
+            AND CWBNO = #{cwbNo}
+            AND CWBNODEPTCD = #{cwbNoDeptCD}
+    </delete>
+
+    <delete id="deleteAiHead" parameterType="java.lang.String">
+        DELETE
+        FROM
+            AI_HEAD
+        WHERE				
+        AWBNO = #{awbNo}	
+        AND ARRFLT_1 = #{arrFlt1}	
+        AND ARRFLT_2 = #{arrFlt2}	
+    </delete>
+</mapper>

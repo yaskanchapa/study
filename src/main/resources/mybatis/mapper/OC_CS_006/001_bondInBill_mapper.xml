@@ -1,0 +1,56 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="com.kse.wmsv2.oc_cs_006.mapper.OCCS006BondInBillMapper">
+
+    <!--搬入伝票PDF存在有無確認 -->
+    <select id="selectCsImageManagement"  parameterType="String"
+            resultType="String">
+        SELECT IMAGEPATH
+            FROM   CS_IMAGE_MANAGEMENT
+        WHERE  1 = 1
+            AND IMPORTEXPORTCLASS = '2'
+            AND CWBNO = #{bondInBillNo}
+            AND IMAGECLASS = 'BI'
+        ORDER  BY SEQ
+        LIMIT  1
+    </select>
+
+    <!--搬入伝票印刷 -->
+    <select id="selectBondInBill"  parameterType="String"
+                                    resultType="com.kse.wmsv2.oc_cs_006.dto.OCCS006BondInBillDto">
+        SELECT *
+        FROM AE_DATA
+        WHERE BONDINBILLNO = #{value}
+    </select>
+
+    <!--印刷履歴更新 -->
+    <update id="updateBondInBill" parameterType="hashmap">
+        UPDATE
+            AE_DATA
+        SET
+            BONDINBILLISSUEDATE =#{date}
+        WHERE 1 = 1
+            AND BONDINBILLNO = #{bondInBillNo}
+            AND CWBNO = #{cwbNo}
+    </update>
+
+    <!--bondInBillNoに該当する戻り電文リスト -->
+    <select id="selectFileName"  parameterType="String"
+            resultType="String">
+        SELECT FILENAME
+        FROM   CS_NACCS_MESSAGE
+        WHERE  CWBNO LIKE CONCAT(#{bondInBillNo},'%')
+        ORDER  BY IMPORTDATE
+    </select>
+
+    <!--bondInBillNoに該当する戻り電文リスト -->
+    <select id="selectBiFileName"  parameterType="String"
+            resultType="String">
+        SELECT FILENAME
+        FROM   CS_PATTERN_GROUP
+        WHERE  IMAGECLASS = 'BI'
+    </select>
+</mapper>

@@ -1,0 +1,153 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="com.kse.wmsv2.oa_ew_001.mapper.OAEW001ReportMapper">
+  <!--検索-->
+    <select id="getBILDataList" parameterType="HashMap" resultType="com.kse.wmsv2.oa_ew_001.dao.OAEW001BILReportDao">
+        SELECT
+            A1.BONDINBILLNO,
+            A1.CWBNO,
+            IFNULL(COVNVDEPP.CHARACTERITEM1, A1.DEPPORT) AS DEPPORT,
+            IFNULL(T1.CHARACTERITEM1,
+            (CASE
+            WHEN A1.SPSDOCCLASSCD = '0'
+            THEN 'SPS'
+            ELSE 'DOCUMENT'
+            END)) AS ITEM,
+            A1.REMARKS,
+            A1.AWBNO,
+            A1.BWBNO,
+            A1.CUSTOMSPLACECD,
+            A1.BONDEDWAREHOUSECD
+        FROM
+            AE_DATA AS A1
+                LEFT JOIN
+                    AM_NAME AS COVNVDEPP
+                ON COVNVDEPP.DEPARTMENTCD = 'ALL'
+                    AND COVNVDEPP.NAMECLASS = '0283'
+                    AND COVNVDEPP.NAMECD = A1.DEPPORT
+                LEFT JOIN
+                    AM_NAME AS T1
+                ON T1.DEPARTMENTCD = A1.CUSTOMSPLACECD
+                    AND T1.NAMECLASS = '0046'
+                    AND T1.NAMECD = '008'
+        WHERE 1 = 1
+            AND A1.BONDINBILLNO = #{bondInBillNo}
+            AND EXISTS (
+                        SELECT
+                            *
+                        FROM
+                            AE_STATUS_HISTORY AS A2
+                        WHERE
+                            1 = 1
+                            AND A2.CWBNO = A1.CWBNO
+                            AND A2.STATUSCD = 'EC00700'
+                        )
+            AND NOT EXISTS (
+                            SELECT
+                                *
+                            FROM
+                                AE_STATUS_HISTORY AS A6
+                            WHERE
+                                1 = 1
+                                AND A6.BUSINESSCLASS = '02'
+                                AND A6.CWBNO = A1.CWBNO
+                                AND A6.STATUSCD = 'EB00210'
+                            )
+        <if test ="userAuthorityCd == '02'">
+            AND A1.CUSTOMSPLACECD = #{deptCd}
+        </if>
+        <if test ="userAuthorityCd == '04'">
+            AND A1.BONDEDWAREHOUSECD = #{deptCd}
+        </if>
+        AND A1.DELETEDATE IS NULL
+        AND A1.SPSDOCCLASSCD IN ('0', '2')
+    </select>
+
+    <select id= "getBILDataListRe" parameterType = "HashMap" resultType ="com.kse.wmsv2.oa_ew_001.dao.OAEW001BILReportDao">
+        SELECT    A1.BONDINBILLNO,
+            A1.CWBNO,
+            IFNULL(CONVDEPP.CHARACTERITEM1, A1.DEPPORT) AS DEPPORT,
+            IFNULL(T1.CHARACTERITEM1, (
+            CASE
+            WHEN A1.SPSDOCCLASSCD = '0' THEN 'SPS'
+            ELSE 'DOCUMENT'
+            END)) AS ITEM,
+            A1.REMARKS,
+            A1.AWBNO,
+            A1.BWBNO,
+            A1.CUSTOMSPLACECD,
+            A1.BONDEDWAREHOUSECD
+        FROM      AE_DATA AS A1
+            LEFT JOIN AM_NAME CONVDEPP
+            ON        CONVDEPP.DEPARTMENTCD = 'ALL'
+                AND       CONVDEPP.NAMECLASS = '0283'
+                AND       CONVDEPP.NAMECD = A1.DEPPORT
+            LEFT JOIN AM_NAME T1
+            ON        T1.DEPARTMENTCD = A1.CUSTOMSPLACECD
+                AND       T1.NAMECLASS = '0046'
+                AND       T1.NAMECD = '008'
+        WHERE     1 = 1
+            AND A1.BONDINBILLNO = #{bondInBillNo}
+            AND       EXISTS
+                        (
+                        SELECT *
+                        FROM   AE_STATUS_HISTORY AS A2
+                        WHERE  1 = 1
+                        AND    A2.BUSINESSCLASS = '02'
+                        AND    A2.CWBNO = A1.CWBNO
+                        AND    A2.STATUSCD = 'EB00210' )
+        <if test ="userAuthorityCd == '02'">
+            AND A1.CUSTOMSPLACECD = #{deptCd}
+        </if>
+        <if test ="userAuthorityCd == '04'">
+            AND A1.BONDEDWAREHOUSECD = #{deptCd}
+        </if>
+            AND A1.DELETEDATE IS NULL
+            AND A1.SPSDOCCLASSCD IN ('0', '2')
+    </select>
+    <update id="updateMasterStatus" parameterType="hashMap">
+        UPDATE
+            AE_DATA
+        SET
+            CURRENTCUSTOMSSTATUSCD = #{statusCd}
+            ,UPDATEUSERCD = #{userCd}
+            ,UPDATEDATE = #{date}
+        WHERE
+            AWBNO = #{awbNo}
+            AND CWBNO = #{cwbNo}
+    </update>
+    <insert id="insertCsSendMessage" parameterType="hashMap">
+        INSERT INTO CS_SEND_MESSAGE
+            (
+                MESSAGEFILENAME,
+                IMPORTEXPORTCLASS,
+                MESSAGETYPE,
+                MESSAGECREATEDATE,
+                BONDEDWAREHOUSECD,
+                FILEPATH,
+                REGUSERCD,
+                REGDATE,
+                UPDATEUSERCD,
+                UPDATEDATE
+            )
+        VALUES
+            (
+                #{messageFileName},
+                #{importExportClass},
+                #{messageType},
+                #{messageCreateDate},
+                #{bondedWareHouseCd},
+                #{filePath},
+                #{userCd},
+                #{date},
+                #{userCd},
+                #{date}
+            )
+    </insert>
+</mapper>
+
+
+

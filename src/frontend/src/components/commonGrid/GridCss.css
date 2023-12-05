@@ -1,0 +1,22 @@
+.grid-wrapper {
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+  height: 100%;
+}
+
+.ag-theme-alpine {
+  --ag-header-column-separator-display: block;
+  --ag-header-column-separator-height: 100%;
+  --ag-header-column-separator-width: 2px;
+  --ag-header-column-separator-color: black;
+
+  --ag-header-column-resize-handle-display: block;
+  --ag-header-column-resize-handle-height: 25%;
+  --ag-header-column-resize-handle-width: 2px;
+  --ag-header-column-resize-handle-color: orange;
+}
+
+.cellCenter .ag-cell-wrapper {
+  justify-content: center;
+}

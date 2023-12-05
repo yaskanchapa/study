@@ -1,0 +1,33 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="com.kse.wmsv2.oa_it_002.mapper.AirImportAmCustomerNumberMapper">
+  <select id="countAmCustomerNumber" parameterType="com.kse.wmsv2.oa_it_002.dto.request.AmCustomerNumberRequest" resultType="int">
+    SELECT 
+      COUNT(*)
+    FROM 
+      AM_CUSTOMER_NUMBER
+    WHERE 
+      1 = 1
+      AND CUSTOMERNO = #{customerNo}
+      AND DEPTCD = #{deptCd}
+      AND OCSDEPTCD = #{ocsDeptCd}
+  </select>
+
+  <select id="getCustomerName" parameterType="com.kse.wmsv2.oa_it_002.dto.request.AmCustomerNumberRequest" resultType="string">
+    SELECT 
+      DISTINCT CUSTOMERNAMEE
+    FROM 
+      AM_CUSTOMER_NUMBER
+    WHERE 
+      1 = 1
+      AND CUSTOMERNO = #{customerNo}
+      AND DEPTCD = #{deptCd}
+      AND OCSDEPTCD = #{ocsDeptCd}
+  </select>
+
+</mapper>
+
+ 

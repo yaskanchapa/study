@@ -1,0 +1,63 @@
+package com.kse.wmsv2.oa_iw_001.dao;
+
+import lombok.Data;
+
+@Data
+public class OAIW001InsertAiDataDao {
+    String awbNo;
+    String cwbNo;
+    String cwbNoDeptCd;
+    String remodelingFlg;
+    String bwbNo;
+    String arrFlt1;
+    String arrFlt2;
+    String getPort;
+    String shipmentCd;
+    String arrpPortDate;
+    String customsTraderCd;
+    String customsPlaceCd;
+    String bondedWarehouse;
+    String bondedWarehouseCd;
+    String editFlg;
+    String documentCheck;
+    String origin;
+    String spsdocClassCd;
+    String DocIncompleteFlg;
+    String DeclarationOutputflg;
+    String carryInObjectFlg;
+    String warehouseClassCd;
+    String locationCd;
+    String currentCustomsStatusCd;
+    String currentCargoStatusCd;
+    String currentDocStatusCd;
+    String inclassifyClassName;
+    String outclassifyClassName;
+    String domesticClassifyClassName;
+    String specialPrepareName01;
+    String entryType;
+    String idaFlg;
+    String reportCondition;
+    String reportDivCd;
+    String reportDepCd;
+    String reportPersonCd;
+    String cargoPiece;
+    String cargoInPiece;
+    String cargoInScanPiece;
+    String carBondedWarehouse;
+    String destination;
+    String agent;
+    String defaultSet;
+    String inspectDocFlag;
+    String confirmDocFlag;
+    String editHold;
+    String customsCheckCount;
+    String customsCheckHold;
+    String customsCheckCorrect;
+    String customsCheckClass1;
+    String customsCheckClass2;
+    String hardRecvFlag;
+    String invoiceValue;
+    String fare;
+    String userCd;
+    String updateDate;
+}

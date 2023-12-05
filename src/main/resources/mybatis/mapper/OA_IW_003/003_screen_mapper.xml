@@ -1,0 +1,1174 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="com.kse.wmsv2.oa_iw_003.mapper.OAIW003ScreenMapper">
+
+<!--■E002 対象表示ボタン押下処理 -->
+    <!-- 1.3 下記のSQL文を実行して、該当するデータの件数を取得する -->
+    <select id="selectAiInventoryCnt"  parameterType="com.kse.wmsv2.oa_iw_003.dao.OAIW003SearchDataDao"
+                                    resultType="Integer">
+        SELECT COUNT(*) AS CNT
+        FROM   AI_INVENTORY
+        WHERE  1 = 1
+        AND DELFLG = '0'
+        <if test="objectAll == true or objectAWB == true">
+            AND ( 1 = 0
+            <if test="objectAll == true">
+                OR ( OBJECTFLG = '1' )
+            </if>
+            <if test="objectAWB == true">
+                OR ( OBJECTFLG = '2'
+                <if test="awbNo != null and awbNo != ''">
+                    AND AWBNO =  #{awbNo}
+                </if>
+                <if test="arrFlt1 != null and arrFlt1 != ''">
+                    AND FLT1 =  #{arrFlt1}
+                </if>
+                <if test="arrFlt2 != null and arrFlt2 != ''">
+                    AND FLT2 =  #{arrFlt2}
+                </if>
+                )
+            </if>
+            )
+        </if>
+        <if test="!((unMatchOver == true and unMatchShort == true and match == true) || (unMatchOver == false and unMatchShort == false and match == false))">
+            AND ( 1 = 0
+            <if test="unMatchOver == true">
+                OR IFNULL(DATAPICEC, 0) <![CDATA[<]]> IFNULL(SCANPICEC, 0)
+            </if>
+            <if test="unMatchShort == true">
+                OR IFNULL(DATAPICEC, 0) > IFNULL(SCANPICEC, 0)
+            </if>
+            <if test="match == true">
+                OR IFNULL(DATAPICEC, 0) = IFNULL(SCANPICEC, 0)
+            </if>
+            )
+        </if>
+        <if test="workingDays != null and workingDays != ''">
+            AND date(WORKSTARTTIME) >= date(#{workingDays})
+            AND date(WORKSTARTTIME) <![CDATA[<]]> DATE_ADD(#{workingDays}, INTERVAL 1 DAY)
+        </if>
+        <if test="bondedWareHouseCd != null and bondedWareHouseCd != ''">
+            AND BONDEDWAREHOUSECD = #{bondedWareHouseCd}
+        </if>
+        <if test="endDisplay == true">
+            OR DELFLG = '1'
+        </if>
+    </select>
+
+    <!--■E002 対象表示ボタン押下処理 -->
+    <!-- 1.4 条件に該当するSQL文を実行して検索結果データを取得 -->
+    <select id="selectAiInventory"  parameterType="com.kse.wmsv2.oa_iw_003.dao.OAIW003SearchDataDao"
+            resultType="com.kse.wmsv2.oa_iw_003.dto.OAIW003SearchResultDto">
+        <if test="objectAll == true or (objectAll == false and objectAWB == false)">
+            SELECT 0                 AS C,
+                FM1.WORKSTARTTIME AS WORKSTARTTIME,
+                FM1.WORKENDTIME   AS WORKENDTIME,
+                FM1.OBJECTFLG     AS OBJECTFLG,
+                FM1.NAME          AS OBJ,
+                FM1.FLT           AS FLT,
+                FM1.FLT1          AS FLT1,
+                FM1.FLT2          AS FLT2,
+                FM1.AWB           AS AWBNO,
+                COUNT(*)          AS CWBCNT,
+                SUM(FM1.SCAN)     AS SCANPIECE,
+                SUM(FM1.OVERP)    AS OVERCNT,
+                SUM(FM1.SHORT)    AS SHORTCNT,
+                CASE
+                    WHEN FM1.WORKENDTIME IS NULL THEN '0'
+                    ELSE '1'
+                END ENDFLG
+            FROM   (
+                        SELECT
+                            T1.WORKSTARTTIME AS WORKSTARTTIME,
+                            T1.WORKENDTIME   AS WORKENDTIME,
+                            T1.OBJECTFLG     AS OBJECTFLG,
+                            N1.NAME,
+                            CASE
+                                WHEN T1.OBJECTFLG = '1' THEN ''
+                                ELSE CONCAT(IFNULL(T1.FLT1, ''), '/', IFNULL(T1.FLT2, ''))
+                            END                    FLT,
+                            IFNULL(T1.FLT1, '') AS FLT1,
+                            IFNULL(T1.FLT2, '') AS FLT2,
+                            CASE
+                                WHEN T1.OBJECTFLG = '1' THEN ''
+                                ELSE IFNULL(T1.AWBNO, '')
+                            END                     AWB,
+                            IFNULL(T1.AWBNO, '') AS AWBNO,
+                            IFNULL(TI1.OVERP,0)  AS OVERP,
+                            IFNULL(TI2.SHORT,0)  AS SHORT,
+                            IFNULL(TI3.SCAN,0)   AS SCAN,
+                            CASE
+                                WHEN T1.WORKENDTIME IS NULL THEN '0'
+                                ELSE '1'
+                            END                     ENDFLG,
+                            T1.BONDEDWAREHOUSECD AS BONDEDWAREHOUSECD,
+                            T1.CWBNO             AS CWBNO,
+                            T1.CWBNODEPTCD       AS CWBNODEPTCD
+                        FROM      AI_INVENTORY T1
+                        LEFT JOIN AM_NAME N1
+                        ON        NAMECLASS = '0102'
+                        AND       NAMECD = T1.OBJECTFLG
+                        LEFT JOIN
+                            (
+                                SELECT
+                                    TI1.BONDEDWAREHOUSECD AS BONDEDWAREHOUSECD,
+                                    TI1.CWBNO             AS CWBNO,
+                                    TI1.CWBNODEPTCD       AS CWBNODEPTCD,
+                                    TI1.WORKSTARTTIME     AS WORKSTARTTIME,
+                                    1                     AS OVERP
+                                FROM   AI_INVENTORY TI1
+                                WHERE  1 = 1
+                                AND    IFNULL(TI1.DATAPICEC,0) <![CDATA[<]]> IFNULL(TI1.SCANPICEC,0)) TI1
+                        ON        T1.BONDEDWAREHOUSECD = TI1.BONDEDWAREHOUSECD
+                        AND       T1.CWBNO = TI1.CWBNO
+                        AND       T1.CWBNODEPTCD = TI1.CWBNODEPTCD
+                        AND       T1.WORKSTARTTIME = TI1.WORKSTARTTIME
+                        LEFT JOIN
+                            (
+                                SELECT
+                                    TI2.BONDEDWAREHOUSECD AS BONDEDWAREHOUSECD,
+                                    TI2.CWBNO             AS CWBNO,
+                                    TI2.CWBNODEPTCD       AS CWBNODEPTCD,
+                                    TI2.WORKSTARTTIME     AS WORKSTARTTIME,
+                                    1                     AS SHORT
+                                FROM   AI_INVENTORY TI2
+                                WHERE  1 = 1
+                                AND    IFNULL(TI2.DATAPICEC,0) > IFNULL(TI2.SCANPICEC,0)) TI2
+                        ON        T1.BONDEDWAREHOUSECD = TI2.BONDEDWAREHOUSECD
+                        AND       T1.CWBNO = TI2.CWBNO
+                        AND       T1.CWBNODEPTCD = TI2.CWBNODEPTCD
+                        AND       T1.WORKSTARTTIME = TI2.WORKSTARTTIME
+                        LEFT JOIN
+                            (
+                                SELECT
+                                    TI3.BONDEDWAREHOUSECD AS BONDEDWAREHOUSECD,
+                                    TI3.CWBNO             AS CWBNO,
+                                    TI3.CWBNODEPTCD       AS CWBNODEPTCD,
+                                    TI3.WORKSTARTTIME     AS WORKSTARTTIME,
+                                    1                     AS SCAN
+                                FROM   AI_INVENTORY TI3
+                                WHERE  1 = 1
+                                AND    IFNULL(TI3.DATAPICEC,0) = IFNULL(TI3.SCANPICEC,0)) TI3
+                        ON        T1.BONDEDWAREHOUSECD = TI3.BONDEDWAREHOUSECD
+                        AND       T1.CWBNO = TI3.CWBNO
+                        AND       T1.CWBNODEPTCD = TI3.CWBNODEPTCD
+                        AND       T1.WORKSTARTTIME = TI3.WORKSTARTTIME
+                        WHERE     1=1
+<!--                        AND       T1.OBJECTFLG = '1'-->
+            <!--条件追加-->
+                    <if test = "objectAll == true and objectAWB == true">
+                        AND
+                        (
+                        T1.OBJECTFLG = '1'
+                        OR (     T1.OBJECTFLG = '2'
+                        <if test="awbNo != null and awbNo != ''">
+                            AND T1.AWBNO = #{awbNo}
+                        </if>
+                        <if test="arrFlt1 != null and arrFlt1 != ''">
+                            AND T1.FLT1 =  #{arrFlt1}
+                        </if>
+                        <if test="arrFlt2 != null and arrFlt2 != ''">
+                            AND T1.FLT2 =  #{arrFlt2}
+                        </if>
+                            )
+                        )
+                    </if>
+                    <if test = "objectAll == true and objectAWB == false">
+                        AND T1.OBJECTFLG = '1'
+                    </if>
+                    <if test = "objectAll == false and objectAWB == true">
+                        AND T1.OBJECTFLG = '2'
+                        <if test="awbNo != null and awbNo != ''">
+                            AND T1.AWBNO = #{awbNo}
+                        </if>
+                        <if test="arrFlt1 != null and arrFlt1 != ''">
+                            AND T1.FLT1 =  #{arrFlt1}
+                        </if>
+                        <if test="arrFlt2 != null and arrFlt2 != ''">
+                            AND T1.FLT2 =  #{arrFlt2}
+                        </if>
+                    </if>
+                    <if test="!((unMatchOver == true and unMatchShort == true and match == true) || (unMatchOver == false and unMatchShort == false and match == false)) ">
+                        <if test="unMatchOver == true">
+                            <if test="unMatchShort == true">
+                                AND (IFNULL(T1.DATAPICEC,0) > IFNULL(T1.SCANPICEC,0)
+                                OR   IFNULL(T1.SCANPICEC,0) > IFNULL(T1.DATAPICEC,0))
+                            </if>
+                            <if test="match == true">
+                                AND (IFNULL(T1.DATAPICEC,0) <![CDATA[<]]> IFNULL(T1.SCANPICEC,0)
+                                OR   IFNULL(T1.DATAPICEC,0) = IFNULL(T1.SCANPICEC,0))
+                            </if>
+                            AND IFNULL(T1.DATAPICEC,0) <![CDATA[<]]> IFNULL(T1.SCANPICEC,0)
+                        </if>
+                        <if test="unMatchShort == true">
+                            <if test="match == true">
+                                AND (IFNULL(T1.SCANPICEC,0) <![CDATA[<]]> IFNULL(T1.DATAPICEC,0)
+                                OR   IFNULL(T1.DATAPICEC,0) = IFNULL(T1.SCANPICEC,0))
+                            </if>
+                            AND (IFNULL(T1.SCANPICEC,0) <![CDATA[<]]> IFNULL(T1.DATAPICEC,0))
+                        </if>
+                        <if test="match == true">
+                            AND IFNULL(DATAPICEC,0) = IFNULL(SCANPICEC,0)
+                        </if>
+                    </if>
+                    <if test="workingDays != null and workingDays != ''">
+                        AND T1.WORKSTARTTIME >=  date(#{workingDays})
+                        AND T1.WORKSTARTTIME <![CDATA[<]]>  DATE_ADD(#{workingDays}, INTERVAL 1 DAY)
+                    </if>
+                    <if test="bondedWareHouseCd != null and bondedWareHouseCd != ''">
+                        AND T1.BONDEDWAREHOUSECD = #{bondedWareHouseCd}
+                    </if>
+            <!--条件追加終了-->
+                    <if test="endDisplay == false">
+                        AND DELFLG = 0
+                    </if>
+                    <if test="endDisplay == true">
+                        AND DELFLG = 1
+                    </if>
+                    ) FM1
+            GROUP BY
+            FM1.WORKSTARTTIME,
+            FM1.WORKENDTIME,
+            FM1.OBJECTFLG,
+            FM1.NAME,
+            FM1.FLT,
+            FM1.FLT1,
+            FM1.FLT2,
+            FM1.AWB
+            <if test="objectAWB == true or (objectAll == false and objectAWB == false)">
+                UNION
+            </if>
+        </if>
+        <if test="objectAWB == true or (objectAll == false and objectAWB == false)">
+            SELECT 0                 AS C,
+                FM2.WORKSTARTTIME AS WORKSTARTTIME,
+                FM2.WORKENDTIME   AS WORKENDTIME,
+                FM2.OBJECTFLG     AS OBJECTFLG,
+                FM2.NAME          AS OBJ,
+                FM2.FLT           AS FLT,
+                FM2.FLT1          AS FLT1,
+                FM2.FLT2          AS FLT2,
+                FM2.AWB           AS AWBNO,
+                COUNT(*)          AS CWBCNT,
+                SUM(FM2.SCAN)     AS SCANPIECE,
+                SUM(FM2.OVERP)    AS OVERCNT,
+                SUM(FM2.SHORT)    AS SHORTCNT,
+                CASE
+                WHEN FM2.WORKENDTIME IS NULL THEN '0'
+                ELSE '1'
+                END               ENDFLG
+            FROM   (SELECT T1.WORKSTARTTIME     AS WORKSTARTTIME,
+                            T1.WORKENDTIME       AS WORKENDTIME,
+                            T1.OBJECTFLG         AS OBJECTFLG,
+                            N1.NAME,
+                            CASE
+                                WHEN T1.OBJECTFLG = '1' THEN ''
+                                ELSE CONCAT(IFNULL(T1.FLT1, ''), '/', IFNULL(T1.FLT2, ''))
+                            END                  FLT,
+                            IFNULL(T1.FLT1, '')  AS FLT1,
+                            IFNULL(T1.FLT2, '')  AS FLT2,
+                            CASE
+                                WHEN T1.OBJECTFLG = '1' THEN ''
+                                ELSE IFNULL(T1.AWBNO, '')
+                            END                  AWB,
+                            IFNULL(T1.AWBNO, '') AS AWBNO,
+                            IFNULL(TI1.OVERP, 0) AS OVERP,
+                            IFNULL(TI2.SHORT, 0) AS SHORT,
+                            IFNULL(TI3.SCAN, 0)  AS SCAN,
+                            CASE
+                                WHEN T1.WORKENDTIME IS NULL THEN '0'
+                                ELSE '1'
+                            END                  ENDFLG,
+                            T1.BONDEDWAREHOUSECD AS BONDEDWAREHOUSECD,
+                            T1.CWBNO             AS CWBNO,
+                            T1.CWBNODEPTCD       AS CWBNODEPTCD
+                    FROM   AI_INVENTORY T1
+                            LEFT JOIN AM_NAME N1
+                                    ON NAMECLASS = '0102'
+                                        AND NAMECD = T1.OBJECTFLG
+                            LEFT JOIN (SELECT TI1.BONDEDWAREHOUSECD AS BONDEDWAREHOUSECD,
+                                                TI1.CWBNO             AS CWBNO,
+                                                TI1.CWBNODEPTCD       AS CWBNODEPTCD,
+                                                TI1.WORKSTARTTIME     AS WORKSTARTTIME,
+                                                1                     AS OVERP
+                                        FROM   AI_INVENTORY TI1
+                                        WHERE  1 = 1
+                                        AND IFNULL(TI1.DATAPICEC, 0)  <![CDATA[<]]>
+                                            IFNULL(TI1.SCANPICEC, 0)) TI1
+                                    ON T1.BONDEDWAREHOUSECD = TI1.BONDEDWAREHOUSECD
+                                    AND T1.CWBNO = TI1.CWBNO
+                                    AND T1.CWBNODEPTCD = TI1.CWBNODEPTCD
+                                    AND T1.WORKSTARTTIME = TI1.WORKSTARTTIME
+                            LEFT JOIN (SELECT TI2.BONDEDWAREHOUSECD AS BONDEDWAREHOUSECD,
+                                                TI2.CWBNO             AS CWBNO,
+                                                TI2.CWBNODEPTCD       AS CWBNODEPTCD,
+                                                TI2.WORKSTARTTIME     AS WORKSTARTTIME,
+                                                1                     AS SHORT
+                                        FROM   AI_INVENTORY TI2
+                                        WHERE  1 = 1
+                                                AND IFNULL(TI2.DATAPICEC, 0) >
+                                                IFNULL(TI2.SCANPICEC, 0)) TI2
+                                    ON T1.BONDEDWAREHOUSECD = TI2.BONDEDWAREHOUSECD
+                                    AND T1.CWBNO = TI2.CWBNO
+                                    AND T1.CWBNODEPTCD = TI2.CWBNODEPTCD
+                                    AND T1.WORKSTARTTIME = TI2.WORKSTARTTIME
+                            LEFT JOIN (SELECT TI3.BONDEDWAREHOUSECD AS BONDEDWAREHOUSECD,
+                                                TI3.CWBNO             AS CWBNO,
+                                                TI3.CWBNODEPTCD       AS CWBNODEPTCD,
+                                                TI3.WORKSTARTTIME     AS WORKSTARTTIME,
+                                                1                     AS SCAN
+                                                FROM   AI_INVENTORY TI3
+                                                WHERE  1 = 1
+                                                AND IFNULL(TI3.DATAPICEC, 0) =
+                                                IFNULL(TI3.SCANPICEC, 0)) TI3
+                                    ON T1.BONDEDWAREHOUSECD = TI3.BONDEDWAREHOUSECD
+                                    AND T1.CWBNO = TI3.CWBNO
+                                    AND T1.CWBNODEPTCD = TI3.CWBNODEPTCD
+                                    AND T1.WORKSTARTTIME = TI3.WORKSTARTTIME
+                                    WHERE  1 = 1
+<!--                                    AND T1.OBJECTFLG = '2'-->
+            <!--条件追加-->
+                                <if test = "objectAll == true and objectAWB == true">
+                                    AND
+                                    (
+                                    T1.OBJECTFLG = '1'
+                                    OR (     T1.OBJECTFLG = '2'
+                                    <if test="awbNo != null and awbNo != ''">
+                                        AND T1.AWBNO = #{awbNo}
+                                    </if>
+                                    <if test="arrFlt1 != null and arrFlt1 != ''">
+                                        AND T1.FLT1 =  #{arrFlt1}
+                                    </if>
+                                    <if test="arrFlt2 != null and arrFlt2 != ''">
+                                        AND T1.FLT2 =  #{arrFlt2}
+                                    </if>
+                                        )
+                                    )
+                                </if>
+                                <if test = "objectAll == true and objectAWB == false">
+                                    AND T1.OBJECTFLG = '1'
+                                </if>
+                                <if test = "objectAll == false and objectAWB == true">
+                                    AND T1.OBJECTFLG = '2'
+                                    <if test="awbNo != null and awbNo != ''">
+                                        AND T1.AWBNO = #{awbNo}
+                                    </if>
+                                    <if test="arrFlt1 != null and arrFlt1 != ''">
+                                        AND T1.FLT1 =  #{arrFlt1}
+                                    </if>
+                                    <if test="arrFlt2 != null and arrFlt2 != ''">
+                                        AND T1.FLT2 =  #{arrFlt2}
+                                    </if>
+                                </if>
+                                <if test="!((unMatchOver == true and unMatchShort == true and match == true) || (unMatchOver == false and unMatchShort == false and match == false)) ">
+                                    <if test="unMatchOver == true">
+                                        <if test="unMatchShort == true">
+                                            AND (IFNULL(T1.DATAPICEC,0) > IFNULL(T1.SCANPICEC,0)
+                                            OR   IFNULL(T1.SCANPICEC,0) > IFNULL(T1.DATAPICEC,0))
+                                        </if>
+                                        <if test="match == true">
+                                            AND (IFNULL(T1.DATAPICEC,0) <![CDATA[<]]> IFNULL(T1.SCANPICEC,0)
+                                            OR   IFNULL(T1.DATAPICEC,0) = IFNULL(T1.SCANPICEC,0))
+                                        </if>
+                                        AND IFNULL(T1.DATAPICEC,0) <![CDATA[<]]> IFNULL(T1.SCANPICEC,0)
+                                    </if>
+                                    <if test="unMatchShort == true">
+                                        <if test="match == true">
+                                            AND (IFNULL(T1.SCANPICEC,0) <![CDATA[<]]> IFNULL(T1.DATAPICEC,0)
+                                            OR   IFNULL(T1.DATAPICEC,0) = IFNULL(T1.SCANPICEC,0))
+                                        </if>
+                                        AND (IFNULL(T1.SCANPICEC,0) <![CDATA[<]]> IFNULL(T1.DATAPICEC,0))
+                                    </if>
+                                    <if test="match == true">
+                                        AND IFNULL(DATAPICEC,0) = IFNULL(SCANPICEC,0)
+                                    </if>
+                                </if>
+                                <if test="workingDays != null and workingDays != ''">
+                                    AND T1.WORKSTARTTIME >=  date(#{workingDays})
+                                    AND T1.WORKSTARTTIME <![CDATA[<]]>  DATE_ADD(#{workingDays}, INTERVAL 1 DAY)
+                                </if>
+                                <if test="bondedWareHouseCd != null and bondedWareHouseCd != ''">
+                                    AND T1.BONDEDWAREHOUSECD = #{bondedWareHouseCd}
+                                </if>
+            <!--条件追加終了-->
+                                <if test="endDisplay == false">
+                                    AND DELFLG = 0
+                                </if>
+                                <if test="endDisplay == true">
+                                    AND DELFLG = 1
+                                </if>
+                    ) FM2
+            GROUP BY
+            FM2.WORKSTARTTIME,
+            FM2.WORKENDTIME,
+            FM2.OBJECTFLG,
+            FM2.NAME,
+            FM2.FLT,
+            FM2.FLT1,
+            FM2.FLT2,
+            FM2.AWB
+        </if>
+    </select>
+
+    <!--■E003 MAWB検索ボタン押下処理 -->
+    <!-- 1.3 以下のSQL文を実行して検索結果を出力する。 -->
+    <select id="searchMawb"  parameterType="com.kse.wmsv2.oa_iw_003.dao.OAIW003SearchData2Dao"
+            resultType="com.kse.wmsv2.oa_iw_003.dto.OAIW003SearchResult2Dto">
+        SELECT
+            0 AS c
+            ,REPLACE(T1.ARRPORTDATE,'-','/') 								  AS GTXTARRPORTDATE
+            ,CONCAT(T1.CURRENTARRFLT_1, '/', T1.CURRENTARRFLT_2)              AS GTXTFLT
+            ,T1.AWBNO                                                         AS GTXTAWBNO
+            ,COUNT(*)					                                      AS GTXTCOUNT
+        FROM
+            AI_DATA T1
+            INNER JOIN
+                (SELECT DISTINCT
+                CWBNO,
+                CWBNODEPTCD
+                FROM
+                AI_STATUS_HISTORY OC1
+                WHERE 1 = 1
+                AND OC1.BUSINESSCLASS     = '02'
+                AND OC1.STATUSCD          = 'IB00200'
+                ) OC1
+            ON T1.CWBNO = OC1.CWBNO
+            AND T1.CWBNODEPTCD = OC1.CWBNODEPTCD
+        WHERE
+            NOT EXISTS
+                (SELECT
+                *
+                FROM
+                AI_STATUS_HISTORY OC2
+                WHERE
+                T1.CWBNO = OC2.CWBNO
+                AND T1.CWBNODEPTCD = OC2.CWBNODEPTCD
+                AND OC2.BUSINESSCLASS     = '02'
+                AND OC2.STATUSCD          = 'IB00710'
+                )
+    <if test="(recordDateFrom != null and recordDateFrom != '') and (recordDateTo != null and recordDateTo != '')">
+            AND T1.ARRPORTDATE >= date(#{recordDateFrom})
+            AND T1.ARRPORTDATE <![CDATA[<=]]> date(#{recordDateTo})
+    </if>
+    <if test="bondedWareHouseCd != null and bondedWareHouseCd != ''">
+            AND T1.BONDEDWAREHOUSECD =  #{bondedWareHouseCd}
+    </if>
+    <if test="arrFlt1 != null and arrFlt1 != ''">
+        AND T1.CURRENTARRFLT_1 =  #{arrFlt1}
+    </if>
+    <if test="arrFlt2 != null and arrFlt2 != ''">
+        AND T1.CURRENTARRFLT_2 =  #{arrFlt2}
+    </if>
+    <if test="awbNo != null and awbNo != ''">
+        AND T1.AWBNO =  #{awbNo}
+    </if>
+            AND (
+                SELECT
+                    STATUSCD
+                FROM
+                    AI_STATUS_HISTORY
+                WHERE
+                    1 = 1
+                    AND BUSINESSCLASS     = '02'
+                    AND CWBNO             = T1.CWBNO
+                    AND CWBNODEPTCD       = T1.CWBNODEPTCD
+                ORDER BY
+                REGDATE DESC,
+                STATUSCD DESC
+                LIMIT 1
+            )
+            NOT IN('IB00310', 'IB00320', 'IB00330', 'IB00340', 'IB00350')
+            AND T1.REMODELINGFLG != '1'
+            AND (T1.DELETEDATE IS NULL OR TRIM(T1.DELETEDATE) = '')
+            AND T1.SPSDOCCLASSCD IN ('0','2')
+        GROUP BY
+            T1.ARRPORTDATE
+            ,T1.CURRENTARRFLT_1
+            ,T1.CURRENTARRFLT_2
+            ,T1.AWBNO
+        ORDER BY
+            GTXTARRPORTDATE DESC
+            ,GTXTFLT ASC
+    </select>
+
+    <!--■E004 指示ボタン押下処理 -->
+    <!-- 1.2 以下のSQL文を実行して対象データ件数を取得する -->
+    <select id="searchAiInventory"  parameterType="com.kse.wmsv2.oa_iw_003.dao.OAIW003SearchData2Dao"
+            resultType="Integer">
+        SELECT COUNT(*) AS CNT
+        FROM   AI_INVENTORY
+        WHERE  1 = 1
+        AND BONDEDWAREHOUSECD = #{bondedWareHouseCd}
+        AND DELFLG = '0'
+        <if test="objectAll == false">
+            AND ( 1 = 0
+            OR ( OBJECTFLG = '1' )
+            OR ( OBJECTFLG = '2'
+            <if test="awbNo != null and awbNo != ''">
+                AND AWBNO =  #{awbNo}
+            </if>
+            <if test="arrFlt1 != null and arrFlt1 != ''">
+                AND FLT1 =  #{arrFlt1}
+            </if>
+            <if test="arrFlt2 != null and arrFlt2 != ''">
+                AND FLT2 =  #{arrFlt2}
+            </if>
+            )
+            )
+        </if>
+    </select>
+
+    <!--■E004 指示ボタン押下処理  -->
+    <!-- 2.2.  通関業者コード,通関場所コード取得。 -->
+    <select id="selectAmName"  parameterType="com.kse.wmsv2.oa_iw_003.dao.OAIW003SelectAmNameDao"
+            resultType="com.kse.wmsv2.oa_iw_003.dto.OAIW003SelectAmNameDto">
+        SELECT
+            DEPARTMENTCD,
+            NAMECLASS,
+            NAMECD,
+            CHARACTERITEM2,
+            CHARACTERITEM3
+        FROM
+            AM_NAME
+        WHERE 1 = 1
+        AND DEPARTMENTCD =  #{departmentCd}
+        AND NAMECLASS =  #{nameClass}
+        AND NAMECD =  #{nameCd}
+    </select>
+
+    <!-- 2.5. 対象データ取得 -->
+    <select id="selectTargetData"  parameterType="com.kse.wmsv2.oa_iw_003.dao.OAIW003KeyDataDao"
+            resultType="com.kse.wmsv2.oa_iw_003.dto.OAIW003SelectAiDataDto">
+        SELECT DISTINCT
+            *
+        FROM
+            AI_DATA T1
+            INNER JOIN
+                (SELECT DISTINCT
+                    CWBNO,
+                    CWBNODEPTCD
+                FROM
+                    AI_STATUS_HISTORY OC1
+                WHERE 1 = 1
+                    AND OC1.BUSINESSCLASS = '02'
+                    AND OC1.STATUSCD = 'IB00200'
+                ) OC1
+            ON T1.CWBNO = OC1.CWBNO
+            AND T1.CWBNODEPTCD = OC1.CWBNODEPTCD
+        WHERE
+            NOT EXISTS
+            (SELECT
+             *
+            FROM
+                AI_STATUS_HISTORY OC2
+            WHERE 1 = 1
+                AND T1.CWBNO = OC2.CWBNO
+                AND T1.CWBNODEPTCD = OC2.CWBNODEPTCD
+                AND OC2.BUSINESSCLASS = '02'
+                AND OC2.STATUSCD = 'IB00710'
+            )
+        <if test="instAwbNo != null and instAwbNo != ''">
+            AND T1.AWBNO =  #{instAwbNo}
+        </if>
+        <if test="instArrFlt1 != null and instArrFlt1 != ''">
+            AND T1.CURRENTARRFLT_1 =  #{instArrFlt1}
+        </if>
+        <if test="instArrFlt2 != null and instArrFlt2 != ''">
+            AND T1.CURRENTARRFLT_2 =  #{instArrFlt2}
+        </if>
+        <if test="bondedWareHouseCd != null and bondedWareHouseCd != ''">
+            AND T1.BONDEDWAREHOUSECD =  #{bondedWareHouseCd}
+        </if>
+            AND
+            (SELECT
+            STATUSCD
+            FROM
+            AI_STATUS_HISTORY
+            WHERE 1 = 1
+            AND BUSINESSCLASS = '02'
+            AND CWBNO = T1.CWBNO
+            AND CWBNODEPTCD = T1.CWBNODEPTCD
+            ORDER BY
+            REGDATE DESC,
+            STATUSCD DESC
+            LIMIT 1
+            )  NOT IN('IB00310', 'IB00320', 'IB00330', 'IB00340', 'IB00350')
+        AND T1.REMODELINGFLG != '1'
+        AND (T1.DELETEDATE IS NULL OR TRIM(T1.DELETEDATE) = '')
+        AND T1.SPSDOCCLASSCD IN ('0','2')
+    </select>
+
+    <!-- 2.8. 対象データ取得 -->
+    <select id="selectTargetData2"  parameterType="com.kse.wmsv2.oa_iw_003.dao.OAIW003KeyDataDao"
+            resultType="com.kse.wmsv2.oa_iw_003.dto.OAIW003SelectAiData2Dto">
+        SELECT DISTINCT
+            T1.AWBNO AS AWBNO
+            ,T1.CURRENTARRFLT_1 AS FLT_1
+            ,T1.CURRENTARRFLT_2 AS FLT_2
+            ,T1.BONDEDWAREHOUSECD AS BONDEDWAREHOUSECD
+            ,T1.ORIGIN AS ORIGIN
+            ,SUM(IFNULL(T1.CARGOINPIECE,0)) AS DATAPIECE
+            ,SUM(IFNULL(T1.CARGOWEIGHT,0)) AS DATAWEIGHT
+            ,COUNT(*) AS CWBCOUNT
+        FROM
+            AI_DATA T1
+            INNER JOIN
+                (SELECT DISTINCT
+                    CWBNO,
+                    CWBNODEPTCD
+                FROM
+                 AI_STATUS_HISTORY OC1
+                WHERE 1 = 1
+                    AND OC1.BUSINESSCLASS = '02'
+                    AND OC1.STATUSCD = 'IB00200'
+                ) OC1
+            ON T1.CWBNO = OC1.CWBNO
+            AND T1.CWBNODEPTCD = OC1.CWBNODEPTCD
+        WHERE
+            NOT EXISTS
+                (SELECT
+                    *
+                FROM
+                    AI_STATUS_HISTORY OC2
+                WHERE 1 = 1
+                    AND T1.CWBNO = OC2.CWBNO
+                    AND T1.CWBNODEPTCD = OC2.CWBNODEPTCD
+                    AND OC2.BUSINESSCLASS = '02'
+                    AND OC2.STATUSCD = 'IB00710'
+                )
+        <if test="instAwbNo != null and instAwbNo != ''">
+            AND T1.AWBNO =  #{instAwbNo}
+        </if>
+        <if test="instArrFlt1 != null and instArrFlt1 != ''">
+            AND T1.CURRENTARRFLT_1 =  #{instArrFlt1}
+        </if>
+        <if test="instArrFlt2 != null and instArrFlt2 != ''">
+            AND T1.CURRENTARRFLT_2 =  #{instArrFlt2}
+        </if>
+        <if test="bondedWareHouseCd != null and bondedWareHouseCd != ''">
+            AND T1.BONDEDWAREHOUSECD =  #{bondedWareHouseCd}
+        </if>
+            AND
+                (SELECT
+                    STATUSCD
+                FROM
+                    AI_STATUS_HISTORY
+                WHERE 1 = 1
+                    AND BUSINESSCLASS = '02'
+                    AND CWBNO = T1.CWBNO
+                    AND CWBNODEPTCD = T1.CWBNODEPTCD
+                ORDER BY
+                    REGDATE DESC,
+                    STATUSCD DESC
+                LIMIT 1
+                )  NOT IN('IB00310', 'IB00320', 'IB00330', 'IB00340', 'IB00350')
+            AND T1.REMODELINGFLG != '1'
+            AND (T1.DELETEDATE IS NULL OR TRIM(T1.DELETEDATE) = '')
+            AND T1.SPSDOCCLASSCD IN ('0','2')
+    </select>
+
+    <!-- 3.1. UPDATE実施 -->
+    <update id="updateAiData" parameterType="com.kse.wmsv2.oa_iw_003.dao.OAIW003UpdateAiDataDao">
+        UPDATE AI_DATA
+        SET
+<!--            AWBNO = #{awbNo},-->
+<!--            CWBNO = #{cwbNo},-->
+<!--            CWBNODEPTCD = #{cwbNoDeptCd},-->
+<!--            INCLASSIFYCLASSNAME = #{inClassifyClassName},-->
+<!--            SPECIALPREPARENAME01 = #{specialPrepareName01},-->
+<!--            SPECIALPREPARENAME02 = #{specialPrepareName02},-->
+<!--            SPECIALPREPARENAME03 = #{specialPrepareName03},-->
+<!--            SPECIALPREPARENAME04 = #{specialPrepareName04},-->
+<!--            SPECIALPREPARENAME05 = #{specialPrepareName05},-->
+<!--            SPECIALPREPARENAME06 = #{specialPrepareName06},-->
+<!--            SPECIALPREPARENAME07 = #{specialPrepareName07},-->
+<!--            SPECIALPREPARENAME08 = #{specialPrepareName08},-->
+<!--            SPECIALPREPARENAME09 = #{specialPrepareName09},-->
+<!--            SPECIALPREPARENAME10 = #{specialPrepareName10},-->
+            UPDATEUSERCD = #{updateUserCd},
+            UPDATEDATE = #{updateDate}
+        WHERE  AWBNO = #{awbNo}
+            AND CWBNO = #{cwbNo}
+            AND CWBNODEPTCD = #{cwbNoDeptCd};
+    </update>
+
+    <!-- 3.2. INSERT実施 -->
+    <insert id="insertAiInventory" parameterType="java.util.List">
+        INSERT INTO AI_INVENTORY
+        (
+            BONDEDWAREHOUSECD,
+            CWBNO,
+            CWBNODEPTCD,
+            WORKSTARTTIME,
+            WORKENDTIME,
+            REMODELINGFLG,
+            OBJECTFLG,
+            FLT1,
+            FLT2,
+            ORIGIN,
+            AWBNO,
+            BWBNO,
+            SCANPICEC,
+            DATAPICEC,
+            DATAWEIGHT,
+            CLASSIFYCLASSNAME,
+            SPECIALPREPARENAME01,
+            SPECIALPREPARENAME02,
+            SPECIALPREPARENAME03,
+            SPECIALPREPARENAME04,
+            SPECIALPREPARENAME05,
+            SPECIALPREPARENAME06,
+            SPECIALPREPARENAME07,
+            SPECIALPREPARENAME08,
+            SPECIALPREPARENAME09,
+            SPECIALPREPARENAME10,
+            OVERFLG,
+            HANDYTERMINALID,
+            REGUSERCD,
+            REGDATE,
+            DELFLG
+        )
+        VALUES
+        <foreach collection="insertAiInventoryDaoList" item="aiInventoryDao" separator=",">
+            (
+            #{aiInventoryDao.bondedWareHouseCd},
+            #{aiInventoryDao.cwbNo},
+            #{aiInventoryDao.cwbNoDeptCd},
+            #{aiInventoryDao.regDate},
+            NULL,
+            #{aiInventoryDao.remodelingFlg},
+            #{aiInventoryDao.objectFlg},
+            #{aiInventoryDao.flt1},
+            #{aiInventoryDao.flt2},
+            #{aiInventoryDao.origin},
+            #{aiInventoryDao.awbNo},
+            #{aiInventoryDao.bwbNo},
+            '0',
+            <choose>
+                <when test="aiInventoryDao.dataPicec != '-1'">
+                    #{aiInventoryDao.dataPicec},
+                </when>
+                <otherwise>
+                    NULL,
+                </otherwise>
+            </choose>
+            <choose>
+                <when test="aiInventoryDao.dataWeight != '-1'">
+                    #{aiInventoryDao.dataWeight},
+                </when>
+                <otherwise>
+                    NULL,
+                </otherwise>
+            </choose>
+            #{aiInventoryDao.classifyClassName},
+            #{aiInventoryDao.specialPrepareName01},
+            #{aiInventoryDao.specialPrepareName02},
+            #{aiInventoryDao.specialPrepareName03},
+            #{aiInventoryDao.specialPrepareName04},
+            #{aiInventoryDao.specialPrepareName05},
+            #{aiInventoryDao.specialPrepareName06},
+            #{aiInventoryDao.specialPrepareName07},
+            #{aiInventoryDao.specialPrepareName08},
+            #{aiInventoryDao.specialPrepareName09},
+            #{aiInventoryDao.specialPrepareName10},
+            #{aiInventoryDao.overFlg},
+            #{aiInventoryDao.handyTerminalId},
+            #{aiInventoryDao.regUserCd},
+            #{aiInventoryDao.regDate},
+            '0'
+            )
+        </foreach>
+    </insert>
+
+    <!-- 3.3. INSERT実施 -->
+    <insert id="insertAiInventoryHead" parameterType="java.util.List">
+        INSERT INTO AI_INVENTORY_HEAD
+        (
+            BONDEDWAREHOUSECD,
+            FLT1,
+            FLT2,
+            AWBNO,
+            WORKSTARTTIME,
+            WORKENDTIME,
+            OBJECTFLG,
+            CWBCOUNT,
+            SCANCWBCOUNT,
+            OVERCWBCOUNT,
+            SCANPIECE,
+            DATAPIECE,
+            DATAWEIGHT,
+            REGUSERCD,
+            REGDATE,
+            DELFLG
+        )
+        VALUES
+        <foreach collection="insertAiInventoryHeadDaoList" item="aiInventoryHeadDao" separator=",">
+            (
+            #{aiInventoryHeadDao.bondedWareHouseCd},
+            #{aiInventoryHeadDao.flt1},
+            #{aiInventoryHeadDao.flt2},
+            #{aiInventoryHeadDao.awbNo},
+            #{aiInventoryHeadDao.workStartTime},
+            #{aiInventoryHeadDao.workEndTime},
+            #{aiInventoryHeadDao.objectFlg},
+            #{aiInventoryHeadDao.cwbCount},
+            '0',
+            '0',
+            '0',
+            #{aiInventoryHeadDao.dataPiece},
+            #{aiInventoryHeadDao.dataWeight},
+            #{aiInventoryHeadDao.regUserCd},
+            #{aiInventoryHeadDao.regDate},
+            #{aiInventoryHeadDao.delFlg}
+            )
+        </foreach>
+    </insert>
+
+    <!--■E004 指示ボタン押下処理-->
+    <!-- 3.4. INSERT実施 -->
+    <!--■E006 終了ボタン押下処理-->
+    <!--2.6 AI_STATUS_HISTORY INSERT処理-->
+    <insert id="insertAiStatusHistory" parameterType="java.util.List">
+        INSERT INTO AI_STATUS_HISTORY
+        (
+            BUSINESSCLASS,
+            AWBNO,
+            BWBNO,
+            CWBNO,
+            CWBNODEPTCD,
+            STATUSCD,
+            REGUSERCD,
+            REGDATE,
+            UPDATEUSERCD,
+            UPDATEDATE
+        )
+        VALUES
+        <foreach collection="insertAiStatusHistoryDaoList" item="aiStatusHistoryDao" separator=",">
+            (
+                #{aiStatusHistoryDao.businessClass},
+                #{aiStatusHistoryDao.awbNo},
+                #{aiStatusHistoryDao.bwbNo},
+                #{aiStatusHistoryDao.cwbNo},
+                #{aiStatusHistoryDao.cwbNoDeptCd},
+                #{aiStatusHistoryDao.statusCd},
+                #{aiStatusHistoryDao.regUserCd},
+                NOW(),
+<!--                #{aiStatusHistoryDao.regDate},-->
+                #{aiStatusHistoryDao.updateUserCd},
+                NOW()
+<!--                #{aiStatusHistoryDao.updateDate}-->
+            )
+        </foreach>
+    </insert>
+
+    <!--■E004 指示ボタン押下処理-->
+    <!-- 3.5.  INSERT実施 -->
+    <!--■E006 終了ボタン押下処理-->
+    <!--2.7 AI_STATUS INSERT処理-->
+    <insert id="insertAiStatus" parameterType="java.util.List">
+        INSERT INTO AI_STATUS
+        (
+            BUSINESSCLASS,
+            AWBNO,
+            BWBNO,
+            CWBNO,
+            CWBNODEPTCD,
+            CUSTOMSTATUSCD,
+            BONDEDSTATUSCD,
+            HANDYTERMINALID,
+            LINKDATACLASS,
+            PERMITFLG,
+            REGUSERCD,
+            REGDATE,
+            UPDATEUSERCD,
+            UPDATEDATE
+        )
+        VALUES
+        <foreach collection="insertAiStatusDaoList" item="aiStatusDao" separator=",">
+            (
+            #{aiStatusDao.businessClass},
+            #{aiStatusDao.awbNo},
+            #{aiStatusDao.bwbNo},
+            #{aiStatusDao.cwbNo},
+            #{aiStatusDao.cwbNoDeptCd},
+            <choose>
+                <when test="aiStatusDao.businessClass == '02'">
+                    '',
+                    #{aiStatusDao.statusCd},
+                </when>
+                <otherwise>
+                    #{aiStatusDao.statusCd},
+                    '',
+                </otherwise>
+            </choose>
+            NULL,
+            NULL,
+            NULL,
+            #{aiStatusDao.regUserCd},
+            NOW(),
+<!--            #{aiStatusDao.regDate},-->
+            #{aiStatusDao.updateUserCd},
+            NOW()
+<!--            #{aiStatusDao.updateDate}-->
+            )
+        </foreach>
+    </insert>
+
+    <!--■E006 終了ボタン押下処理 -->
+    <!-- 2.2 対象データ取得。 -->
+    <select id="selectAiInventory2"  parameterType="com.kse.wmsv2.oa_iw_003.dao.OAIW003endKeyDataDao"
+            resultType="com.kse.wmsv2.oa_iw_003.dto.OAIW003SelectAiInventoryDto">
+        SELECT
+        *
+        FROM
+        AI_INVENTORY
+        WHERE 1 = 1
+        <if test="workStartTime != null and workStartTime != ''">
+            AND WORKSTARTTIME=  #{workStartTime}
+        </if>
+        <if test="bondedWareHouseCd != null and bondedWareHouseCd != ''">
+            AND BONDEDWAREHOUSECD=  #{bondedWareHouseCd}
+        </if>
+        <if test="awbNo != null and awbNo != ''">
+            AND AWBNO= #{awbNo}
+        </if>
+        <if test="objectFlg != null and objectFlg != ''">
+            AND OBJECTFLG= #{objectFlg}
+        </if>
+        <if test="arrFlt1 != null and arrFlt1 != ''">
+            AND FLT1=  #{arrFlt1}
+        </if>
+        <if test="arrFlt2 != null and arrFlt2 != ''">
+            AND FLT2=  #{arrFlt2}
+        </if>
+    </select>
+
+    <!-- 2.4 AI_INVENTORY DELFLG更新 -->
+    <update id="updateAiInventory" parameterType="com.kse.wmsv2.oa_iw_003.dao.OAIW003UpdateAiInventoryDao">
+        UPDATE AI_INVENTORY
+        SET    DELFLG='1',
+               WORKENDTIME= NOW()
+<!--               WORKENDTIME= #{workEndTime}-->
+        WHERE  BONDEDWAREHOUSECD= #{bondedWareHouseCd}
+        AND    CWBNO= #{cwbNo}
+        AND    CWBNODEPTCD= #{cwbNoDeptCd};
+    </update>
+
+    <!-- 2.5 AI_INVENTORY_HEAD DELFLG更新 -->
+    <update id="updateAiInventoryHead" parameterType="com.kse.wmsv2.oa_iw_003.dao.OAIW003UpdateAiInventoryHeadDao">
+        UPDATE AI_INVENTORY_HEAD
+        SET    DELFLG='1',
+               WORKENDTIME= NOW()
+<!--               WORKENDTIME= #{workEndTime}-->
+        WHERE  BONDEDWAREHOUSECD= #{bondedWareHouseCd}
+        AND    FLT1= #{flt1}
+        AND    FLT2= #{flt2}
+        AND    AWBNO= #{awbNo}
+    </update>
+
+    <!--履歴照会画面 -->
+    <!--■E002　HAWB検索ボタン押下処理-->
+    <!-- 1.2 下記のSQLの実行を行い対象データの件数をチェックする。 -->
+    <select id="searchStatusCnt"  parameterType="com.kse.wmsv2.oa_iw_003.dao.OAIW003SearchStatusDao"
+            resultType="Integer">
+        SELECT
+            COUNT(*)
+        FROM
+            AI_INVENTORY
+        WHERE 1 = 1
+        <if test="workEndTime != null and workEndTime != ''">
+            AND DELFLG = 1
+            AND WORKENDTIME =  #{workEndTime}
+        </if>
+        <if test="workEndTime == null and workEndTime == ''">
+            AND DELFLG = 0
+        </if>
+        <if test="workStartTime == null and workStartTime == ''">
+            AND WORKSTARTTIME =  #{workStartTime}
+        </if>
+        <if test="objectFlg == null and objectFlg == ''">
+            AND OBJECTFLG =  #{objectFlg}
+        </if>
+        <if test="unMatchOver and unMatchShort and match">
+        </if>
+        <if test="unMatchOver and unMatchShort and !match">
+            AND (IFNULL(DATAPICEC,0) <![CDATA[<]]> IFNULL(SCANPICEC,0)
+            OR   IFNULL(DATAPICEC,0) > IFNULL(SCANPICEC,0) )
+        </if>
+        <if test="unMatchOver and !unMatchShort and match">
+            AND (IFNULL(DATAPICEC,0) <![CDATA[<]]> IFNULL(SCANPICEC,0)
+            OR   IFNULL(DATAPICEC,0) = IFNULL(SCANPICEC,0) )
+        </if>
+        <if test="unMatchOver and !unMatchShort and !match">
+            AND IFNULL(DATAPICEC,0) <![CDATA[<]]> IFNULL(SCANPICEC,0)
+        </if>
+        <if test="!unMatchOver and unMatchShort and match">
+            AND (IFNULL(DATAPICEC,0) > IFNULL(SCANPICEC,0)
+            OR   IFNULL(DATAPICEC,0) = IFNULL(SCANPICEC,0) )
+        </if>
+        <if test="!unMatchOver and unMatchShort and !match">
+            AND IFNULL(DATAPICEC,0) > IFNULL(SCANPICEC,0)
+        </if>
+        <if test="!unMatchOver and !unMatchShort and match">
+            AND IFNULL(DATAPICEC,0) = IFNULL(SCANPICEC,0)
+        </if>
+        <if test="bondedWareHouseCd == null and bondedWareHouseCd == ''">
+            AND BONDEDWAREHOUSECD =  #{bondedWareHouseCd}
+        </if>
+        <if test="awbNo != null and awbNo != ''">
+            AND AWBNO =  #{awbNo}
+        </if>
+        <if test="flt1 != null and flt1 != ''">
+            AND FLT1 =  #{flt1}
+        </if>
+        <if test="flt2 != null and flt2 != ''">
+            AND FLT2 =  #{flt2}
+        </if>
+    </select>
+
+    <!-- 1.3 対象データ取得。 -->
+    <select id="searchStatus"  parameterType="com.kse.wmsv2.oa_iw_003.dao.OAIW003SearchStatusDao"
+            resultType="com.kse.wmsv2.oa_iw_003.dto.OAIW003SearchStatusDto">
+        <if test="unMatchOver">
+            SELECT
+                CASE WHEN CWBNODEPTCD = '000'
+                THEN    CWBNO
+                ELSE    CWBNO + '/' + CWBNODEPTCD
+                END CWBNO,
+                HANDYTERMINALID AS HandyTerminalID,
+                UPDATEDATE AS SCANDateTime,
+                DATAPICEC AS ScanPiece,
+                OVERFLG AS OVERFLG,
+                'オーバー' AS STS
+            FROM
+                AI_INVENTORY
+            WHERE
+                IFNULL(DATAPicec,0) <![CDATA[<]]> IFNULL(SCANPicec,0)
+            <if test="cwbNo != null and cwbNo != ''">
+                AND CWBNO =  #{cwbNo}
+            </if>
+            <if test="workEndTime != null and workEndTime != ''">
+                AND DELFLG = 1
+                AND WORKENDTIME =  #{workEndTime}
+            </if>
+            <if test="workEndTime == null and workEndTime == ''">
+                AND DELFLG = 0
+            </if>
+            <if test="workStartTime != null and workStartTime != ''">
+                AND WORKSTARTTIME =  #{workStartTime}
+            </if>
+            <if test="objectFlg != null and objectFlg != ''">
+                AND OBJECTFLG =  #{objectFlg}
+            </if>
+            <if test="bondedWareHouseCd != null and bondedWareHouseCd != ''">
+                AND BONDEDWAREHOUSECD =  #{bondedWareHouseCd}
+            </if>
+            <if test="awbNo != null and awbNo != ''">
+                AND AWBNO =  #{awbNo}
+            </if>
+            <if test="flt1 != null and flt1 != ''">
+                AND FLT1 =  #{flt1}
+            </if>
+            <if test="flt2 != null and flt2 != ''">
+                AND FLT2 =  #{flt2}
+            </if>
+        </if>
+        <if test="unMatchShort">
+            <if test="unMatchOver">
+                UNION
+            </if>
+            SELECT
+                CASE WHEN CWBNODEPTCD = '000'
+                THEN    CWBNO
+                ELSE    CWBNO + '/' + CWBNODEPTCD
+                END CWBNO,
+                HANDYTERMINALID AS HandyTerminalID,
+                UPDATEDATE AS SCANDateTime,
+                DATAPICEC AS ScanPiece,
+                OVERFLG AS OVERFLG,
+                'ショート' AS STS
+            FROM
+                AI_INVENTORY
+            WHERE
+                IFNULL(DATAPicec,0) > IFNULL(SCANPicec,0)
+            <if test="workEndTime != null and workEndTime != ''">
+                AND DELFLG = 1
+                AND WORKENDTIME =  #{workEndTime}
+            </if>
+            <if test="workEndTime == null and workEndTime == ''">
+                AND DELFLG = 0
+            </if>
+            <if test="cwbNo != null and cwbNo != ''">
+                AND CWBNO =  #{cwbNo}
+            </if>
+            <if test="workStartTime != null and workStartTime != ''">
+                AND WORKSTARTTIME =  #{workStartTime}
+            </if>
+            <if test="objectFlg != null and objectFlg != ''">
+                AND OBJECTFLG =  #{objectFlg}
+            </if>
+            <if test="bondedWareHouseCd != null and bondedWareHouseCd != ''">
+                AND BONDEDWAREHOUSECD =  #{bondedWareHouseCd}
+            </if>
+            <if test="awbNo != null and awbNo != ''">
+                AND AWBNO =  #{awbNo}
+            </if>
+            <if test="flt1 != null and flt1 != ''">
+                AND FLT1 =  #{flt1}
+            </if>
+            <if test="flt2 != null and flt2 != ''">
+                AND FLT2 =  #{flt2}
+            </if>
+        </if>
+        <if test="match">
+            <if test="unMatchOver or unMatchShort">
+                UNION
+            </if>
+            SELECT
+                CASE WHEN CWBNODEPTCD = '000'
+                THEN    CWBNO
+                ELSE    CWBNO + '/' + CWBNODEPTCD
+                END CWBNO,
+                HANDYTERMINALID AS HandyTerminalID,
+                UPDATEDATE AS SCANDateTime,
+                DATAPICEC AS ScanPiece,
+                OVERFLG AS OVERFLG,
+                'スキャン' AS STS
+            FROM
+                AI_INVENTORY
+                WHERE
+            IFNULL(DATAPicec,0) = IFNULL(SCANPicec,0)
+            <if test="workEndTime != null and workEndTime != ''">
+                AND DELFLG = 1
+                AND WORKENDTIME =  #{workEndTime}
+            </if>
+            <if test="workEndTime == null and workEndTime == ''">
+                AND DELFLG = 0
+            </if>
+            <if test="workStartTime != null and workStartTime != ''">
+                AND WORKSTARTTIME =  #{workStartTime}
+            </if>
+            <if test="cwbNo != null and cwbNo != ''">
+                AND CWBNO =  #{cwbNo}
+            </if>
+            <if test="objectFlg != null and objectFlg != ''">
+                AND OBJECTFLG =  #{objectFlg}
+            </if>
+            <if test="bondedWareHouseCd != null and bondedWareHouseCd != ''">
+                AND BONDEDWAREHOUSECD =  #{bondedWareHouseCd}
+            </if>
+            <if test="awbNo != null and awbNo != ''">
+                AND AWBNO =  #{awbNo}
+            </if>
+            <if test="flt1 != null and flt1 != ''">
+                AND FLT1 =  #{flt1}
+            </if>
+            <if test="flt2 != null and flt2 != ''">
+                AND FLT2 =  #{flt2}
+            </if>
+        </if>
+    </select>
+</mapper>

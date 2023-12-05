@@ -1,0 +1,83 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="com.kse.wmsv2.oc_cm_001.mapper.UserMasterAmNameMapper">
+ 
+  <select id="getListCodeAndAmName" parameterType="java.lang.String" resultMap="listCodeAndAmName">
+            SELECT 
+              NAMECD,
+              NAME 
+            FROM AM_NAME 
+            WHERE NAMECLASS = #{nameClass}
+  </select>
+
+  <select id="getListByNameClassAndDepartmentCd" resultMap="listCodeAndAmName">
+            SELECT 
+              NAMECD,
+              NAME 
+            FROM AM_NAME 
+            WHERE NAMECLASS = #{nameClass}
+            AND (DEPARTMENTCD = 'ALL' OR DEPARTMENTCD = #{departmentCd})
+  </select>
+
+  <select id="getListCodeAndAmNameWuthOrderBy" parameterType="java.lang.String" resultMap="listCodeAndAmName">
+            SELECT 
+              NAMECD,
+              NAME 
+            FROM AM_NAME 
+            WHERE NAMECLASS = #{nameClass}
+            <if test="orderBy != ''">
+              ${orderBy}
+          </if>
+  </select>
+
+  <resultMap id="listCodeAndAmName" type="com.kse.wmsv2.oc_cm_001.dto.ComBoBoxDto">
+    <result column="NAMECD" jdbcType="VARCHAR" property="value" />
+    <result column="NAME" jdbcType="VARCHAR" property="name" />
+  </resultMap>
+
+
+  <select id="getDataRate" parameterType="com.kse.wmsv2.oc_cm_001.dto.request.RateMasterRequest" resultMap="listRate">
+        SELECT
+          AM_NAME.NAMECD,
+          AM_NAME.NAME,
+          CM_RATE.RATE,
+          CM_RATE.REGUSERCD,
+          REG.USERNAME AS REG_USER,
+          CM_RATE.REGDATE,
+          CM_RATE.UPDATEUSERCD,
+          UPD.USERNAME AS UPD_USER,
+          CM_RATE.UPDATEDATE,
+          DATE_FORMAT(CM_RATE.STARTDATE, '%Y/%m/%d') AS STARTDATE
+        FROM
+          AM_NAME
+          LEFT JOIN
+            (SELECT * FROM CM_RATE WHERE DATE_FORMAT(CM_RATE.STARTDATE, '%Y/%m/%d') = #{startDate}) CM_RATE 
+            ON AM_NAME.NAMECD = CM_RATE.CURRENCYCD
+          LEFT JOIN 
+            CM_USER REG ON REG.USERCD = CM_RATE.REGUSERCD
+          LEFT JOIN
+            CM_USER UPD ON UPD.USERCD = CM_RATE.UPDATEUSERCD
+        WHERE 1 = 1
+          AND AM_NAME.NAMECLASS = '0019'
+          ORDER BY
+          AM_NAME.SORTKEY
+  </select>
+
+  <resultMap id="listRate" type="com.kse.wmsv2.oc_cm_001.dto.RateMasterDto">
+    <result column="NAMECD" jdbcType="VARCHAR" property="nameCd" />
+    <result column="NAME" jdbcType="VARCHAR" property="name" />
+    <result column="RATE" jdbcType="VARCHAR" property="rate" />
+    <result column="REGUSERCD" jdbcType="VARCHAR" property="regUserCd" />
+    <result column="REG_USER" jdbcType="VARCHAR" property="regUser" />
+    <result column="REGDATE" jdbcType="TIMESTAMP" property="regDate" />
+    <result column="UPDATEUSERCD" jdbcType="VARCHAR" property="updUserCd" />
+    <result column="UPD_USER" jdbcType="VARCHAR" property="updUser" />
+    <result column="UPDATEDATE" jdbcType="TIMESTAMP" property="updateDate" />
+    <result column="STARTDATE" jdbcType="VARCHAR" property="startDate" />
+  </resultMap>
+</mapper>
+
+ 

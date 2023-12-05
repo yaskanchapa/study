@@ -1,0 +1,622 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="com.kse.wmsv2.oc_cm_001.mapper.TraderNoMasterAmCustomerNumberMapper">
+
+   <select id="getDataAmCustomerNumber" parameterType="com.kse.wmsv2.oc_cm_001.dto.request.TraderNoMasterRequest" resultMap="amCustomerNumber">
+
+          SELECT    AM_CUSTOMER_NUMBER.CUSTOMERNO,
+                    AM_CUSTOMER_NUMBER.DEPTCD,
+                    AM_CUSTOMER_NUMBER.OCSDEPTCD,
+                    SUBSTRING(AM_CUSTOMER_NUMBER.OCSDEPTCD, 1, 1) AS ImpExpFlag,
+                    SUBSTRING(AM_CUSTOMER_NUMBER.OCSDEPTCD, 2, 1) AS ShiyoBashoFlag,
+                    SUBSTRING(AM_CUSTOMER_NUMBER.OCSDEPTCD, 3, 3) AS Seq,
+                    CASE
+                         WHEN IFNULL(CONCAT(IFNULL(CONDITIONFLG01, '') , IFNULL(CONDITIONFLG02, '') , IFNULL(CONDITIONFLG03, '')
+                         , IFNULL(CONDITIONFLG04, '') , IFNULL(CONDITIONFLG05, '') , IFNULL(CONDITIONFLG06, '') 
+                         , IFNULL(CONDITIONFLG07, '') , IFNULL(CONDITIONFLG08, '') , IFNULL(CONDITIONFLG09, '') 
+                         , IFNULL(CONDITIONFLG10, '') , IFNULL(CONDITIONFLG11, '') , IFNULL(CONDITIONFLG12, '') 
+                         , IFNULL(CONDITIONFLG13, '') , IFNULL(CONDITIONFLG14, '') , IFNULL(CONDITIONFLG15, '') 
+                         , IFNULL(CONDITIONFLG16, '') , IFNULL(CONDITIONFLG17, '') , IFNULL(CONDITIONFLG18, '') 
+                         , IFNULL(CONDITIONFLG19, '') , IFNULL(CONDITIONFLG20, '') , IFNULL(CONDITIONFLG21, '') 
+                         , IFNULL(CONDITIONFLG22, '') , IFNULL(CONDITIONFLG23, '') , IFNULL(CONDITIONFLG24, '') 
+                         , IFNULL(CONDITIONFLG25, '') , IFNULL(CONDITIONCOMMENT, '') , IFNULL(CONDITIONBANKACCOUNTNO, '') 
+                         , IFNULL(CONDITIONCOLLATERALNO1, '') , IFNULL(CONDITIONCOLLATERALNO2, '') , IFNULL(DELIVERYDATEEXTCD, '') 
+                         , IFNULL(PAYMETHODDISC, '') , IFNULL(PAYMETHODDISC, '') , IFNULL(ESTIMATIONFLGCD, '') 
+                         , IFNULL(INCESTREPRENO, '') , IFNULL(INSURANCECLASSCD, '') , IFNULL(INCINSUREGNO, '')), '') != '' 
+                    THEN 1 ELSE 0
+                    END AS OptionSelectedFlag,
+                    '' AS JastProCode,
+                    CUSTOMERNAMEE,
+                    CUSTOMERADDE1,
+                    CUSTOMERADDE2,
+                    CUSTOMERADDE3,
+                    CUSTOMERADDE4,
+                    CUSTOMERADDEBLANKET,
+                    CUSTOMERNAMEJ,
+                    ZIPCD,
+                    CUSTOMERADDEJ,
+                    DIVISION,
+                    CHARGER,
+                    TELNO,
+                    FAXNO,
+                    EMAILADD,
+                    REMARKS,
+                    CONDITIONCOMMENT,
+                    CONDITIONBANKACCOUNTNO,
+                    CONDITIONCOLLATERALNO1,
+                    CONDITIONCOLLATERALNO2,
+                    CONDITIONFLG01,
+                    CONDITIONFLG02,
+                    CONDITIONFLG03,
+                    CONDITIONFLG04,
+                    CONDITIONFLG05,
+                    CONDITIONFLG06,
+                    CONDITIONFLG07,
+                    CONDITIONFLG08,
+                    CONDITIONFLG09,
+                    CONDITIONFLG10,
+                    CONDITIONFLG11,
+                    CONDITIONFLG12,
+                    CONDITIONFLG13,
+                    CONDITIONFLG14,
+                    CONDITIONFLG15,
+                    CONDITIONFLG16,
+                    CONDITIONFLG17,
+                    CONDITIONFLG18,
+                    CONDITIONFLG19,
+                    CONDITIONFLG20,
+                    CONDITIONFLG21,
+                    CONDITIONFLG22,
+                    CONDITIONFLG23,
+                    CONDITIONFLG24,
+                    CONDITIONFLG25,
+                    DELIVERYDATEEXTCD,
+                    ESTIMATIONFLGCD,
+                    INCESTREPRENO,
+                    INSURANCECLASSCD,
+                    INCINSUREGNO,
+                    PAYMETHODDISC,
+                    CONCAT(IFNULL(CONDITIONCOLLATERALNO1, '') , '-' , IFNULL(CONDITIONCOLLATERALNO2, '')) AS ConditionCollateralNo,
+                    (SELECT USERNAME
+                    FROM CM_USER
+                    WHERE USERCD = AM_CUSTOMER_NUMBER.REGUSERCD) REGUSERCD,
+                    AM_CUSTOMER_NUMBER.REGDATE,
+                    (SELECT USERNAME
+                    FROM CM_USER
+                    WHERE USERCD = AM_CUSTOMER_NUMBER.UPDATEUSERCD) UPDATEUSERCD,
+                    AM_CUSTOMER_NUMBER.UPDATEDATE,
+                    INCESTREPRENO2,
+                    INCESTREPRENO3,
+                    CUSTOMSOFFICEJANITORCD,
+                    CUSTOMSOFFICEJANITORRENO,
+                    CUSTOMSOFFICEJANITORNAME,
+                    SHIPPERSSECCD,
+                    SHIPPERSREFNO
+          FROM AM_CUSTOMER_NUMBER
+          LEFT JOIN AM_WILL_CUSTOMER_NUMBER_CONVERT ON AM_WILL_CUSTOMER_NUMBER_CONVERT.CUSTOMERNO = AM_CUSTOMER_NUMBER.CUSTOMERNO
+          AND AM_WILL_CUSTOMER_NUMBER_CONVERT.DEPTCD = AM_CUSTOMER_NUMBER.DEPTCD
+          AND AM_WILL_CUSTOMER_NUMBER_CONVERT.OCSDEPTCD = AM_CUSTOMER_NUMBER.OCSDEPTCD
+          WHERE 1 = 1
+         <if test="customerNo != ''">
+             AND AM_CUSTOMER_NUMBER.CUSTOMERNO LIKE '%' #{customerNo} '%'
+        </if>
+        <if test="deptCd != ''">
+             AND AM_CUSTOMER_NUMBER.DEPTCD LIKE '%' #{deptCd} '%'
+        </if>
+        <if test="impExpFlag != ''">
+               AND (SUBSTRING(AM_CUSTOMER_NUMBER.OCSDEPTCD, 1,1)  = #{impExpFlag} OR SUBSTRING(AM_CUSTOMER_NUMBER.OCSDEPTCD, 1,1) = '0') 
+        </if>
+        <if test="shiyoBashoFlag != ''">
+                 AND (SUBSTRING(AM_CUSTOMER_NUMBER.OCSDEPTCD, 2,1) = #{shiyoBashoFlag} OR SUBSTRING(AM_CUSTOMER_NUMBER.OCSDEPTCD, 2,1) = '0') 
+        </if>
+        <if test="customerNamee != ''">
+             AND CUSTOMERNAMEE LIKE '%' #{customerNamee} '%'
+        </if>
+        <if test="zipCd != ''">
+             AND ZIPCD LIKE '%' #{zipCd} '%'
+        </if>
+        <if test="customerAdde1 != ''">
+             AND CUSTOMERADDE1 LIKE '%' #{customerAdde1} '%'
+        </if>
+        <if test="customerAdde2 != ''">
+             AND CUSTOMERADDE2 LIKE '%' #{customerAdde2} '%'
+        </if>
+        <if test="customerAdde3 != ''">
+             AND CUSTOMERADDE3 LIKE '%' #{customerAdde3} '%'
+        </if>
+        <if test="customerAdde4 != ''">
+             AND CUSTOMERADDE4 LIKE '%' #{customerAdde4} '%'
+        </if>
+        <if test="customerAddeblAnket != ''">
+             AND (CUSTOMERADDE1 LIKE '%' #{customerAddeblAnket} '%'
+               OR
+               CUSTOMERADDE2 LIKE '%' #{customerAddeblAnket} '%'
+               OR
+               CUSTOMERADDE3 LIKE '%' #{customerAddeblAnket} '%'
+               OR
+               CUSTOMERADDE4 LIKE '%' #{customerAddeblAnket} '%'
+               OR
+               CUSTOMERADDEBLANKET LIKE '%' #{customerAddeblAnket} '%')
+        </if>
+          <if test="customerNamej != ''">
+             AND CUSTOMERNAMEJ LIKE '%' #{customerNamej} '%'
+        </if>
+        <if test="customerAddej != ''">
+             AND CUSTOMERNAMEJ LIKE '%' #{customerAddej} '%'
+        </if>
+        <if test="division != ''">
+             AND DIVISION LIKE '%' #{division} '%'
+        </if>
+        <if test="charger != ''">
+             AND CHARGER LIKE '%' #{charger} '%'
+        </if>
+        <if test="emailAdd != ''">
+             AND EMAILADD LIKE '%' #{emailAdd} '%'
+        </if>
+        <if test="telNo != ''">
+             AND TELNO LIKE '%' #{telNo} '%'
+        </if>
+        <if test="faxNo != ''">
+             AND FAXNO LIKE '%' #{faxNo} '%'
+        </if>
+
+          GROUP BY
+          CUSTOMERNO, DEPTCD, OCSDEPTCD, CUSTOMERNAMEE, CUSTOMERADDE1,  
+          CUSTOMERADDE2, CUSTOMERADDE3, CUSTOMERADDE4, CUSTOMERADDEBLANKET, CUSTOMERNAMEJ,  
+          ZIPCD, CUSTOMERADDEJ, DIVISION, CHARGER, TELNO, FAXNO, EMAILADD,  
+          REMARKS, CONDITIONCOMMENT, CONDITIONBANKACCOUNTNO, CONDITIONCOLLATERALNO1,  
+          CONDITIONCOLLATERALNO2, CONDITIONFLG01, CONDITIONFLG02, CONDITIONFLG03,  
+          CONDITIONFLG04, CONDITIONFLG05, CONDITIONFLG06, CONDITIONFLG07,  CONDITIONFLG08, 
+          CONDITIONFLG09, CONDITIONFLG10, CONDITIONFLG11,  CONDITIONFLG12, CONDITIONFLG13, 
+          CONDITIONFLG14, CONDITIONFLG15,  CONDITIONFLG16, CONDITIONFLG17, CONDITIONFLG18, 
+          CONDITIONFLG19,  CONDITIONFLG20, CONDITIONFLG21, CONDITIONFLG22, CONDITIONFLG23,  
+          CONDITIONFLG24, CONDITIONFLG25, DELIVERYDATEEXTCD, ESTIMATIONFLGCD,  INCESTREPRENO, 
+          INSURANCECLASSCD, INCINSUREGNO, PAYMETHODDISC,  INCESTREPRENO2, INCESTREPRENO3,
+          CUSTOMSOFFICEJANITORCD, CUSTOMSOFFICEJANITORRENO, CUSTOMSOFFICEJANITORNAME, SHIPPERSSECCD,
+          SHIPPERSREFNO,  REGUSERCD, REGDATE, UPDATEUSERCD, UPDATEDATE 
+
+          ORDER BY CUSTOMERNO, DEPTCD, OCSDEPTCD
+
+    <if test="page != null">
+      <if test="itemPerPage != null">
+        LIMIT
+        #{page},
+        #{itemPerPage}
+      </if>
+    </if>
+  </select>
+  
+  <resultMap id="amCustomerNumber" type="com.kse.wmsv2.oc_cm_001.dto.TraderNoMasterDto">
+    <result column="CUSTOMERNO" jdbcType="VARCHAR" property="customerNo" />
+    <result column="DEPTCD" jdbcType="VARCHAR" property="deptCd" />
+    <result column="OCSDEPTCD" jdbcType="VARCHAR" property="ocsdeptCd" />
+    <result column="ImpExpFlag" jdbcType="VARCHAR" property="impExpFlag" />
+    <result column="ShiyoBashoFlag" jdbcType="VARCHAR" property="shiyoBashoFlag" />
+    <result column="Seq" jdbcType="VARCHAR" property="seq" />
+    <result column="OptionSelectedFlag" jdbcType="VARCHAR" property="optionSelectedFlag" />
+    <result column="JastProCode" jdbcType="VARCHAR" property="jastProCode" />
+    <result column="CUSTOMERNAMEE" jdbcType="VARCHAR" property="customerNamee" />
+    <result column="CUSTOMERADDE1" jdbcType="VARCHAR" property="customerAdde1" />
+    <result column="CUSTOMERADDE2" jdbcType="VARCHAR" property="customerAdde2" />
+    <result column="CUSTOMERADDE3" jdbcType="VARCHAR" property="customerAdde3" />
+    <result column="CUSTOMERADDE4" jdbcType="VARCHAR" property="customerAdde4" />
+    <result column="CUSTOMERADDEBLANKET" jdbcType="VARCHAR" property="customerAddeblAnket" />
+    <result column="CUSTOMERNAMEJ" jdbcType="VARCHAR" property="customerNamej" />
+    <result column="ZIPCD" jdbcType="VARCHAR" property="zipCd" />
+    <result column="CUSTOMERADDEJ" jdbcType="VARCHAR" property="customerAddej" />
+    <result column="DIVISION" jdbcType="VARCHAR" property="division" />
+    <result column="CHARGER" jdbcType="VARCHAR" property="charger" />
+    <result column="TELNO" jdbcType="VARCHAR" property="telNo" />
+    <result column="FAXNO" jdbcType="VARCHAR" property="faxNo" />
+    <result column="EMAILADD" jdbcType="VARCHAR" property="emailAdd" />
+    <result column="REMARKS" jdbcType="VARCHAR" property="remarks" />
+    <result column="CONDITIONCOMMENT" jdbcType="VARCHAR" property="conditionComment" />
+    <result column="CONDITIONBANKACCOUNTNO" jdbcType="VARCHAR" property="conditionBankAccountNo" />
+    <result column="CONDITIONCOLLATERALNO1" jdbcType="VARCHAR" property="conditionCollateralNo1" />
+    <result column="CONDITIONCOLLATERALNO2" jdbcType="VARCHAR" property="conditionCollateralNo2" />
+    <result column="CONDITIONFLG01" jdbcType="VARCHAR" property="conditionFlg01" />
+    <result column="CONDITIONFLG02" jdbcType="VARCHAR" property="conditionFlg02" />
+    <result column="CONDITIONFLG03" jdbcType="VARCHAR" property="conditionFlg03" />
+    <result column="CONDITIONFLG04" jdbcType="VARCHAR" property="conditionFlg04" />
+    <result column="CONDITIONFLG05" jdbcType="VARCHAR" property="conditionFlg05" />
+    <result column="CONDITIONFLG06" jdbcType="VARCHAR" property="conditionFlg06" />
+    <result column="CONDITIONFLG07" jdbcType="VARCHAR" property="conditionFlg07" />
+    <result column="CONDITIONFLG08" jdbcType="VARCHAR" property="conditionFlg08" />
+    <result column="CONDITIONFLG09" jdbcType="VARCHAR" property="conditionFlg09" />
+    <result column="CONDITIONFLG10" jdbcType="VARCHAR" property="conditionFlg10" />
+    <result column="CONDITIONFLG11" jdbcType="VARCHAR" property="conditionFlg11" />
+    <result column="CONDITIONFLG12" jdbcType="VARCHAR" property="conditionFlg12" />
+    <result column="CONDITIONFLG13" jdbcType="VARCHAR" property="conditionFlg13" />
+    <result column="CONDITIONFLG14" jdbcType="VARCHAR" property="conditionFlg14" />
+    <result column="CONDITIONFLG15" jdbcType="VARCHAR" property="conditionFlg15" />
+    <result column="CONDITIONFLG16" jdbcType="VARCHAR" property="conditionFlg16" />
+    <result column="CONDITIONFLG17" jdbcType="VARCHAR" property="conditionFlg17" />
+    <result column="CONDITIONFLG18" jdbcType="VARCHAR" property="conditionFlg18" />
+    <result column="CONDITIONFLG19" jdbcType="VARCHAR" property="conditionFlg19" />
+    <result column="CONDITIONFLG20" jdbcType="VARCHAR" property="conditionFlg20" />
+    <result column="CONDITIONFLG21" jdbcType="VARCHAR" property="conditionFlg21" />
+    <result column="CONDITIONFLG22" jdbcType="VARCHAR" property="conditionFlg22" />
+    <result column="CONDITIONFLG23" jdbcType="VARCHAR" property="conditionFlg23" />
+    <result column="CONDITIONFLG24" jdbcType="VARCHAR" property="conditionFlg24" />
+    <result column="CONDITIONFLG25" jdbcType="VARCHAR" property="conditionFlg25" />
+    <result column="DELIVERYDATEEXTCD" jdbcType="VARCHAR" property="deliveryDateExtCd" />
+    <result column="ESTIMATIONFLGCD" jdbcType="VARCHAR" property="estimationFlgCd" />
+    <result column="INCESTREPRENO" jdbcType="VARCHAR" property="incestrepreNo" />
+    <result column="INSURANCECLASSCD" jdbcType="VARCHAR" property="insuranceClassCd" />
+    <result column="INCINSUREGNO" jdbcType="VARCHAR" property="incinsuregNo" />
+    <result column="PAYMETHODDISC" jdbcType="VARCHAR" property="paymethodDisc" />
+    <result column="ConditionCollateralNo" jdbcType="VARCHAR" property="conditionCollateralNo" />
+    <result column="REGUSERCD" jdbcType="VARCHAR" property="reguserCd" />
+    <result column="REGDATE" jdbcType="TIMESTAMP" property="regDate" />
+    <result column="UPDATEUSERCD" jdbcType="VARCHAR" property="updateUserCd" />
+    <result column="UPDATEDATE" jdbcType="TIMESTAMP" property="updateDate" />
+    <result column="INCESTREPRENO2" jdbcType="VARCHAR" property="incestrepreNo2" />
+    <result column="INCESTREPRENO3" jdbcType="VARCHAR" property="incestrepreNo3" />
+    <result column="CUSTOMSOFFICEJANITORCD" jdbcType="VARCHAR" property="customsOfficeJanitorCd" />
+    <result column="CUSTOMSOFFICEJANITORRENO" jdbcType="VARCHAR" property="customsOfficeJanitorreNo" />
+    <result column="CUSTOMSOFFICEJANITORNAME" jdbcType="VARCHAR" property="customsOfficeJanitorName" />
+    <result column="SHIPPERSSECCD" jdbcType="VARCHAR" property="shipperssecCd" />
+    <result column="SHIPPERSREFNO" jdbcType="VARCHAR" property="shippersrefNo" />
+  </resultMap>
+
+     <select id="getOcsDeptCdAmCustomerNumber" parameterType="com.kse.wmsv2.oc_cm_001.dto.TraderNoMasterDto" resultType="string">
+          SELECT IFNULL(MAX(SUBSTRING(OCSDEPTCD, 3, 3)), '000')
+          FROM AM_CUSTOMER_NUMBER
+          WHERE CUSTOMERNO = #{customerNo}
+          AND DEPTCD = #{deptCd}
+          AND SUBSTRING(OCSDEPTCD, 1, 2) = CONCAT(#{impExpFlag}, #{shiyoBashoFlag})
+     </select>
+
+     <insert id="registTraderNoMaster" parameterType="com.kse.wmsv2.oc_cm_001.dto.TraderNoMasterDto">
+          INSERT INTO AM_CUSTOMER_NUMBER 
+               (CUSTOMERNO,
+               DEPTCD,
+               OCSDEPTCD,
+               CUSTOMERNAMEE,
+               ZIPCD,
+               CUSTOMERADDE1,
+               CUSTOMERADDE2,
+               CUSTOMERADDE3,
+               CUSTOMERADDE4,
+               CUSTOMERADDEBLANKET,
+               CUSTOMERNAMEJ,
+               CUSTOMERADDEJ,
+               DIVISION,
+               CHARGER,
+               TELNO,
+               FAXNO,
+               EMAILADD,
+               REMARKS,
+               CONDITIONFLG01,
+               CONDITIONFLG02,
+               CONDITIONFLG03,
+               CONDITIONFLG04,
+               CONDITIONFLG05,
+               CONDITIONFLG06,
+               CONDITIONFLG07,
+               CONDITIONFLG08,
+               CONDITIONFLG09,
+               CONDITIONFLG10,
+               CONDITIONFLG11,
+               CONDITIONFLG12,
+               CONDITIONFLG13,
+               CONDITIONFLG14,
+               CONDITIONFLG15,
+               CONDITIONFLG16,
+               CONDITIONFLG17,
+               CONDITIONFLG18,
+               CONDITIONFLG19,
+               CONDITIONFLG20,
+               CONDITIONFLG21,
+               CONDITIONFLG22,
+               CONDITIONFLG23,
+               CONDITIONFLG24,
+               CONDITIONFLG25,
+               CONDITIONCOMMENT,
+               DELIVERYDATEEXTCD,
+               PAYMETHODDISC,
+               CONDITIONBANKACCOUNTNO,
+               CONDITIONCOLLATERALNO1,
+               CONDITIONCOLLATERALNO2,
+               ESTIMATIONFLGCD,
+               INSURANCECLASSCD,
+               INCINSUREGNO,
+               INCESTREPRENO,
+               INCESTREPRENO2,
+               INCESTREPRENO3,
+               CUSTOMSOFFICEJANITORCD,
+               CUSTOMSOFFICEJANITORRENO,
+               CUSTOMSOFFICEJANITORNAME,
+               SHIPPERSSECCD,
+               SHIPPERSREFNO,
+               REGUSERCD,
+               REGDATE)
+          VALUES 
+               (
+               #{customerNo},
+               #{deptCd},
+               #{ocsdeptCd},
+               #{customerNamee},
+               #{zipCd},
+               #{customerAdde1},
+               #{customerAdde2},
+               #{customerAdde3},
+               #{customerAdde4},
+               #{customerAddeblAnket},
+               #{customerNamej},
+               #{customerAddej},
+               #{division},
+               #{charger},
+               #{telNo},
+               #{faxNo},
+               #{emailAdd},
+               #{remarks},
+               #{conditionFlg01},
+               #{conditionFlg02},
+               #{conditionFlg03},
+               #{conditionFlg04},
+               #{conditionFlg05},
+               #{conditionFlg06},
+               #{conditionFlg07},
+               #{conditionFlg08},
+               #{conditionFlg09},
+               #{conditionFlg10},
+               #{conditionFlg11},
+               #{conditionFlg12},
+               #{conditionFlg13},
+               #{conditionFlg14},
+               #{conditionFlg15},
+               #{conditionFlg16},
+               #{conditionFlg17},
+               #{conditionFlg18},
+               #{conditionFlg19},
+               #{conditionFlg20},
+               #{conditionFlg21},
+               #{conditionFlg22},
+               #{conditionFlg23},
+               #{conditionFlg24},
+               #{conditionFlg25},
+               #{conditionComment},
+               #{deliveryDateExtCd},
+               #{paymethodDisc},
+               #{conditionBankAccountNo},
+               #{conditionCollateralNo1},
+               #{conditionCollateralNo2},
+               #{estimationFlgCd},
+               #{insuranceClassCd},
+               #{incinsuregNo},
+               #{incestrepreNo},
+               #{incestrepreNo2},
+               #{incestrepreNo3},
+               #{customsOfficeJanitorCd},
+               #{customsOfficeJanitorreNo},
+               #{customsOfficeJanitorName},
+               #{shipperssecCd},
+               #{shippersrefNo},
+               #{reguserCd},
+               #{regDate});
+     </insert>
+
+     <select id="detailTraderNoMaster" parameterType="com.kse.wmsv2.oc_cm_001.dto.TraderNoMasterDto" resultMap="amCustomerNumber">
+          SELECT    AM_CUSTOMER_NUMBER.CUSTOMERNO,
+                    AM_CUSTOMER_NUMBER.DEPTCD,
+                    AM_CUSTOMER_NUMBER.OCSDEPTCD,
+                    SUBSTRING(AM_CUSTOMER_NUMBER.OCSDEPTCD, 1, 1) AS ImpExpFlag,
+                    SUBSTRING(AM_CUSTOMER_NUMBER.OCSDEPTCD, 2, 1) AS ShiyoBashoFlag,
+                    SUBSTRING(AM_CUSTOMER_NUMBER.OCSDEPTCD, 3, 3) AS Seq,
+                    CASE
+                         WHEN IFNULL(CONCAT(IFNULL(CONDITIONFLG01, '') , IFNULL(CONDITIONFLG02, '') , IFNULL(CONDITIONFLG03, '')
+                         , IFNULL(CONDITIONFLG04, '') , IFNULL(CONDITIONFLG05, '') , IFNULL(CONDITIONFLG06, '') 
+                         , IFNULL(CONDITIONFLG07, '') , IFNULL(CONDITIONFLG08, '') , IFNULL(CONDITIONFLG09, '') 
+                         , IFNULL(CONDITIONFLG10, '') , IFNULL(CONDITIONFLG11, '') , IFNULL(CONDITIONFLG12, '') 
+                         , IFNULL(CONDITIONFLG13, '') , IFNULL(CONDITIONFLG14, '') , IFNULL(CONDITIONFLG15, '') 
+                         , IFNULL(CONDITIONFLG16, '') , IFNULL(CONDITIONFLG17, '') , IFNULL(CONDITIONFLG18, '') 
+                         , IFNULL(CONDITIONFLG19, '') , IFNULL(CONDITIONFLG20, '') , IFNULL(CONDITIONFLG21, '') 
+                         , IFNULL(CONDITIONFLG22, '') , IFNULL(CONDITIONFLG23, '') , IFNULL(CONDITIONFLG24, '') 
+                         , IFNULL(CONDITIONFLG25, '') , IFNULL(CONDITIONCOMMENT, '') , IFNULL(CONDITIONBANKACCOUNTNO, '') 
+                         , IFNULL(CONDITIONCOLLATERALNO1, '') , IFNULL(CONDITIONCOLLATERALNO2, '') , IFNULL(DELIVERYDATEEXTCD, '') 
+                         , IFNULL(PAYMETHODDISC, '') , IFNULL(PAYMETHODDISC, '') , IFNULL(ESTIMATIONFLGCD, '') 
+                         , IFNULL(INCESTREPRENO, '') , IFNULL(INSURANCECLASSCD, '') , IFNULL(INCINSUREGNO, '')), '') != '' 
+                    THEN 1 ELSE 0
+                    END AS OptionSelectedFlag,
+                    '' AS JastProCode,
+                    CUSTOMERNAMEE,
+                    CUSTOMERADDE1,
+                    CUSTOMERADDE2,
+                    CUSTOMERADDE3,
+                    CUSTOMERADDE4,
+                    CUSTOMERADDEBLANKET,
+                    CUSTOMERNAMEJ,
+                    ZIPCD,
+                    CUSTOMERADDEJ,
+                    DIVISION,
+                    CHARGER,
+                    TELNO,
+                    FAXNO,
+                    EMAILADD,
+                    REMARKS,
+                    CONDITIONCOMMENT,
+                    CONDITIONBANKACCOUNTNO,
+                    CONDITIONCOLLATERALNO1,
+                    CONDITIONCOLLATERALNO2,
+                    CONDITIONFLG01,
+                    CONDITIONFLG02,
+                    CONDITIONFLG03,
+                    CONDITIONFLG04,
+                    CONDITIONFLG05,
+                    CONDITIONFLG06,
+                    CONDITIONFLG07,
+                    CONDITIONFLG08,
+                    CONDITIONFLG09,
+                    CONDITIONFLG10,
+                    CONDITIONFLG11,
+                    CONDITIONFLG12,
+                    CONDITIONFLG13,
+                    CONDITIONFLG14,
+                    CONDITIONFLG15,
+                    CONDITIONFLG16,
+                    CONDITIONFLG17,
+                    CONDITIONFLG18,
+                    CONDITIONFLG19,
+                    CONDITIONFLG20,
+                    CONDITIONFLG21,
+                    CONDITIONFLG22,
+                    CONDITIONFLG23,
+                    CONDITIONFLG24,
+                    CONDITIONFLG25,
+                    DELIVERYDATEEXTCD,
+                    ESTIMATIONFLGCD,
+                    INCESTREPRENO,
+                    INSURANCECLASSCD,
+                    INCINSUREGNO,
+                    PAYMETHODDISC,
+                    CONCAT(IFNULL(CONDITIONCOLLATERALNO1, '') , '-' , IFNULL(CONDITIONCOLLATERALNO2, '')) AS ConditionCollateralNo,
+                    (SELECT USERNAME
+                    FROM CM_USER
+                    WHERE USERCD = AM_CUSTOMER_NUMBER.REGUSERCD) REGUSERCD,
+                    AM_CUSTOMER_NUMBER.REGDATE,
+                    (SELECT USERNAME
+                    FROM CM_USER
+                    WHERE USERCD = AM_CUSTOMER_NUMBER.UPDATEUSERCD) UPDATEUSERCD,
+                    AM_CUSTOMER_NUMBER.UPDATEDATE,
+                    INCESTREPRENO2,
+                    INCESTREPRENO3,
+                    CUSTOMSOFFICEJANITORCD,
+                    CUSTOMSOFFICEJANITORRENO,
+                    CUSTOMSOFFICEJANITORNAME,
+                    SHIPPERSSECCD,
+                    SHIPPERSREFNO
+          FROM AM_CUSTOMER_NUMBER
+          LEFT JOIN AM_WILL_CUSTOMER_NUMBER_CONVERT ON AM_WILL_CUSTOMER_NUMBER_CONVERT.CUSTOMERNO = AM_CUSTOMER_NUMBER.CUSTOMERNO
+          AND AM_WILL_CUSTOMER_NUMBER_CONVERT.DEPTCD = AM_CUSTOMER_NUMBER.DEPTCD
+          AND AM_WILL_CUSTOMER_NUMBER_CONVERT.OCSDEPTCD = AM_CUSTOMER_NUMBER.OCSDEPTCD
+          WHERE 1 = 1
+         <if test="customerNo != ''">
+             AND AM_CUSTOMER_NUMBER.CUSTOMERNO = #{customerNo}
+        </if>
+        <if test="deptCd != ''">
+             AND AM_CUSTOMER_NUMBER.DEPTCD = #{deptCd}
+        </if>
+        <if test="ocsdeptCd != ''">
+               AND AM_CUSTOMER_NUMBER.OCSDEPTCD = #{ocsdeptCd}
+        </if>
+
+          GROUP BY
+          CUSTOMERNO, DEPTCD, OCSDEPTCD, CUSTOMERNAMEE, CUSTOMERADDE1,  
+          CUSTOMERADDE2, CUSTOMERADDE3, CUSTOMERADDE4, CUSTOMERADDEBLANKET, CUSTOMERNAMEJ,  
+          ZIPCD, CUSTOMERADDEJ, DIVISION, CHARGER, TELNO, FAXNO, EMAILADD,  
+          REMARKS, CONDITIONCOMMENT, CONDITIONBANKACCOUNTNO, CONDITIONCOLLATERALNO1,  
+          CONDITIONCOLLATERALNO2, CONDITIONFLG01, CONDITIONFLG02, CONDITIONFLG03,  
+          CONDITIONFLG04, CONDITIONFLG05, CONDITIONFLG06, CONDITIONFLG07,  CONDITIONFLG08, 
+          CONDITIONFLG09, CONDITIONFLG10, CONDITIONFLG11,  CONDITIONFLG12, CONDITIONFLG13, 
+          CONDITIONFLG14, CONDITIONFLG15,  CONDITIONFLG16, CONDITIONFLG17, CONDITIONFLG18, 
+          CONDITIONFLG19,  CONDITIONFLG20, CONDITIONFLG21, CONDITIONFLG22, CONDITIONFLG23,  
+          CONDITIONFLG24, CONDITIONFLG25, DELIVERYDATEEXTCD, ESTIMATIONFLGCD,  INCESTREPRENO, 
+          INSURANCECLASSCD, INCINSUREGNO, PAYMETHODDISC,  INCESTREPRENO2, INCESTREPRENO3,
+          CUSTOMSOFFICEJANITORCD, CUSTOMSOFFICEJANITORRENO, CUSTOMSOFFICEJANITORNAME, SHIPPERSSECCD,
+          SHIPPERSREFNO,  REGUSERCD, REGDATE, UPDATEUSERCD, UPDATEDATE 
+
+          ORDER BY CUSTOMERNO, DEPTCD, OCSDEPTCD
+
+     </select>
+     <delete id="deleteTraderNoMaster" parameterType="com.kse.wmsv2.oc_cm_001.dto.TraderNoMasterDto">
+          DELETE FROM
+               AM_CUSTOMER_NUMBER
+          WHERE 
+               CUSTOMERNO = #{customerNo}
+               AND DEPTCD = #{deptCd}
+               AND OCSDEPTCD = #{ocsdeptCd}
+     </delete>
+     <update id="updateTraderNoMaster" parameterType="com.kse.wmsv2.oc_cm_001.dto.TraderNoMasterDto">
+     UPDATE AM_CUSTOMER_NUMBER
+     SET
+          CUSTOMERNAMEE = #{customerNamee}
+          ,ZIPCD = #{zipCd}
+          ,CUSTOMERADDE1 = #{customerAdde1}
+          ,CUSTOMERADDE2 = #{customerAdde2}
+          ,CUSTOMERADDE3 = #{customerAdde3}
+          ,CUSTOMERADDE4 = #{customerAdde4}
+          ,CUSTOMERADDEBLANKET = #{customerAddeblAnket}
+          ,CUSTOMERNAMEJ = #{customerNamej}
+          ,CUSTOMERADDEJ = #{customerAddej}
+          ,DIVISION = #{division}
+          ,CHARGER = #{charger}
+          ,TELNO = #{telNo}
+          ,FAXNO = #{faxNo}
+          ,EMAILADD = #{emailAdd}
+          ,REMARKS = #{remarks}
+          ,CONDITIONFLG01 = #{conditionFlg01}
+          ,CONDITIONFLG02 = #{conditionFlg02}
+          ,CONDITIONFLG03 = #{conditionFlg03}
+          ,CONDITIONFLG04 = #{conditionFlg04}
+          ,CONDITIONFLG05 = #{conditionFlg05}
+          ,CONDITIONFLG06 = #{conditionFlg06}
+          ,CONDITIONFLG07 = #{conditionFlg07}
+          ,CONDITIONFLG08 = #{conditionFlg08}
+          ,CONDITIONFLG09 = #{conditionFlg09}
+          ,CONDITIONFLG10 = #{conditionFlg10}
+          ,CONDITIONFLG11 = #{conditionFlg11}
+          ,CONDITIONFLG12 = #{conditionFlg12}
+          ,CONDITIONFLG13 = #{conditionFlg13}
+          ,CONDITIONFLG14 = #{conditionFlg14}
+          ,CONDITIONFLG15 = #{conditionFlg15}
+          ,CONDITIONFLG16 = #{conditionFlg16}
+          ,CONDITIONFLG17 = #{conditionFlg17}
+          ,CONDITIONFLG18 = #{conditionFlg18}
+          ,CONDITIONFLG19 = #{conditionFlg19}
+          ,CONDITIONFLG20 = #{conditionFlg20}
+          ,CONDITIONFLG21 = #{conditionFlg21}
+          ,CONDITIONFLG22 = #{conditionFlg22}
+          ,CONDITIONFLG23 = #{conditionFlg23}
+          ,CONDITIONFLG24 = #{conditionFlg24}
+          ,CONDITIONFLG25 = #{conditionFlg25}
+          ,CONDITIONCOMMENT = #{conditionComment}
+          ,DELIVERYDATEEXTCD = #{deliveryDateExtCd}
+          ,PAYMETHODDISC = #{paymethodDisc}
+          ,CONDITIONBANKACCOUNTNO = #{conditionBankAccountNo}
+          ,CONDITIONCOLLATERALNO1 = #{conditionCollateralNo1}
+          ,CONDITIONCOLLATERALNO2 = #{conditionCollateralNo2}
+          ,ESTIMATIONFLGCD = #{estimationFlgCd}
+          ,INSURANCECLASSCD = #{insuranceClassCd}
+          ,INCINSUREGNO = #{incinsuregNo}
+          ,INCESTREPRENO = #{incestrepreNo}
+          ,INCESTREPRENO2 = #{incestrepreNo2}
+          ,INCESTREPRENO3 = #{incestrepreNo3}
+          ,CUSTOMSOFFICEJANITORCD = #{customsOfficeJanitorCd}
+          ,CUSTOMSOFFICEJANITORRENO = #{customsOfficeJanitorreNo}
+          ,CUSTOMSOFFICEJANITORNAME = #{customsOfficeJanitorName}
+          ,SHIPPERSSECCD = #{shipperssecCd}
+          ,SHIPPERSREFNO = #{shippersrefNo}
+          ,UPDATEUSERCD = #{updateUserCd}
+          ,UPDATEDATE = #{updateDate}
+     WHERE
+          CUSTOMERNO = #{customerNo}
+          AND DEPTCD = #{deptCd}
+          AND OCSDEPTCD = #{ocsdeptCd}
+     </update>
+
+     <select id="countAmCustomerNumber" parameterType="com.kse.wmsv2.oc_cm_001.dto.TraderNoMasterDto" resultType="int">
+          SELECT 
+               COUNT(*) 
+          FROM 
+               AM_CUSTOMER_NUMBER
+          WHERE 
+               CUSTOMERNO = #{customerNo}
+               AND DEPTCD = #{deptCd}
+               AND OCSDEPTCD = #{ocsdeptCd}
+     </select>
+
+     <select id="countAmCustomerNumberByCustomerNo" parameterType="java.lang.String" resultType="int">
+          SELECT 
+               COUNT(*) 
+          FROM 
+               AM_CUSTOMER_NUMBER
+          WHERE 
+               CUSTOMERNO = #{customerNo}
+     </select>
+</mapper>
+
+ 

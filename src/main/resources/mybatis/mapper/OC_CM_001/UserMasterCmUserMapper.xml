@@ -1,0 +1,305 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="com.kse.wmsv2.oc_cm_001.mapper.UserMasterCmUserMapper">
+
+   <select id="getListDataCmUser" parameterType="com.kse.wmsv2.oc_cm_001.dto.request.UserMasterRequest" resultMap="cmUsers">
+
+          SELECT USERCD,
+              USERNAME,
+              USERNAMESYLLABARY,
+              USERNAMEENG,
+              MGTAUTH.NAME AS USERMANAGEMENTAUTHORITYCD,
+              AUTH.NAME AS USERAUTHORITYCD,
+              COMPANY.NAME AS USERCOMPANYCD,
+              DEPT.NAME AS DEPARTMENTCD
+        FROM CM_USER
+        LEFT OUTER JOIN AM_NAME MGTAUTH ON MGTAUTH.NAMECLASS = '0002'
+        AND MGTAUTH.NAMECD = CM_USER.USERMANAGEMENTAUTHORITYCD
+        LEFT OUTER JOIN AM_NAME AUTH ON AUTH.NAMECLASS = '0003'
+        AND AUTH.NAMECD = CM_USER.USERAUTHORITYCD
+        LEFT OUTER JOIN AM_NAME COMPANY ON COMPANY.NAMECLASS = '0007'
+        AND COMPANY.NAMECD = CM_USER.USERCOMPANYCD
+        LEFT OUTER JOIN AM_NAME DEPT ON DEPT.NAMECLASS = '0008'
+        AND DEPT.NAMECD = CM_USER.DEPARTMENTCD
+        WHERE 1 = 1
+        <if test="userCd != ''">
+             AND USERCD LIKE '%' #{userCd} '%'
+        </if>
+        <if test="username != ''">
+             AND USERNAME LIKE '%' #{username} '%'
+        </if>
+        <if test="usernameSyllabary != ''">
+             AND USERNAMESYLLABARY LIKE '%' #{usernameSyllabary} '%'
+        </if>
+        <if test="usernameEng != ''">
+             AND USERNAMEENG LIKE '%' #{usernameEng} '%'
+        </if>
+        <if test="usermanagementAuthorityCd != ''">
+             AND USERMANAGEMENTAUTHORITYCD  = #{usermanagementAuthorityCd}
+        </if>
+        <if test="userAuthorityCd != ''">
+             AND USERAUTHORITYCD = #{userAuthorityCd}
+        </if>
+        <if test="userCompanyCd != ''">
+             AND USERCOMPANYCD = #{userCompanyCd}
+        </if>
+        <if test="departmentCd != ''">
+             AND CM_USER.DEPARTMENTCD = #{departmentCd}
+        </if>
+        ORDER BY USERCD, USERNAME, USERNAMESYLLABARY, USERNAMEENG 
+
+    <if test="page != null">
+      <if test="itemPerPage != null">
+        LIMIT
+        #{page},
+        #{itemPerPage}
+      </if>
+    </if>
+  </select>
+  
+  <resultMap id="cmUsers" type="com.kse.wmsv2.oc_cm_001.dto.UserMasterDto">
+    <result column="USERCD" jdbcType="VARCHAR" property="userCd" />
+    <result column="USERNAME" jdbcType="VARCHAR" property="username" />
+    <result column="USERNAMESYLLABARY" jdbcType="VARCHAR" property="usernameSyllabary" />
+    <result column="USERNAMEENG" jdbcType="VARCHAR" property="usernameEng" />
+    <result column="USERMANAGEMENTAUTHORITYCD" jdbcType="VARCHAR" property="usermanagementAuthorityCd" />
+    <result column="USERAUTHORITYCD" jdbcType="VARCHAR" property="userAuthorityCd" />
+    <result column="USERCOMPANYCD" jdbcType="VARCHAR" property="userCompanyCd" />
+    <result column="DEPARTMENTCD" jdbcType="VARCHAR" property="departmentCd" />
+  </resultMap>
+
+
+  <select id="getListCmUserByUserCd" parameterType="java.lang.String" resultType="string">
+    SELECT 
+      USERCD 
+    FROM CM_USER 
+    WHERE USERCD = #{userCd}
+  </select>
+
+  <delete id="deleteCmUserByUserCd" parameterType="String">
+     DELETE
+     FROM
+          CM_USER
+     WHERE USERCD = #{userCd}
+ </delete>
+<select id="getCmUserInfo" parameterType="String" resultMap="cmUserInfo">
+     SELECT 
+          CMUSER1.USERCD,
+          CMUSER1.USERNAME,
+          CMUSER1.USERNAMESYLLABARY,
+          CMUSER1.USERNAMEENG,
+          CMUSER1.USERMANAGEMENTAUTHORITYCD,
+          CMUSER1.USERAUTHORITYCD,
+          CMUSER1.USERAUTHORITYGROUPCD,
+          CMUSER1.USERCOMPANYCD,
+          CMUSER1.DEPARTMENTCD,
+          CMUSER1.PRINTUSERNAME,
+          CMUSER1.PRINTUSERCOMPANYNM,
+          CMUSER1.PRINTUSERCOMPANYCD,
+          CMUSER1.PASSWORD,
+          CMUSER1.STARTDATE,
+          CMUSER1.ENDDATE,
+          CMUSER1.PREPASSWORD,
+          CMUSER2.USERNAME AS USERNAME2,
+          CMUSER1.REGUSERCD,
+          CMUSER1.REGDATE,
+          CMUSER3.USERNAME AS USERNAME3,
+          CMUSER1.UPDATEUSERCD,
+          CMUSER1.UPDATEDATE
+     FROM
+         CM_USER CMUSER1
+     LEFT JOIN CM_USER CMUSER2
+          ON CMUSER1.REGUSERCD = CMUSER2.USERCD
+     LEFT JOIN CM_USER CMUSER3
+          ON CMUSER1.UPDATEUSERCD = CMUSER3.USERCD
+     WHERE CMUSER1.USERCD = #{userCd}
+</select>
+<resultMap id="cmUserInfo" type="com.kse.wmsv2.oc_cm_001.dto.UserMasterDto">
+    <result column="USERCD" jdbcType="VARCHAR" property="userCd" />
+    <result column="USERNAME" jdbcType="VARCHAR" property="username" />
+    <result column="USERNAMESYLLABARY" jdbcType="VARCHAR" property="usernameSyllabary" />
+    <result column="USERNAMEENG" jdbcType="VARCHAR" property="usernameEng" />
+    <result column="USERMANAGEMENTAUTHORITYCD" jdbcType="VARCHAR" property="usermanagementAuthorityCd" />
+    <result column="USERAUTHORITYCD" jdbcType="VARCHAR" property="userAuthorityCd" />
+    <result column="USERAUTHORITYGROUPCD" jdbcType="VARCHAR" property="userAuthorityGroupCd" />
+    <result column="USERCOMPANYCD" jdbcType="VARCHAR" property="userCompanyCd" />
+    <result column="DEPARTMENTCD" jdbcType="VARCHAR" property="departmentCd" />
+    <result column="PRINTUSERNAME" jdbcType="VARCHAR" property="printUsername" />
+    <result column="PRINTUSERCOMPANYNM" jdbcType="VARCHAR" property="printUserCompanyNm" />
+    <result column="PRINTUSERCOMPANYCD" jdbcType="VARCHAR" property="printUserCompanyCd" />
+    <result column="PASSWORD" jdbcType="VARCHAR" property="password" />
+    <result column="STARTDATE" jdbcType="TIMESTAMP" property="startDate" />
+    <result column="ENDDATE" jdbcType="TIMESTAMP" property="endDate" />
+    <result column="PREPASSWORD" jdbcType="VARCHAR" property="prePassword" />
+    <result column="USERNAME2" jdbcType="VARCHAR" property="regUsername" />
+    <result column="REGUSERCD" jdbcType="VARCHAR" property="regUserCd" />
+    <result column="REGDATE" jdbcType="TIMESTAMP" property="regDate" />
+    <result column="USERNAME3" jdbcType="VARCHAR" property="updateUsername" />
+    <result column="UPDATEUSERCD" jdbcType="VARCHAR" property="updateUserCd" />
+    <result column="UPDATEDATE" jdbcType="TIMESTAMP" property="updateDate" />
+</resultMap>
+
+ <update id="updateCmUserByUserCd" parameterType="com.kse.wmsv2.oc_cm_001.dto.UserMasterDto">
+    UPDATE CM_USER
+    SET
+      USERNAME = #{username},
+      USERNAMESYLLABARY = #{usernameSyllabary},
+      USERNAMEENG = #{usernameEng},
+      USERMANAGEMENTAUTHORITYCD = #{usermanagementAuthorityCd},
+      USERAUTHORITYCD = #{userAuthorityCd},
+      USERAUTHORITYGROUPCD = #{userAuthorityGroupCd},
+      USERCOMPANYCD = #{userCompanyCd},
+      DEPARTMENTCD = #{departmentCd},
+      PRINTUSERNAME = #{printUsername},
+      PRINTUSERCOMPANYNM = #{printUserCompanyNm},
+      PRINTUSERCOMPANYCD = #{printUserCompanyCd},
+      PASSWORD = #{password},
+      STARTDATE = #{startDate},
+      ENDDATE = #{endDate},
+      PREPASSWORD = #{prePassword},
+      UPDATEUSERCD = #{updateUserCd},
+      UPDATEDATE = #{updateDate}
+     WHERE USERCD = #{userCd};
+  </update>
+
+  <insert id="registCmUser" parameterType="com.kse.wmsv2.oc_cm_001.dto.UserMasterDto">
+      INSERT INTO CM_USER 
+        (USERCD,
+        USERNAME,
+        USERNAMESYLLABARY,
+        USERNAMEENG,
+        USERMANAGEMENTAUTHORITYCD,
+        USERAUTHORITYCD,
+        USERAUTHORITYGROUPCD,
+        USERCOMPANYCD,
+        DEPARTMENTCD,
+        PRINTUSERNAME,
+        PRINTUSERCOMPANYNM,
+        PRINTUSERCOMPANYCD,
+        PASSWORD,
+        STARTDATE,
+        ENDDATE,
+        REGUSERCD,
+        REGDATE)
+      VALUES 
+          (#{userCd},
+          #{username},
+          #{usernameSyllabary},
+          #{usernameEng},
+          #{usermanagementAuthorityCd},
+          #{userAuthorityCd},
+          #{userAuthorityGroupCd},
+          #{userCompanyCd},
+          #{departmentCd},
+          #{printUsername},
+          #{printUserCompanyNm},
+          #{printUserCompanyCd},
+          #{password},
+          #{startDate},
+          #{endDate},
+          #{regUserCd},
+          #{regDate});
+  </insert>
+
+  <select id="getListDataCsvCmUser" parameterType="com.kse.wmsv2.oc_cm_001.dto.request.UserMasterRequest" resultMap="cmUsersCsv">
+
+          SELECT USERCD,
+               USERNAME,
+               USERNAMESYLLABARY,
+               USERNAMEENG,
+               USERMANAGEMENTAUTHORITYCD,
+               (SELECT NAME
+               FROM AM_NAME
+               WHERE NAMECLASS = '0002'
+                    AND NAMECD = USERMANAGEMENTAUTHORITYCD) AS USERMANAGEMENTAUTHORITYNAME,
+               USERAUTHORITYCD,
+               (SELECT NAME
+               FROM AM_NAME
+               WHERE NAMECLASS = '0003'
+                    AND NAMECD = USERAUTHORITYCD) AS USERAUTHORITYNAME,
+               USERCOMPANYCD,
+               (SELECT NAME
+               FROM AM_NAME
+               WHERE NAMECLASS = '0007'
+                    AND NAMECD = USERCOMPANYCD) AS USERCOMPANYNAME,
+               DEPARTMENTCD,
+               (SELECT NAME
+               FROM AM_NAME
+               WHERE NAMECLASS = '0008'
+                    AND NAMECD = DEPARTMENTCD) AS DEPARTMENTNAME,
+               PREPASSWORD,
+               STARTDATE,
+               ENDDATE,
+               (SELECT A.USERNAME
+               FROM CM_USER A
+               WHERE A.USERCD = U.REGUSERCD) AS REGUSERNAME,
+               REGDATE,
+               (SELECT B.USERNAME
+               FROM CM_USER B
+               WHERE B.USERCD = U.UPDATEUSERCD) AS UPDATEUSERNAME,
+               UPDATEDATE
+          FROM CM_USER U
+          WHERE 1 = 1 
+
+        <if test="userCd != ''">
+             AND USERCD LIKE '%' #{userCd} '%'
+        </if>
+        <if test="username != ''">
+             AND USERNAME LIKE '%' #{username} '%'
+        </if>
+        <if test="usernameSyllabary != ''">
+             AND USERNAMESYLLABARY LIKE '%' #{usernameSyllabary} '%'
+        </if>
+        <if test="usernameEng != ''">
+             AND USERNAMEENG LIKE '%' #{usernameEng} '%'
+        </if>
+        <if test="usermanagementAuthorityCd != ''">
+             AND USERMANAGEMENTAUTHORITYCD  = #{usermanagementAuthorityCd}
+        </if>
+        <if test="userAuthorityCd != ''">
+             AND USERAUTHORITYCD = #{userAuthorityCd}
+        </if>
+        <if test="userCompanyCd != ''">
+             AND USERCOMPANYCD = #{userCompanyCd}
+        </if>
+        <if test="departmentCd != ''">
+             AND DEPARTMENTCD = #{departmentCd}
+        </if>
+        ORDER BY USERCD, USERNAME, USERNAMESYLLABARY, USERNAMEENG 
+
+     <if test="page != null">
+          <if test="itemPerPage != null">
+          LIMIT
+          #{page},
+          #{itemPerPage}
+          </if>
+     </if>
+  </select>
+  
+  <resultMap id="cmUsersCsv" type="com.kse.wmsv2.oc_cm_001.dto.UserMasterDto">
+    <result column="USERCD" jdbcType="VARCHAR" property="userCd" />
+    <result column="USERNAME" jdbcType="VARCHAR" property="username" />
+    <result column="USERNAMESYLLABARY" jdbcType="VARCHAR" property="usernameSyllabary" />
+    <result column="USERNAMEENG" jdbcType="VARCHAR" property="usernameEng" />
+    <result column="USERMANAGEMENTAUTHORITYCD" jdbcType="VARCHAR" property="usermanagementAuthorityCd" />
+    <result column="USERMANAGEMENTAUTHORITYNAME" jdbcType="VARCHAR" property="userManagementAuthorityName" />
+    <result column="USERAUTHORITYCD" jdbcType="VARCHAR" property="userAuthorityCd" />
+    <result column="USERAUTHORITYNAME" jdbcType="VARCHAR" property="userAuthorityName" />
+    <result column="USERCOMPANYCD" jdbcType="VARCHAR" property="userCompanyCd" />
+    <result column="USERCOMPANYNAME" jdbcType="VARCHAR" property="userCompanyName" />
+    <result column="DEPARTMENTCD" jdbcType="VARCHAR" property="departmentCd" />
+    <result column="DEPARTMENTNAME" jdbcType="VARCHAR" property="departmentName" />
+    <result column="PREPASSWORD" jdbcType="VARCHAR" property="prePassword" />
+    <result column="STARTDATE" jdbcType="TIMESTAMP" property="startDate" />
+    <result column="ENDDATE" jdbcType="TIMESTAMP" property="endDate" />
+    <result column="REGUSERNAME" jdbcType="VARCHAR" property="regUsername" />
+    <result column="REGDATE" jdbcType="TIMESTAMP" property="regDate" />
+    <result column="UPDATEUSERNAME" jdbcType="VARCHAR" property="updateUsername" />
+    <result column="UPDATEDATE" jdbcType="TIMESTAMP" property="updateDate" />
+  </resultMap>
+</mapper>
+
+ 

@@ -1,0 +1,146 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="com.kse.wmsv2.oa_et_002.mapper.AirExportAEStatusHistoryMapper">
+  <select id="getDataAEStatusHistory" parameterType="com.kse.wmsv2.oa_et_002.dto.request.AEStatusHistoryRequest" resultMap="aEStatusHistory">
+      SELECT 
+        DATE_FORMAT(AE.REGDATE, "%Y/%m/%d %H:%i:%s") AS REGDATE,
+        STS.NAME AS STS_NAME, 
+        BUSINESS.NAME AS BUSINESSCLASS_NAME, 
+        REG.USERNAME AS USER_NAME, 
+        BUSINESSCLASS, 
+        AWBNO, 
+        BWBNO, 
+        CWBNODEPTCD, 
+        STATUSCD, 
+        AE.REGUSERCD 
+      FROM 
+        AE_STATUS_HISTORY AS AE
+        LEFT JOIN AM_NAME STS ON STS.DEPARTMENTCD = 'ALL' 
+        AND STS.NAMECLASS IN (
+          '0010', '0011', '0012', '0013', '0014', 
+          '0015', '0052'
+        ) 
+        AND STATUSCD = STS.NAMECD 
+        LEFT JOIN CM_USER REG ON AE.REGUSERCD = REG.USERCD 
+        LEFT JOIN AM_NAME BUSINESS ON BUSINESS.DEPARTMENTCD = 'ALL' 
+        AND BUSINESS.NAMECLASS = '0057' 
+        AND BUSINESSCLASS = BUSINESS.NAMECD 
+      WHERE 
+        1 = 1
+        AND CWBNO = #{cwbNo}
+        AND CWBNODEPTCD = #{cwbNoDeptCd}
+      ORDER BY  AE.REGDATE, STATUSCD
+          
+  </select>
+  
+   <resultMap id="aEStatusHistory" type="com.kse.wmsv2.oa_et_002.dto.AEStatusHistoryDto">
+    <result column="REGDATE" jdbcType="VARCHAR" property="regDate" />
+    <result column="STS_NAME" jdbcType="VARCHAR" property="stsName" />
+    <result column="BUSINESSCLASS_NAME" jdbcType="VARCHAR" property="businessClassName" />
+    <result column="USER_NAME" jdbcType="VARCHAR" property="userName" />
+    <result column="BUSINESSCLASS" jdbcType="VARCHAR" property="businessClass" />
+    <result column="AWBNO" jdbcType="VARCHAR" property="awbNo" />
+    <result column="BWBNO" jdbcType="VARCHAR" property="bwbNo" />
+    <result column="CWBNODEPTCD" jdbcType="VARCHAR" property="cwbNoDeptCd" />
+    <result column="STATUSCD" jdbcType="VARCHAR" property="statusCd" />
+    <result column="REGUSERCD" jdbcType="VARCHAR" property="regUserCd" />
+  </resultMap>
+
+  <select id="countAEStatusHistory" parameterType="com.kse.wmsv2.oa_et_002.dto.request.AEStatusHistoryRequest" resultType="int">
+    SELECT 
+      COUNT(*) 
+    FROM 
+      AE_STATUS_HISTORY 
+    WHERE 
+      1 = 1 
+      <if test="useHeader == false">
+        AND BUSINESSCLASS = #{businessClass}
+        AND STATUSCD = #{statusCd}
+        AND REGDATE = #{regDate}
+        AND REGUSERCD = #{regUserCd}
+      </if>
+      <if test="useHeader == true">
+        AND BUSINESSCLASS = #{headerBusinessClass}
+        AND STATUSCD = #{headerStatusCd}
+        AND REGDATE = #{headerRegDate}
+        AND REGUSERCD = #{userCd}
+      </if>
+      AND AWBNO = #{awbNo}
+      AND BWBNO = #{bwbNo}
+      AND CWBNO = #{cwbNo}
+      AND CWBNODEPTCD = #{cwbNoDeptCd}
+  </select>
+
+  <delete id="deleteAEStatusHistory" parameterType="com.kse.wmsv2.oa_et_002.dto.request.AEStatusHistoryRequest">
+     DELETE FROM 
+      AE_STATUS_HISTORY 
+    WHERE 
+      1 = 1 
+      AND BUSINESSCLASS = #{businessClass}
+      AND AWBNO = #{awbNo}
+      AND BWBNO = #{bwbNo}
+      AND CWBNO = #{cwbNo}
+      AND CWBNODEPTCD = #{cwbNoDeptCd}
+      AND STATUSCD = #{statusCd}
+      AND REGUSERCD = #{regUserCd}
+      AND REGDATE = #{regDate}
+ </delete>
+
+ <update id="updateAEStatusHistory" parameterType="com.kse.wmsv2.oa_et_002.dto.request.AEStatusHistoryRequest">
+     UPDATE AE_STATUS_HISTORY 
+     SET
+      BUSINESSCLASS = #{headerBusinessClass},
+      STATUSCD = #{headerStatusCd},
+      REGDATE = #{headerRegDate},
+      UPDATEUSERCD = #{userCd},
+      UPDATEDATE = #{headerRegDate}
+    WHERE 
+      BUSINESSCLASS = #{businessClass}
+      AND AWBNO = #{awbNo}
+      AND BWBNO = #{bwbNo}
+      AND CWBNO = #{cwbNo}
+      AND CWBNODEPTCD = #{cwbNoDeptCd}
+      AND STATUSCD = #{statusCd}
+      AND REGUSERCD = #{regUserCd}
+      AND REGDATE = #{regDate}
+ </update>
+
+ <insert id="insertAEStatusHistory" parameterType="com.kse.wmsv2.oa_et_002.dto.request.AEStatusHistoryRequest">
+     INSERT INTO AE_STATUS_HISTORY 
+               (
+                BUSINESSCLASS
+                ,AWBNO
+                ,BWBNO
+                ,CWBNO
+                ,CWBNODEPTCD
+                ,STATUSCD
+                ,REGUSERCD
+                ,REGDATE
+                ,UPDATEUSERCD
+                ,UPDATEDATE
+               )
+          VALUES 
+               (
+               #{headerBusinessClass}
+               ,#{awbNo}
+              <if test="deleteFlag == ''">
+               ,'00000000000'
+              </if>
+              <if test="deleteFlag != ''">
+               ,#{bwbNo}
+              </if>
+               ,#{cwbNo}
+               ,#{cwbNoDeptCd}
+               ,#{headerStatusCd}
+               ,#{userCd}
+               ,#{headerRegDate}
+               ,#{userCd}
+               ,#{headerRegDate}
+               );
+ </insert>
+
+</mapper>
+

@@ -1,0 +1,161 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="com.kse.wmsv2.oa_ew_001.mapper.OAEW001ScreenMapper">
+  <!--検索-->
+    <select id="selectSearchResult" parameterType="com.kse.wmsv2.oa_ew_001.dto.OAEW001SearchDto" resultType ="com.kse.wmsv2.oa_ew_001.dao.OAEW001SearchResultDao">
+        SELECT DISTINCT
+            0 AS CCHECK
+            ,CASE
+                WHEN IFNULL(OTED2.BILMAKE, 0) = 0 THEN '済' ELSE '未'
+            END AS BILMAKE
+            ,CASE
+                WHEN IFNULL(OCSM1.BONDINBILL, 0) = 0 THEN '済' ELSE '未'
+            END AS BONDINBILL
+            ,OTED.BONDINBILLNO AS BONDINBILLNO
+            ,OTED.AWBNO AS AWBNO
+            ,OTED1.CWBCOUNT AS CWBCOUNT
+            ,OTED1.CARRYINGPIECE AS CARRYINGPIECE
+            ,OTED1.CARRYINGWEIGHT AS CARRYINGWEIGHT
+            ,OTED.ARRIVALDATE AS ARRIVALDATE
+            ,OTED.BONDINBILLISSUEDATE AS BONDINBILLISSUEDATE
+        FROM
+            (
+                SELECT
+                    BONDINBILLNO AS BONDINBILLNO
+                    ,MAX(AWBNO) AS AWBNO
+                    ,MAX(SHUTTLENO) AS SHUTTLENO
+                    ,MAX(ARRIVALDATE) AS ARRIVALDATE
+                    ,MAX(BONDINBILLISSUEDATE) AS BONDINBILLISSUEDATE
+                FROM
+                    AE_DATA AS TMP
+                LEFT JOIN
+                    (
+                        SELECT
+                            CWBNO
+                            ,MAX(REGDATE) AS ARRIVALDATE
+                        FROM
+                            AE_STATUS_HISTORY
+                        WHERE
+                            STATUSCD = 'EB00200'
+                        GROUP BY
+                            CWBNO
+                    ) AS OCSM
+                ON
+                    TMP.CWBNO = OCSM.CWBNO
+                WHERE
+                    BONDINBILLNO IS NOT NULL
+                    AND DELETEDATE IS NULL
+                    AND SPSDOCCLASSCD IN ('0', '2')
+                <if test="userAuthorityCd == '02' ">
+                    AND CUSTOMSPLACECD = #{userDepartmentCd}
+                </if>
+                <if test="userAuthorityCd == '04'">
+                    AND BONDEDWAREHOUSECD = #{userDepartmentCd}
+                </if>
+                <choose>
+                    <when test="cwbNo != null and cwbNo != '' ">
+                    AND TMP.CWBNO = #{cwbNo}
+                    </when>
+                    <otherwise>
+                        <if test="bondInBillNo != null and bondInBillNo != ''">
+                            AND BONDINBILLNO = #{bondInBillNo}
+                        </if>
+                        <if test="awbNo != null and awbNo != ''">
+                            AND AWBNO = #{awbNo}
+                        </if>
+                        <if test="bondInBillIssueDate != null and bondInBillIssueDate != ''">
+                            AND  BONDINBILLISSUEDATE BETWEEN #{bondInBillIssueDate} AND DATE_ADD(#{bondInBillIssueDate} , INTERVAL 1 DAY)
+                        </if>
+                        <if test="arrivalDate != null and arrivalDate != ''">
+                            AND  ARRIVALDATE BETWEEN #{arrivalDate} AND DATE_ADD(#{arrivalDate} , INTERVAL 1 DAY)
+                        </if>
+                    </otherwise>
+                </choose>
+                GROUP BY
+                    BONDINBILLNO
+            ) OTED
+        LEFT JOIN
+            (
+                SELECT
+                    BONDINBILLNO AS BONDINBILLNO
+                    ,COUNT(CWBNO) AS CWBCOUNT
+                    ,SUM(CARRYINGPIECE) AS CARRYINGPIECE
+                    ,SUM(CARRYINGWEIGHT) AS CARRYINGWEIGHT
+                FROM
+                    AE_DATA
+                WHERE
+                    1 = 1
+                    <if test="userAuthorityCd == '02' ">
+                        AND CUSTOMSPLACECD = #{userDepartmentCd}
+                    </if>
+                    <if test="userAuthorityCd == '04'">
+                        AND BONDEDWAREHOUSECD = #{userDepartmentCd}
+                    </if>
+                GROUP BY
+                    BONDINBILLNO
+            ) AS OTED1
+        ON
+            OTED.BONDINBILLNO = OTED1.BONDINBILLNO
+        LEFT JOIN
+            (
+                SELECT
+                    BONDINBILLNO AS BONDINBILLNO
+                    ,COUNT(CWBNO) AS BILMAKE
+                FROM
+                    AE_DATA AS TMP2
+                WHERE
+                    NOT EXISTS
+                    (
+                        SELECT
+                            CWBNO
+                        FROM
+                            AE_STATUS_HISTORY
+                        WHERE
+                            CWBNO = TMP2.CWBNO
+                            AND STATUSCD = 'EB00210'
+                    )
+                GROUP BY
+                    BONDINBILLNO
+            ) AS OTED2
+        ON
+            OTED.BONDINBILLNO = OTED2.BONDINBILLNO
+        LEFT JOIN
+            (
+                SELECT
+                    BONDINBILLNO AS BONDINBILLNO
+                    ,COUNT(CWBNO) AS BONDINBILL
+                FROM
+                    AE_DATA
+                WHERE
+                    BONDINBILLISSUEDATE IS NULL
+                GROUP BY
+                    BONDINBILLNO
+        ) AS OCSM1
+        ON
+            OTED.BONDINBILLNO = OCSM1.BONDINBILLNO
+        WHERE
+            1 = 1
+            <choose>
+                <when test=" bilMakeNotEnd == 'true' and bilMakeEnd == 'false' ">
+                    AND IFNULL(OTED2.BILMAKE, 0) > 0
+                </when>
+                <when test=" bilMakeNotEnd == 'false' and bilMakeEnd == 'true' ">
+                    AND IFNULL(OTED2.BILMAKE, 0) = 0
+                </when>
+            </choose>
+            <choose>
+                <when test=" bondInBillNotEnd == 'true' and bondInBillEnd == 'false' ">
+                    AND IFNULL(OCSM1.BONDINBILL, 0) > 0
+                </when>
+                <when test=" bondInBillNotEnd == 'false' and bondInBillEnd == 'true' ">
+                    AND IFNULL(OCSM1.BONDINBILL, 0) = 0
+                </when>
+            </choose>
+    </select>
+</mapper>
+
+
+

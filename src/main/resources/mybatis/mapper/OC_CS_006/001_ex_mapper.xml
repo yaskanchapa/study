@@ -1,0 +1,35 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="com.kse.wmsv2.oc_cs_006.mapper.OCCS006ExMapper">
+
+    <!--検査指定票PDF存在有無確認 -->
+    <select id="selectCsImageManagement"  parameterType="String"
+            resultType="String">
+        SELECT IMAGEPATH
+        FROM   CS_IMAGE_MANAGEMENT
+        WHERE  1 = 1
+            AND CWBNO = #{cwbNo}
+            AND IMAGECLASS = 'EX'
+        ORDER  BY SEQ
+        LIMIT  1
+    </select>
+    <!--cwbNoに該当する戻り電文リスト -->
+    <select id="selectFileName"  parameterType="String"
+            resultType="String">
+        SELECT FILENAME
+        FROM   CS_NACCS_MESSAGE
+        WHERE  CWBNO LIKE CONCAT(#{cwbNo},'%')
+        ORDER  BY IMPORTDATE
+    </select>
+    <!--検査指定票に該当する戻り電文リスト -->
+    <select id="selectExFileName"  parameterType="String"
+            resultType="String">
+        SELECT FILENAME
+        FROM   CS_PATTERN_GROUP
+        WHERE  IMAGECLASS = 'EX'
+    </select>
+
+</mapper>

@@ -1,0 +1,68 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="com.kse.wmsv2.telegram.mapper.TelegramMapper">
+    <!-- 電文共通項目（ヘッド）データ取得 -->
+    <select id="selectTelegramCommonHeadData" parameterType="com.kse.wmsv2.telegram.dto.TelegramCommonParamDto"
+                                          resultType="com.kse.wmsv2.telegram.dto.TelegramCommonResultDto">
+        SELECT
+          CHARACTERITEM1 AS userCode, -- 利用者コード
+          CHARACTERITEM2 AS userNo, -- 識別番号
+          CHARACTERITEM3 AS userPwd  -- 利用者パスワード
+        FROM
+          AM_NAME
+        WHERE
+              DEPARTMENTCD = #{place}
+          AND NAMECLASS    = '0260'
+          <choose>
+            <when test="reportCustomsSpecialistUserCd == null or reportCustomsSpecialistUserCd == ''">
+              AND NAMECD = #{businessCd}
+            </when>
+            <otherwise>
+              AND NAMECD = #{reportCustomsSpecialistUserCd}
+            </otherwise>
+          </choose>
+    </select>
+
+    <!-- OUT電文データ取得(輸入通関データ) -->
+    <select id="selectTelegramOutData" parameterType="com.kse.wmsv2.telegram.dto.TelegramOutParamDto"
+                                          resultType="com.kse.wmsv2.telegram.dto.TelegramOutResultDto">
+        SELECT
+          AWBNO,
+          CWBNO,
+          CWBNODEPTCD,
+          AGENT as agent,
+          CARRYOUTFLG as carryOutFlg,
+          PAYKIND as payKind,
+          ADDITIONALCHARGE as additionalCharge,
+          DIFFDAYS as diffDays
+        FROM
+          AI_DATA
+        WHERE
+            1 = 1
+            <if test="awbNo != null and awbNo != ''">
+              AND AWBNO = #{awbNo}
+            </if>
+            <if test="cwbNo != null and cwbNo != ''">
+              AND CWBNO = #{cwbNo}
+            </if>
+            <if test="cwbNoDeptCd != null and cwbNoDeptCd != ''">
+              AND CWBNODEPTCD = #{cwbNoDeptCd}
+            </if>
+          AND DELETEDATE IS NULL
+          AND SPSDOCCLASSCD IN ('0', '2')
+    </select>
+
+    <!-- 名称マスタから電文作成コート取得 -->
+    <select id="selectCharacterItem1" parameterType="com.kse.wmsv2.telegram.dto.SelectCharacterItem1ParamDto"
+                                          resultType="String">
+        SELECT CHARACTERITEM1
+        FROM AM_NAME
+        WHERE
+         NAMECD = #{nameCd}
+         AND NAMECLASS = #{nameClass}
+         AND DEPARTMENTCD = #{departmentCd}
+    </select>
+</mapper>

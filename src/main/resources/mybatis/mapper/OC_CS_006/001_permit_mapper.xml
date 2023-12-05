@@ -1,0 +1,46 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="com.kse.wmsv2.oc_cs_006.mapper.OCCS006PermitImpMapper">
+
+    <!--PDF存在有無確認 -->
+    <select id="selectCsImageManagement"  parameterType="String"
+            resultType="String">
+        SELECT IMAGEPATH
+        FROM CS_IMAGE_MANAGEMENT
+        WHERE 1 = 1
+        AND CWBNO = #{cwbNo}
+        AND (IMAGECLASS = 'RP' OR IMAGECLASS = 'PE')
+        ORDER BY SEQ
+        limit 1
+    </select>
+
+    <!--cwbNoに該当する戻り電文リスト -->
+    <select id="selectFileName"  parameterType="String"
+            resultType="String">
+        SELECT FILENAME
+        FROM   CS_NACCS_MESSAGE
+        WHERE  CWBNO LIKE CONCAT(#{cwbNo},'%')
+        ORDER  BY IMPORTDATE
+    </select>
+
+    <!--cwbNoに該当する戻り電文リスト -->
+    <select id="selectRpFileName"  parameterType="String"
+            resultType="String">
+        SELECT FILENAME, PATTRN
+        FROM   CS_PATTERN_GROUP
+        WHERE IMAGECLASS = 'RP'
+    </select>
+
+    <!--cwbNoに該当する戻り電文リスト -->
+    <select id="selectPeFileName"  parameterType="String"
+            resultType="String">
+        SELECT FILENAME, PATTRN
+        FROM   CS_PATTERN_GROUP
+        WHERE IMAGECLASS = 'PE'
+    </select>
+
+
+</mapper>

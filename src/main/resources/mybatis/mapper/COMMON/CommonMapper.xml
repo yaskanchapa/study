@@ -1,0 +1,332 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="com.kse.wmsv2.common.mapper.COMMONMapper">
+    <select id="getBusinessDate"  resultType="String">
+        SELECT
+            CONTROLDATE
+        FROM
+            CM_CONTROL
+        WHERE
+            1=1
+            AND CONTROLCD = '1'
+    </select>
+    <update id="updateStatusMasterTable" parameterType="com.kse.wmsv2.common.dto.COMMONStatusDto">
+        UPDATE
+            <choose>
+                <when test=" businessClass == '01'">
+                    AI_STATUS
+                    SET
+                    <choose>
+                        <when test=" customStatusCd != null and customStatusCd != ''">
+                            CUSTOMSTATUSCD = #{customStatusCd}
+                        </when>
+                        <when test=" bondStatusCd != null and bondStatusCd != ''">
+                            BONDEDSTATUSCD = #{bondStatusCd}
+                        </when>
+                    </choose>
+                </when>
+                <when test=" businessClass == '02'">
+                    AE_STATUS
+                    SET
+                    <choose>
+                        <when test=" customStatusCd != null and customStatusCd != ''">
+                            CUSTOMSTATUSCD = #{customStatusCd}
+                        </when>
+                        <when test=" bondStatusCd != null and bondStatusCd != ''">
+                            BONDSTATUSCD = #{bondStatusCd}
+                        </when>
+                    </choose>
+                </when>
+            </choose>
+        <if test=" handyTerminalId != null and handyTerminalId != '' ">
+            ,HANDYTERMINALID = #{handyTerminalId}
+        </if>
+        <if test=" linkDataClass != null and linkDataClass != '' ">
+            , LINKDATACLASS = #{linkDataClass}
+        </if>
+        <if test=" permitFlg != null and permitFlg != '' ">
+            , PERMITFLG = #{permitFlg}
+        </if>
+            , UPDATEUSERCD = #{userCd}
+            , UPDATEDATE = #{date}
+        WHERE
+            BUSINESSCLASS = #{businessClass}
+            AND AWBNO = #{awbNo}
+            AND CWBNO = #{cwbNo}
+        <if test="bwbNo != null and bwbNo != '' ">
+            AND BWBNO = #{bwbNo}
+        </if>
+        <choose>
+            <when test=" cwbNoDeptCd != null and cwbNoDeptCd != '' ">
+                AND CWBNODEPTCD = #{cwbNoDeptCd}
+            </when>
+            <otherwise >
+                AND CWBNODEPTCD = ''
+            </otherwise>
+        </choose>
+    </update>
+    <insert id="insertStatusHistoryTable" parameterType="com.kse.wmsv2.common.dto.COMMONStatusDto">
+        INSERT INTO
+        <choose>
+            <when test=" businessClass == '01'">
+                AI_STATUS_HISTORY
+            </when>
+            <when test=" businessClass == '02'">
+                AE_STATUS_HISTORY
+            </when>
+        </choose>
+            (BUSINESSCLASS,AWBNO,BWBNO,CWBNO,CWBNODEPTCD,STATUSCD,HANDYTERMINALID,LINKDATACLASS
+            ,PERMITFLG,REGUSERCD,REGDATE,UPDATEUSERCD,UPDATEDATE)
+        VALUES
+            (
+                #{historyClass}
+                ,#{awbNo}
+                ,#{bwbNo}
+                ,#{cwbNo}
+        <choose>
+            <when test=" cwbNoDeptCd != null and cwbNoDeptCd != '' ">
+                ,#{cwbNoDeptCd}
+            </when>
+            <otherwise >
+                , ''
+            </otherwise>
+        </choose>
+        <choose>
+            <when test=" historyClass == '01'">
+                ,#{customStatusCd}
+            </when>
+            <when test=" historyClass == '02'">
+                ,#{bondStatusCd}
+            </when>
+        </choose>
+        <choose>
+            <when test="handyTerminalId != null and handyTerminalId != ''">
+                ,#{handyTerminalId}
+            </when>
+            <otherwise >
+                , ''
+            </otherwise>
+        </choose>
+        <choose>
+            <when test="linkDataClass != null and linkDataClass != ''">
+                ,#{linkDataClass}
+            </when>
+            <otherwise >
+                , ''
+            </otherwise>
+        </choose>
+        <choose>
+            <when test="permitFlg != null and permitFlg != ''">
+                ,#{permitFlg}
+            </when>
+            <otherwise >
+                , '0'
+            </otherwise>
+        </choose>
+                ,#{userCd}
+                ,#{date}
+                ,#{userCd}
+                ,#{date}
+            )
+    </insert>
+    <insert id="insertStatusMasterTable" parameterType="com.kse.wmsv2.common.dto.COMMONStatusDto">
+        INSERT INTO
+        <choose>
+            <when test=" businessClass == '01'">
+                AI_STATUS(BUSINESSCLASS,AWBNO,BWBNO,CWBNO,CWBNODEPTCD,CUSTOMSTATUSCD,BONDEDSTATUSCD
+                ,HANDYTERMINALID,LINKDATACLASS,PERMITFLG,REGUSERCD,REGDATE,UPDATEUSERCD,UPDATEDATE)
+            </when>
+            <when test=" businessClass == '02'">
+                AE_STATUS(BUSINESSCLASS,AWBNO,BWBNO,CWBNO,CWBNODEPTCD,CUSTOMSTATUSCD,BONDSTATUSCD
+                ,HANDYTERMINALID,LINKDATACLASS,PERMITFLG,REGUSERCD,REGDATE,UPDATEUSERCD,UPDATEDATE)
+            </when>
+        </choose>
+        VALUES
+            (
+                #{businessClass}
+                ,#{awbNo}
+                ,#{bwbNo}
+                ,#{cwbNo}
+                ,#{cwbNoDeptCd}
+        <choose>
+            <when test=" customStatusCd != null and customStatusCd != ''">
+                ,#{customStatusCd}
+            </when>
+            <otherwise>
+                ,''
+            </otherwise>
+        </choose>
+        <choose>
+            <when test=" bondStatusCd != null and bondStatusCd != ''">
+                ,#{bondStatusCd}
+            </when>
+            <otherwise>
+                ,''
+            </otherwise>
+        </choose>
+        <choose>
+            <when test="handyTerminalId != null and handyTerminalId != ''">
+                ,#{handyTerminalId}
+            </when>
+            <otherwise >
+                , ''
+            </otherwise>
+        </choose>
+        <choose>
+            <when test="linkDataClass != null and linkDataClass != ''">
+                ,#{linkDataClass}
+            </when>
+            <otherwise >
+                , ''
+            </otherwise>
+        </choose>
+        <choose>
+            <when test="permitFlg != null and permitFlg != ''">
+                ,#{permitFlg}
+            </when>
+            <otherwise >
+                , '0'
+            </otherwise>
+        </choose>
+        ,#{userCd}
+        ,#{date}
+        ,#{userCd}
+        ,#{date}
+        )
+    </insert>
+    <select id="getCommonValueReport" parameterType="hashMap" resultType="hashMap">
+        SELECT
+            NAME, CHARACTERITEM1, CHARACTERITEM2, CHARACTERITEM3, CHARACTERITEM4
+        FROM
+            AM_NAME
+        WHERE
+            DEPARTMENTCD = 'ALL'
+            AND NAMECLASS = '0110'
+            AND NAMECD = #{deptCd}
+    </select>
+    <select id="getCommonValueReportAuto" parameterType="hashMap" resultType="hashMap">
+        SELECT
+        NAME, CHARACTERITEM1, CHARACTERITEM2, CHARACTERITEM3, CHARACTERITEM4
+        FROM
+        AM_NAME
+        WHERE
+        DEPARTMENTCD = #{deptCd}
+        AND NAMECLASS = '0260'
+        <choose>
+            <when test=" userCd != '' ">
+                AND NAMECD = #{userCd}
+            </when>
+            <otherwise >
+                AND NAMECD = #{businessCd}
+            </otherwise>
+        </choose>
+    </select>
+    <select id="getReportPath" parameterType="hashMap" resultType="string">
+        SELECT
+            CHARACTERITEM1
+        FROM
+            AM_NAME
+        WHERE
+            DEPARTMENTCD = 'ALL'
+            AND NAMECLASS = '0051'
+            AND NAMECD = #{reportName}
+        LIMIT 1
+    </select>
+    <select id="getS3Path" parameterType="String" resultType="String">
+        SELECT
+            CHARACTERITEM2
+        FROM
+            AM_NAME
+        WHERE
+            DEPARTMENTCD = 'ALL'
+            AND NAMECLASS = '0051'
+            AND NAMECD = #{value}
+    </select>
+    <select id="getS3Path2" parameterType="String" resultType="String">
+        SELECT
+            CHARACTERITEM2
+        FROM
+            AM_NAME
+        WHERE
+            DEPARTMENTCD = 'ALL'
+            AND NAMECLASS = '0051'
+            AND NAMECD = #{value}
+    </select>
+    <select id="getHDInformation" parameterType="hashMap" resultType="hashMap">
+        SELECT
+            IFNULL(COUNT(*),0) AS cwbCnt
+            , SUM(IFNULL(CARGOPIECE,0)) AS piece
+            , SUM(IFNULL(CARGOWEIGHT,0)) AS weight
+        FROM
+            AI_DATA
+        WHERE
+            AWBNO = #{awbNo}
+            AND CURRENTARRFLT_1 = #{flt1}
+            AND CURRENTARRFLT_2 = #{flt2}
+    </select>
+    <update id="updateHDInformation" parameterType="hashMap" >
+        UPDATE
+            AI_HEAD
+        SET
+            CWBCOUNT = #{cwbCnt}
+            , CWBPIECESUM = #{piece}
+            , CWBWEIHTSUM = #{weight}
+        WHERE
+            AWBNO = #{awbNo}
+            AND ARRFLT_1 = #{flt1}
+            AND ARRFLT_2 = #{flt2}
+    </update>
+    <select id="getConditionCount" parameterType="String"  resultType="Integer">
+        SELECT
+        COUNT(*)
+        FROM
+        AI_CONDITION
+        WHERE
+        CWBNO = #{value}
+        AND DOCSTATUSCD = 'CND00001'
+    </select>
+    <select id="getCountIDAItem" parameterType="hashmap" resultType="Integer">
+        SELECT
+        COUNT(*)
+        FROM
+        AM_NAME
+        WHERE
+        DEPARTMENTCD = #{deptCd}
+        AND NAMECLASS = '0118'
+        AND UPPER(#{item}) LIKE CONCAT('%',UPPER(NAME),'%')
+    </select>
+    <select id="getOptionalService" parameterType="String"  resultType="Integer">
+        SELECT
+        COUNT(*)
+        FROM
+        CS_OPTIONAL_SERVICE
+        WHERE
+        IMPORTEXPORTCLASS = '1'
+        AND DISPLAYCLASS IN ('2','3')
+        AND CWBNO = #{value}
+    </select>
+    <select id="getAddProcessValue" parameterType="hashMap" resultType="com.kse.wmsv2.common.dto.COMMONImportAddAccDto">
+        SELECT
+            REPORTCONDITION, TAXAMO, INCLASSIFYCLASSNAME
+            ,OUTCLASSIFYCLASSNAME ,DOMESTICCLASSIFYCLASSNAME
+        FROM
+            AI_DATA
+        WHERE
+            AWBNO = #{awbNo}
+            AND CWBNO = #{cwbNo}
+    </select>
+    <update id="setAddProcessValue" parameterType="com.kse.wmsv2.common.dto.COMMONImportAddAccDto">
+        UPDATE
+            AI_DATA
+        SET
+            INCLASSIFYCLASSNAME = #{inClassifyClassName}
+            ,OUTCLASSIFYCLASSNAME = #{outClassifyClassName}
+            ,DOMESTICCLASSIFYCLASSNAME = #{domesticClassifyClassName}
+        WHERE
+            AWBNO = #{awbNo}
+            AND CWBNO = #{cwbNo}
+    </update>
+</mapper>

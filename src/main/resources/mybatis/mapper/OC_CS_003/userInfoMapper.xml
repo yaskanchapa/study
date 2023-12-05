@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<!--parameterTypeが多数の場合はHashMap使用-->
+<mapper namespace="com.kse.wmsv2.oc_cs_003.mapper.UserInfoMapper">
+    <select id="select" parameterType="String" resultType="com.kse.wmsv2.oc_cs_003.dto.UserInfoDto">
+        SELECT *
+        FROM   CM_USER AS CU
+            LEFT JOIN (SELECT NAMECD,
+                              NAME AS DEPARTMENTNAME
+                        FROM   AM_NAME AS AN
+                        WHERE  1 = 1
+                               AND AN.NAMECLASS = '0008') AS AN
+            ON CU.DEPARTMENTCD = AN.NAMECD
+        WHERE  1 = 1
+            AND USERCD = #{userCd}
+    </select>
+</mapper>

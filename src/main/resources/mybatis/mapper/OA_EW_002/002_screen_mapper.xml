@@ -1,0 +1,204 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="com.kse.wmsv2.oa_ew_002.mapper.OAEW002ScreenMapper">
+
+    <select id="getParameterList"  parameterType="com.kse.wmsv2.oa_ew_002.dao.OAEW002GetParameterListDao"
+                                      resultType="com.kse.wmsv2.oa_ew_002.dto.OAEW002GetParameterListDto">
+        SELECT DISTINCT
+            NAMECD AS value,
+            CONCAT(NAMECD, ':', NAME) AS text
+        FROM
+            AM_NAME
+        WHERE
+                NAMECLASS = #{nameClass}
+            AND DEPARTMENTCD = #{departmentCd}
+    </select>
+
+    <select id="selectContainer1"  parameterType="com.kse.wmsv2.oa_ew_002.dao.OAEW002SelectContainer1Dao"
+                                      resultType="com.kse.wmsv2.oa_ew_002.dto.OAEW002SelectContainer1Dto">
+        SELECT
+            CONCAT(T1.AWBNO, T1.ULDNO, DATE_FORMAT(T1.CONTAINERDATE, '%Y-%m-%d')) AS delKey,
+            T1.CUSTOMSPLACE AS customsPlace,
+            T_CUSTMCD.NAME AS customsPlaceName,
+            T_BONDEDCD.NAME AS bondedWarehouse,
+            DATE_FORMAT(T1.CONTAINERDATE, '%Y-%m-%d') AS containerDate,
+            T1.DEPPORT AS depPort,
+            T_DEPPORT.NAME AS depPortName,
+            T1.AWBNO AS awbNo,
+            T1.ULDNO AS uldNo,
+            T_CONTAINER.NAME AS container,
+            T1.BONDEDWAREHOUSECD AS bondedWarehouseCd,
+            T1.CONTAINERCLASSCD AS containerClassCd,
+            T_CONTAINER.NAME AS containerClassName,
+            T1.DEPARTURETRUCKNO AS departureTruckNo,
+            T_DEPARTURE.NAME AS departureTruckName,
+            CASE WHEN IFNULL(T1.HTDISPLAYFLG,'1') = '2' THEN 1 ELSE 0 END AS htDisplayFlg,
+            T_DEPARTURE.NAME AS departure
+        FROM
+            AE_CONTAINER T1 LEFT JOIN AM_NAME AS T_CUSTMCD ON CUSTOMSPLACE = T_CUSTMCD.NAMECD AND T_CUSTMCD.NAMECLASS = '0028' AND T_CUSTMCD.DEPARTMENTCD = #{userDepartmentCd}
+            LEFT JOIN AM_NAME AS T_BONDEDCD ON BONDEDWAREHOUSECD = T_BONDEDCD.NAMECD AND T_BONDEDCD.NAMECLASS = '0029' AND T_BONDEDCD.DEPARTMENTCD = #{userDepartmentCd}
+            LEFT JOIN AM_NAME AS T_DEPPORT ON DEPPORT = T_DEPPORT.NAMECD AND T_DEPPORT.NAMECLASS = '0030' AND T_DEPPORT.DEPARTMENTCD = #{userDepartmentCd}
+            LEFT JOIN AM_NAME AS T_CONTAINER ON CONTAINERCLASSCD = T_CONTAINER.NAMECD AND T_CONTAINER.NAMECLASS = '0045'
+            LEFT JOIN AM_NAME AS T_DEPARTURE ON DEPARTURETRUCKNO = T_DEPARTURE.NAMECD AND T_DEPARTURE.NAMECLASS = '0160' AND T_DEPARTURE.DEPARTMENTCD = #{userDepartmentCd}
+        WHERE 1 = 1
+             <if test="bondedWarehouseCd != null and bondedWarehouseCd != ''">
+               AND T1.BONDEDWAREHOUSECD = #{bondedWarehouseCd}
+             </if>
+             <if test="customsPlace != null and customsPlace != ''">
+               AND T1.CUSTOMSPLACE = #{customsPlace}
+             </if>
+             <if test="containerDate != null and containerDate != ''">
+               AND T1.CONTAINERDATE = #{containerDate}
+             </if>
+             <if test="depPort != null and depPort != ''">
+               AND T1.DEPPORT = #{depPort}
+             </if>
+             <if test="departureTruckNoStart != null and departureTruckNoStart != ''">
+               AND T1.DEPARTURETRUCKNO >= #{departureTruckNoStart}
+             </if>
+             <if test="departureTruckNoEnd != null and departureTruckNoEnd != ''">
+               AND T1.DEPARTURETRUCKNO <![CDATA[<=]]> #{departureTruckNoEnd}
+             </if>
+             <choose>
+               <when test="htDisplayFlg01 == true and htDisplayFlg02 == false">
+                 AND T1.HTDISPLAYFLG = '1'
+               </when>
+               <when test="htDisplayFlg01 == true and htDisplayFlg02 == true">
+                 AND T1.HTDISPLAYFLG = '2'
+               </when>
+               <otherwise/>
+             </choose>
+             <if test="uldNo != null and uldNo != ''">
+               AND T1.ULDNO = #{uldNo}
+             </if>
+             <if test="awbNo != null and awbNo != ''">
+               AND T1.AWBNO = #{awbNo}
+             </if>
+        ORDER BY
+          T1.CUSTOMSPLACE ASC,
+          T1.BONDEDWAREHOUSECD ASC,
+          T1.CONTAINERDATE ASC,
+          T1.DEPPORT ASC,
+          T1.AWBNO ASC,
+          T1.ULDNO ASC,
+          T1.CONTAINERCLASSCD ASC
+    </select>
+
+    <select id="selectContainer2"  parameterType="com.kse.wmsv2.oa_ew_002.dao.OAEW002SelectContainer2Dao"
+                                      resultType="int">
+        SELECT
+          COUNT(*)
+        FROM
+          AE_CONTAINER
+        WHERE 1 = 1
+          <if test="containerDate != null and containerDate != ''">
+            AND CONTAINERDATE = #{containerDate}
+          </if>
+          <if test="awbNo != null and awbNo != ''">
+            AND AWBNO = #{awbNo}
+          </if>
+          <if test="uldNo != null and uldNo != ''">
+            AND ULDNO = #{uldNo}
+          </if>
+    </select>
+
+    <insert id="insertContainer1" parameterType="com.kse.wmsv2.oa_ew_002.dao.OAEW002InsertUpdateContainer1Dao">
+        INSERT INTO AE_CONTAINER
+            (CONTAINERDATE,
+            AWBNO,
+            ULDNO,
+            CUSTOMSPLACE,
+            BONDEDWAREHOUSECD,
+            DEPPORT,
+            CONTAINERCLASSCD,
+            DEPARTURETRUCKNO,
+            HTDISPLAYFLG,
+            REGUSERCD,
+            REGDATE,
+            UPDATEUSERCD,
+            UPDATEDATE)
+        VALUES(
+            #{containerDate},
+            #{awbNo},
+            #{uldNo},
+            #{customsPlace},
+            #{bondedWarehouseCd},
+            #{depPort},
+            #{containerClassCd},
+            #{departureTruckNo},
+             <choose>
+               <when test="htDisplayFlg == true">
+                 '2',
+               </when>
+               <when test="htDisplayFlg == false">
+                 '1',
+               </when>
+               <otherwise/>
+             </choose>
+            #{userCd},
+            #{updateDate},
+            #{userCd},
+            #{updateDate}
+        )
+    </insert>
+
+    <update id="updateContainer1" parameterType="com.kse.wmsv2.oa_ew_002.dao.OAEW002InsertUpdateContainer1Dao">
+        UPDATE
+          AE_CONTAINER
+        SET
+           CONTAINERDATE = #{containerDate}
+          ,AWBNO = #{awbNo}
+          ,ULDNO = #{uldNo}
+          ,CUSTOMSPLACE = #{customsPlace}
+          ,BONDEDWAREHOUSECD = #{bondedWarehouseCd}
+          ,DEPPORT = #{depPort}
+          ,CONTAINERCLASSCD = #{containerClassCd}
+          ,DEPARTURETRUCKNO = #{departureTruckNo}
+             <choose>
+               <when test="htDisplayFlg == true">
+                 ,HTDISPLAYFLG = '2'
+               </when>
+               <when test="htDisplayFlg == false">
+                 ,HTDISPLAYFLG = '1'
+               </when>
+               <otherwise/>
+             </choose>
+          ,UPDATEUSERCD = #{userCd}
+          ,UPDATEDATE = #{updateDate}
+        WHERE
+              CONTAINERDATE = #{containerDate}
+          AND AWBNO = #{awbNo}
+          AND ULDNO = #{uldNo}
+    </update>
+
+    <update id="updateContainer2" parameterType="com.kse.wmsv2.oa_ew_002.dao.OAEW002UpdateContainer2Dao">
+        UPDATE
+          AE_CONTAINER
+        SET
+             <choose>
+               <when test="htDisplayFlg == true">
+                 HTDISPLAYFLG = '2'
+               </when>
+               <when test="htDisplayFlg == false">
+                 HTDISPLAYFLG = '1'
+               </when>
+               <otherwise/>
+             </choose>
+        WHERE
+              CONTAINERDATE = #{containerDate}
+          AND AWBNO = #{awbNo}
+          AND ULDNO = #{uldNo}
+    </update>
+
+    <delete id="deleteContainer1" parameterType="com.kse.wmsv2.oa_ew_002.dao.OAEW002DeleteContainer1Dao">
+        DELETE FROM
+          AE_CONTAINER
+        WHERE
+              CONTAINERDATE = #{containerDate}
+          AND AWBNO = #{awbNo}
+          AND ULDNO = #{uldNo}
+    </delete>
+</mapper>

@@ -1,0 +1,788 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="com.kse.wmsv2.oa_et_002.mapper.AirExportAEDataMapper">
+  <select id="getDataAE" parameterType="com.kse.wmsv2.oa_et_002.dto.request.AirExportRequest" resultMap="airExports">
+
+          SELECT   0 AS CCheck,
+          <if test="objectDate == 0">
+            OTED.TRUCKNODATE AS TRUCKNODATE,
+            OTED.LINKTRUCKNO AS LINKTRUCKNO,
+            OTED.LINKTRUCKNO AS LinkTruckNoName,
+          </if>
+          <if test="objectDate == 1">
+            OTED.SHUTTLESTARTDATE AS TRUCKNODATE,
+            OTED.SHUTTLENO AS LINKTRUCKNO,
+            OTED.SHUTTLENO AS LinkTruckNoName,
+          </if>
+          <if test="objectDate == 2">
+            OTED.TRUCKNODATE AS TRUCKNODATE,
+            OTED.LINKTRUCKNO AS LINKTRUCKNO,
+            OTED.LINKTRUCKNO AS LinkTruckNoName,
+          </if>
+          <if test="objectDate == 3">
+            OTED.TRUCKNODATE AS TRUCKNODATE,
+            OTED.LINKTRUCKNO AS LINKTRUCKNO,
+            OTED.LINKTRUCKNO AS LinkTruckNoName,
+          </if>
+          <if test="objectDate == 4">
+            OTED.TRUCKNODATE AS TRUCKNODATE,
+            OTED.LINKTRUCKNO AS LINKTRUCKNO,
+            OTED.LINKTRUCKNO AS LinkTruckNoName,
+          </if>
+          OTED.AWBNO,
+          OTED.BWBNO,
+          OTED.CWBNO,
+          OTED.FLTDESTINATION AS DESTINATION,
+          OTED.CARRYINGPIECE,
+          OTED.CARRYINGWEIGHT,
+          OCSM01.MAXREGDATE AS ArrivalDate,
+          OTED.ARRIVALPIECE,
+          OCSM02.MAXREGDATE AS CDBCreateDate,
+          OCSM11.MAXREGDATE AS CDBReturnDate,
+          OCSM12.MAXREGDATE AS BILCreateDate,
+          OCSM03.MAXREGDATE AS EDACreateDate,
+          CASE
+              WHEN IFNULL(OTED.EXPREPORTNO, '') != '' THEN '○'
+              WHEN IFNULL(OTED.EXPREPORTNO, '') = ''
+                  AND (IFNULL(OTED.REMARKS, '') != ''
+                        AND OTED.REMARKS != OTED.CUSTOMSPLACECD) THEN OTED.REMARKS
+              ELSE ''
+                                              END AS Hard,
+          OCSM04.MAXREGDATE AS MECEDCCreateDate,
+          OCSM05.MAXREGDATE AS ReserveDeclarationDate,
+          OTED.PERMITCLASSCD,
+          OCSM06.MAXREGDATE AS DeclarationDate,
+          OCSM07.MAXREGDATE AS PermissionDate,
+          OCSM09.MAXREGDATE AS LoadingDate,
+          OCSM08.MAXREGDATE AS HDFCreateDate,
+          OTED.ULDNO AS ULDNO,
+          OCSM10.MAXREGDATE AS ULMCreateDate,
+          0 AS ACCFlg
+          FROM AE_DATA OTED
+          LEFT JOIN AE_HEAD OTEH ON OTEH.AWBNO = OTED.AWBNO
+          LEFT JOIN AM_NAME ON DEPARTMENTCD = #{departmentCd}
+          AND NAMECLASS = '0042'
+          <if test="objectDate == 0">
+            AND NAMECD = OTED.SHUTTLENO 
+          </if>
+          <if test="objectDate == 1">
+            AND NAMECD = OTED.SHUTTLENO
+          </if>
+          <if test="objectDate == 2">
+            AND NAMECD = OTED.LINKTRUCKNO
+          </if>
+          <if test="objectDate == 3">
+            AND NAMECD = OTED.LINKTRUCKNO 
+          </if>
+          <if test="objectDate == 4">
+            AND NAMECD = OTED.LINKTRUCKNO 
+          </if>
+
+          LEFT JOIN
+            (SELECT DISTINCT CWBNO,
+                            MAX(REGDATE) AS MAXREGDATE
+            FROM AE_STATUS_HISTORY 
+            WHERE 1 = 1
+              AND BUSINESSCLASS = '02'
+              AND STATUSCD = 'EB00200'
+            GROUP BY CWBNO) OCSM01 ON OTED.CWBNO = OCSM01.CWBNO
+
+          LEFT JOIN
+              (SELECT DISTINCT CWBNO,
+                              MAX(REGDATE) AS MAXREGDATE
+              FROM AE_STATUS_HISTORY 
+              WHERE 1 = 1
+                AND BUSINESSCLASS = '01'
+                AND STATUSCD = 'EC00700'
+              GROUP BY CWBNO) OCSM02 ON OTED.CWBNO = OCSM02.CWBNO
+
+          LEFT JOIN 
+            (SELECT DISTINCT CWBNO,
+                            MAX(REGDATE) AS MAXREGDATE
+            FROM AE_STATUS_HISTORY 
+            WHERE 1 = 1
+              AND BUSINESSCLASS = '01'
+              AND STATUSCD = 'EC01000'
+            GROUP BY CWBNO) OCSM03 ON OTED.CWBNO = OCSM03.CWBNO
+
+          LEFT JOIN   
+            (SELECT DISTINCT CWBNO,
+                            MAX(REGDATE) AS MAXREGDATE
+            FROM AE_STATUS_HISTORY 
+            WHERE 1 = 1
+              AND BUSINESSCLASS = '01'
+              AND STATUSCD IN ('EC00900',  'EC01100')
+            GROUP BY CWBNO) OCSM04 ON OTED.CWBNO = OCSM04.CWBNO
+
+          LEFT JOIN
+            (SELECT DISTINCT CWBNO,
+                            MAX(REGDATE) AS MAXREGDATE
+            FROM AE_STATUS_HISTORY 
+            WHERE 1 = 1
+              AND BUSINESSCLASS = '01'
+              AND STATUSCD IN ('EC01220', 'EC01320')
+            GROUP BY CWBNO) OCSM05 ON OTED.CWBNO = OCSM05.CWBNO
+
+          LEFT JOIN
+            (SELECT DISTINCT CWBNO,
+                            MAX(REGDATE) AS MAXREGDATE
+            FROM AE_STATUS_HISTORY 
+            WHERE 1 = 1
+              AND BUSINESSCLASS = '01'
+              AND STATUSCD IN ('EC01210', 'EC01310', 'EC01600')
+            GROUP BY CWBNO) OCSM06 ON OTED.CWBNO = OCSM06.CWBNO
+
+          LEFT JOIN
+            (SELECT DISTINCT CWBNO,
+                            MAX(REGDATE) AS MAXREGDATE
+            FROM AE_STATUS_HISTORY 
+            WHERE 1 = 1
+              AND ((BUSINESSCLASS = '01'
+                    AND STATUSCD IN ('EC01500', 'EC01700'))
+                    OR (BUSINESSCLASS = '02' AND STATUSCD = 'EB00300'))
+            GROUP BY CWBNO) OCSM07 ON OTED.CWBNO = OCSM07.CWBNO
+
+        LEFT JOIN 
+          (SELECT DISTINCT CWBNO,
+                          MAX(REGDATE) AS MAXREGDATE
+          FROM AE_STATUS_HISTORY 
+          WHERE 1 = 1
+            AND BUSINESSCLASS = '02'
+            AND STATUSCD = 'EB00500'
+          GROUP BY CWBNO) OCSM09 ON OTED.CWBNO = OCSM09.CWBNO
+        LEFT JOIN
+          (SELECT DISTINCT CWBNO,
+                          MAX(REGDATE) AS MAXREGDATE
+          FROM AE_STATUS_HISTORY 
+          WHERE 1 = 1
+            AND BUSINESSCLASS = '02'
+            AND STATUSCD = 'EB00400'
+          GROUP BY CWBNO) OCSM08 ON OTED.CWBNO = OCSM08.CWBNO
+        LEFT JOIN
+          (SELECT DISTINCT CWBNO,
+                          MAX(REGDATE) AS MAXREGDATE
+          FROM AE_STATUS_HISTORY 
+          WHERE 1 = 1
+            AND BUSINESSCLASS = '02'
+            AND STATUSCD IN ('EB00610', 'EB00620', 'EB00630')
+          GROUP BY CWBNO) OCSM10 ON OTED.CWBNO = OCSM10.CWBNO
+        LEFT JOIN
+          (SELECT DISTINCT CWBNO,
+                          MAX(REGDATE) AS MAXREGDATE
+          FROM AE_STATUS_HISTORY 
+          WHERE 1 = 1
+            AND BUSINESSCLASS = '01'
+            AND STATUSCD = 'EC00710'
+          GROUP BY CWBNO) OCSM11 ON OTED.CWBNO = OCSM11.CWBNO
+        LEFT JOIN
+          (SELECT DISTINCT CWBNO,
+                          MAX(REGDATE) AS MAXREGDATE
+          FROM AE_STATUS_HISTORY 
+          WHERE 1 = 1
+            AND BUSINESSCLASS = '02'
+            AND STATUSCD = 'EB00210'
+          GROUP BY CWBNO) OCSM12 ON OTED.CWBNO = OCSM12.CWBNO
+          <if test="objectDate == 0">
+            LEFT JOIN
+              (SELECT DISTINCT CWBNO,
+                   MAX(REGDATE) AS REGDATE
+              FROM AE_STATUS_HISTORY 
+              WHERE 1 = 1
+                AND BUSINESSCLASS = '02'
+                AND STATUSCD = 'EB00200'
+                AND CWBNODEPTCD = '000'
+              GROUP BY CWBNO) OCSM13 ON OTED.CWBNO = OCSM13.CWBNO
+          </if>
+          WHERE 1 = 1
+        <if test="authorityCd == '04'">
+          AND OTED.BONDEDWAREHOUSECD = #{departmentCd}
+        </if>
+        <if test="authorityCd == '02' and bondedWareHouseCd != ''">
+          AND OTED.BONDEDWAREHOUSECD = #{bondedWareHouseCd}
+        </if>
+      <if test="cWBNo != ''">
+          AND OTED.CWBNO = #{cWBNo}
+      </if>
+      <if test="cWBNo == ''">
+          <if test="objectDate == 0">
+            AND DATE_FORMAT(OCSM13.REGDATE, '%Y/%m/%d') = #{truckNoDate}
+          </if>
+          <if test="objectDate == 0 and linkTruckNOFrom != ''">
+            AND (CASE WHEN OTED.SHUTTLENO = '00' THEN '100'
+                    ELSE RIGHT(CONCAT('00',OTED.SHUTTLENO), 2) END) >= (CASE WHEN #{linkTruckNOFrom} = '00' 
+                THEN '100' ELSE RIGHT(CONCAT('00', #{linkTruckNOFrom}) , 2) END)
+          </if>
+          <if test="objectDate == 0 and linkTruckNOTo != ''">
+            AND (CASE WHEN OTED.SHUTTLENO = '00' THEN '100'
+                    ELSE RIGHT(CONCAT('00',OTED.SHUTTLENO), 2) END) &lt;= (CASE WHEN #{linkTruckNOTo} = '00' 
+              THEN '100' ELSE RIGHT(CONCAT('00', #{linkTruckNOTo}), 2) END)
+          </if>
+          <if test="objectDate == 1">
+              AND DATE_FORMAT(OTED.SHUTTLESTARTDATE, '%Y/%m/%d') = #{truckNoDate}
+          </if>
+          <if test="objectDate == 1 and linkTruckNOFrom != ''">
+            AND OTED.SHUTTLENO >= #{linkTruckNOFrom}
+          </if>
+          <if test="objectDate == 1 and linkTruckNOTo != ''">
+            AND OTED.SHUTTLENO &lt;= #{linkTruckNOTo}
+          </if>
+          <if test="objectDate == 2">
+              AND DATE_FORMAT(OTED.TRUCKNODATE, '%Y/%m/%d') = #{truckNoDate}
+          </if>
+          <if test="objectDate == 2 and linkTruckNOFrom != ''">
+          AND (CASE WHEN OTED.LINKTRUCKNO = '00' THEN '100' 
+            ELSE RIGHT('00'+OTED.LINKTRUCKNO, 2)END) >=  (CASE WHEN #{linkTruckNOFrom} = '00' 
+                      THEN '100' ELSE RIGHT(CONCAT('00', #{linkTruckNOFrom}), 2) END)
+          
+          </if>
+          <if test="objectDate == 2 and linkTruckNOTo != ''">
+          
+          AND (CASE WHEN OTED.LINKTRUCKNO = '00' THEN '100' 
+            ELSE RIGHT('00'+OTED.LINKTRUCKNO, 2)END) &lt;=  (CASE WHEN #{linkTruckNOTo} = '00' 
+                      THEN '100' ELSE RIGHT(CONCAT('00', #{linkTruckNOTo}), 2) END)
+          </if>
+
+          <if test="objectDate == 3">
+              AND EXISTS
+                (SELECT CWBNO
+                FROM AE_STATUS_HISTORY
+                WHERE 1 = 1
+                  AND BUSINESSCLASS = '01'
+                  AND CWBNO = OTED.CWBNO
+                  AND CWBNODEPTCD = '000'
+                  AND STATUSCD IN ('EC01500',
+                                    'EC01700')
+                  AND DATE_FORMAT(REGDATE, '%Y/%m/%d') = #{truckNoDate}
+                )
+          </if>
+          <if test="objectDate == 3 and linkTruckNOFrom != ''">
+            AND (CASE WHEN OTED.LINKTRUCKNO = '00' THEN '100'
+              ELSE RIGHT(CONCAT('00',OTED.LINKTRUCKNO), 2) END) >= (CASE WHEN #{linkTruckNOFrom} = '00' 
+                        THEN '100' ELSE RIGHT(CONCAT('00', #{linkTruckNOFrom}), 2) END)
+
+          </if>
+          <if test="objectDate == 3 and linkTruckNOTo != ''">
+
+            AND (CASE WHEN OTED.LINKTRUCKNO = '00' THEN '100' 
+              ELSE RIGHT(CONCAT('00',OTED.LINKTRUCKNO), 2)END) &lt;=  (CASE WHEN #{linkTruckNOTo} = '00' 
+                        THEN '100' ELSE RIGHT(CONCAT('00', #{linkTruckNOTo}), 2) END)
+          </if>
+          <if test="objectDate == 4">
+          AND EXISTS
+              (SELECT CWBNO
+              FROM AE_STATUS_HISTORY
+              WHERE 1 = 1
+                AND BUSINESSCLASS = '01'
+                AND CWBNO = OTED.CWBNO
+                AND CWBNODEPTCD = '000'
+                AND STATUSCD IN ('EC01500',
+                                  'EC01700')
+                AND DATE_FORMAT(REGDATE, '%Y/%m/%d') = #{truckNoDate} )
+          </if>
+          <if test="objectDate == 4 and linkTruckNOFrom != ''">
+          AND (CASE WHEN OTED.LINKTRUCKNO = '00' THEN '100'
+                  ELSE RIGHT(CONCAT('00',OTED.LINKTRUCKNO), 2) END) >= (CASE WHEN #{linkTruckNOFrom} = '00' 
+          THEN '100' ELSE RIGHT(CONCAT('00', #{linkTruckNOFrom}), 2) END)
+
+          </if>
+          <if test="objectDate == 4 and linkTruckNOTo != ''">
+
+          AND (CASE WHEN OTED.LINKTRUCKNO = '00' THEN '100' 
+                  ELSE RIGHT(CONCAT('00',OTED.LINKTRUCKNO), 2)END) &lt;=  (CASE WHEN #{linkTruckNOTo} = '00' 
+          THEN '100' ELSE RIGHT(CONCAT('00', #{linkTruckNOTo}), 2) END)
+          </if>
+          <if test="aWBNo != ''">
+            AND OTED.AWBNO = #{aWBNo}
+          </if>
+          <if test="possible01 == 1 and possible02 == 0">
+            AND NOT EXISTS
+              (SELECT CWBNO
+              FROM CS_OPTIONAL_SERVICE
+              WHERE 1 = 1
+                AND IMPORTEXPORTCLASS = '2'
+                AND CWBNO = OTED.CWBNO
+                AND APOSMANAGEMENTCLASS IN ('2', '4') )
+          </if>
+          <if test="possible01 == 0 and possible02 == 1">
+          AND EXISTS
+            (SELECT CWBNO
+            FROM CS_OPTIONAL_SERVICE
+            WHERE 1 = 1
+              AND IMPORTEXPORTCLASS = '2'
+              AND CWBNO = OTED.CWBNO
+              AND APOSMANAGEMENTCLASS IN ('2', '4') )
+          </if>
+          <if test="permitClassCd != ''">
+            AND (CASE (SUBSTRING(OTED.PERMITCLASSCD, 1, 1) REGEXP '^[0-9]+$')
+              WHEN 0 THEN SUBSTRING(OTED.PERMITCLASSCD, 2, 1)
+              WHEN 1 THEN SUBSTRING(OTED.PERMITCLASSCD, 1, 1)END) ${operator}
+          </if>
+          <if test="permitClass != '' and permitClass != '999'">
+            AND OTED.PERMITCLASSCD IS NOT NULL
+            AND (LENGTH(OTED.PERMITCLASSCD) >=2
+            AND RIGHT(OTED.PERMITCLASSCD, 1) IN
+              (SELECT CHARACTERITEM1
+                FROM AM_NAME
+                WHERE 1 = 1
+                  AND DEPARTMENTCD = 'ALL'
+                  AND NAMECLASS = '0292'
+                  AND NAMECD = #{permitClass})) 
+          </if>
+          <if test="permitClass != '' and permitClass == '999'">
+            AND OTED.PERMITCLASSCD IS NOT NULL
+            AND NOT (LENGTH(OTED.PERMITCLASSCD) >=2
+            AND RIGHT(OTED.PERMITCLASSCD, 1) IN
+                (SELECT CHARACTERITEM1
+                  FROM AM_NAME
+                  WHERE 1 = 1
+                    AND DEPARTMENTCD = 'ALL'
+                    AND NAMECLASS = '0292'
+                    AND NAMECD != '999' )) 
+          </if>
+          <if test="arrival01 == 1 and arrival02 == 0">
+            AND NOT EXISTS (SELECT * FROM
+            (SELECT DISTINCT CWBNO,
+                            MAX(REGDATE) AS MAXREGDATE
+            FROM AE_STATUS_HISTORY 
+            WHERE 1 = 1
+              AND BUSINESSCLASS = '02'
+              AND STATUSCD = 'EB00200'
+            GROUP BY CWBNO) OCSM01_SUB
+            WHERE OTED.CWBNO = OCSM01_SUB.CWBNO) 
+          </if>
+          <if test="arrival01 == 0 and arrival02 == 1">
+            AND EXISTS (SELECT * FROM
+            (SELECT DISTINCT CWBNO,
+                            MAX(REGDATE) AS MAXREGDATE
+            FROM AE_STATUS_HISTORY 
+            WHERE 1 = 1
+              AND BUSINESSCLASS = '02'
+              AND STATUSCD = 'EB00200'
+            GROUP BY CWBNO) OCSM01_SUB
+            WHERE OTED.CWBNO = OCSM01_SUB.CWBNO) 
+          </if>
+          <if test="cDB01 == 1 and cDB02 == 0">
+           AND NOT EXISTS 
+           (SELECT * FROM
+            (SELECT DISTINCT CWBNO,
+                              MAX(REGDATE) AS MAXREGDATE
+              FROM AE_STATUS_HISTORY 
+              WHERE 1 = 1
+                AND BUSINESSCLASS = '01'
+                AND STATUSCD = 'EC00700'
+              GROUP BY CWBNO) OCSM02_SUB
+             WHERE OTED.CWBNO = OCSM02_SUB.CWBNO) 
+          </if>
+          <if test="cDB01 == 0 and cDB02 == 1">
+           AND EXISTS 
+           (SELECT * FROM
+            (SELECT DISTINCT CWBNO,
+                              MAX(REGDATE) AS MAXREGDATE
+              FROM AE_STATUS_HISTORY 
+              WHERE 1 = 1
+                AND BUSINESSCLASS = '01'
+                AND STATUSCD = 'EC00700'
+              GROUP BY CWBNO) OCSM02_SUB
+            WHERE OTED.CWBNO = OCSM02_SUB.CWBNO) 
+          </if>
+          <if test="eDA01 == 1 and eDA02 == 0">
+          AND NOT EXISTS (SELECT * FROM 
+          
+          (SELECT DISTINCT CWBNO,
+                            MAX(REGDATE) AS MAXREGDATE
+            FROM AE_STATUS_HISTORY 
+            WHERE 1 = 1
+              AND BUSINESSCLASS = '01'
+              AND STATUSCD = 'EC01000'
+            GROUP BY CWBNO) OCSM03_SUB
+
+           WHERE OTED.CWBNO = OCSM03_SUB.CWBNO) 
+          </if>
+          <if test="eDA01 == 0 and eDA02 == 1">
+          AND EXISTS (SELECT * FROM 
+
+          (SELECT DISTINCT CWBNO,
+                            MAX(REGDATE) AS MAXREGDATE
+            FROM AE_STATUS_HISTORY 
+            WHERE 1 = 1
+              AND BUSINESSCLASS = '01'
+              AND STATUSCD = 'EC01000'
+            GROUP BY CWBNO) OCSM03_SUB
+
+           WHERE OTED.CWBNO = OCSM03_SUB.CWBNO) 
+          </if>
+          <if test="mECEDC01 == 1 and mECEDC02 == 0">
+          AND NOT EXISTS (SELECT * FROM 
+          
+          (SELECT DISTINCT CWBNO,
+                            MAX(REGDATE) AS MAXREGDATE
+            FROM AE_STATUS_HISTORY 
+            WHERE 1 = 1
+              AND BUSINESSCLASS = '01'
+              AND STATUSCD IN ('EC00900',  'EC01100')
+            GROUP BY CWBNO) OCSM04_SUB
+          
+           WHERE OTED.CWBNO = OCSM04_SUB.CWBNO) 
+          </if>
+          <if test="mECEDC01 == 0 and mECEDC02 == 1">
+          AND EXISTS (SELECT * FROM 
+          
+          (SELECT DISTINCT CWBNO,
+                            MAX(REGDATE) AS MAXREGDATE
+            FROM AE_STATUS_HISTORY 
+            WHERE 1 = 1
+              AND BUSINESSCLASS = '01'
+              AND STATUSCD IN ('EC00900',  'EC01100')
+            GROUP BY CWBNO) OCSM04_SUB
+
+           WHERE OTED.CWBNO = OCSM04_SUB.CWBNO) 
+          </if>
+          <if test="reserveDeclara01 == 1 and reserveDeclara02 == 0">
+          AND NOT EXISTS (SELECT * FROM 
+          
+          (SELECT DISTINCT CWBNO,
+                            MAX(REGDATE) AS MAXREGDATE
+            FROM AE_STATUS_HISTORY 
+            WHERE 1 = 1
+              AND BUSINESSCLASS = '01'
+              AND STATUSCD IN ('EC01220', 'EC01320')
+            GROUP BY CWBNO) OCSM05_SUB
+          
+           WHERE OTED.CWBNO = OCSM05_SUB.CWBNO) 
+          </if>
+          <if test="reserveDeclara01 == 0 and reserveDeclara02 == 1">
+          AND EXISTS (SELECT * FROM 
+          
+          (SELECT DISTINCT CWBNO,
+                            MAX(REGDATE) AS MAXREGDATE
+            FROM AE_STATUS_HISTORY 
+            WHERE 1 = 1
+              AND BUSINESSCLASS = '01'
+              AND STATUSCD IN ('EC01220', 'EC01320')
+            GROUP BY CWBNO) OCSM05_SUB
+          
+           WHERE OTED.CWBNO = OCSM05_SUB.CWBNO) 
+          </if>
+          <if test="declara01 == 1 and declara02 == 0">
+          AND NOT EXISTS (SELECT * FROM 
+          
+          (SELECT DISTINCT CWBNO,
+                            MAX(REGDATE) AS MAXREGDATE
+            FROM AE_STATUS_HISTORY 
+            WHERE 1 = 1
+              AND BUSINESSCLASS = '01'
+              AND STATUSCD IN ('EC01210', 'EC01310', 'EC01600')
+            GROUP BY CWBNO) OCSM06_SUB
+
+           WHERE OTED.CWBNO = OCSM06_SUB.CWBNO) 
+          </if>
+          <if test="declara01 == 0 and declara02 == 1">
+          AND EXISTS (SELECT * FROM 
+          
+          (SELECT DISTINCT CWBNO,
+                            MAX(REGDATE) AS MAXREGDATE
+            FROM AE_STATUS_HISTORY 
+            WHERE 1 = 1
+              AND BUSINESSCLASS = '01'
+              AND STATUSCD IN ('EC01210', 'EC01310', 'EC01600')
+            GROUP BY CWBNO) OCSM06_SUB
+          
+           WHERE OTED.CWBNO = OCSM06_SUB.CWBNO) 
+          </if>
+          <if test="permission01 == 1 and permission02 == 0">
+          AND NOT EXISTS (SELECT * FROM 
+          
+          (SELECT DISTINCT CWBNO,
+                            MAX(REGDATE) AS MAXREGDATE
+            FROM AE_STATUS_HISTORY 
+            WHERE 1 = 1
+              AND ((BUSINESSCLASS = '01'
+                    AND STATUSCD IN ('EC01500', 'EC01700'))
+                    OR (BUSINESSCLASS = '02' AND STATUSCD = 'EB00300'))
+            GROUP BY CWBNO) OCSM07_SUB
+          
+           WHERE OTED.CWBNO = OCSM07_SUB.CWBNO)
+          </if>
+          <if test="permission01 == 0 and permission02 == 1">
+          AND EXISTS (SELECT * FROM 
+          
+          (SELECT DISTINCT CWBNO,
+                            MAX(REGDATE) AS MAXREGDATE
+            FROM AE_STATUS_HISTORY 
+            WHERE 1 = 1
+              AND ((BUSINESSCLASS = '01'
+                    AND STATUSCD IN ('EC01500', 'EC01700'))
+                    OR (BUSINESSCLASS = '02' AND STATUSCD = 'EB00300'))
+            GROUP BY CWBNO) OCSM07_SUB
+          
+           WHERE OTED.CWBNO = OCSM07_SUB.CWBNO)
+          </if>
+          <if test="hDF01 == 1 and hDF02 == 0">
+          AND NOT EXISTS (SELECT * FROM 
+          (
+              SELECT DISTINCT CWBNO,
+                              MAX(REGDATE) AS MAXREGDATE
+              FROM AE_STATUS_HISTORY
+              WHERE 1 = 1
+                AND BUSINESSCLASS = '02'
+                AND STATUSCD = 'EB00400'
+              GROUP BY CWBNO
+          ) OCSM08_SUB
+          
+           WHERE OTED.CWBNO = OCSM08_SUB.CWBNO)
+          </if>
+          <if test="hDF01 == 0 and hDF02 == 1">
+          AND EXISTS (SELECT * FROM 
+          (
+              SELECT DISTINCT CWBNO,
+                              MAX(REGDATE) AS MAXREGDATE
+              FROM AE_STATUS_HISTORY
+              WHERE 1 = 1
+                AND BUSINESSCLASS = '02'
+                AND STATUSCD = 'EB00400'
+              GROUP BY CWBNO
+          ) OCSM08_SUB
+          
+           WHERE OTED.CWBNO = OCSM08_SUB.CWBNO)
+          </if>
+          <if test="consolidation01 == 1 and consolidation02 == 0">
+          AND NOT EXISTS (SELECT * FROM 
+          
+          (SELECT DISTINCT CWBNO,
+                          MAX(REGDATE) AS MAXREGDATE
+          FROM AE_STATUS_HISTORY 
+          WHERE 1 = 1
+            AND BUSINESSCLASS = '02'
+            AND STATUSCD = 'EB00500'
+          GROUP BY CWBNO) OCSM09_SUB
+          
+           WHERE OTED.CWBNO = OCSM09_SUB.CWBNO) 
+          </if>
+          <if test="consolidation01 == 0 and consolidation02 == 1">
+          AND EXISTS (SELECT * FROM 
+          
+          (SELECT DISTINCT CWBNO,
+                          MAX(REGDATE) AS MAXREGDATE
+          FROM AE_STATUS_HISTORY 
+          WHERE 1 = 1
+            AND BUSINESSCLASS = '02'
+            AND STATUSCD = 'EB00500'
+          GROUP BY CWBNO) OCSM09_SUB
+          
+           WHERE OTED.CWBNO = OCSM09_SUB.CWBNO) 
+          </if>
+          <if test="uLM01 == 1 and uLM02 == 0">
+          AND NOT EXISTS (SELECT * FROM 
+          
+          (SELECT DISTINCT CWBNO,
+                          MAX(REGDATE) AS MAXREGDATE
+          FROM AE_STATUS_HISTORY 
+          WHERE 1 = 1
+            AND BUSINESSCLASS = '02'
+            AND STATUSCD IN ('EB00610', 'EB00620', 'EB00630')
+          GROUP BY CWBNO) OCSM10_SUB
+
+           WHERE OTED.CWBNO = OCSM10_SUB.CWBNO) 
+          </if>
+          <if test="uLM01 == 0 and uLM02 == 1">
+          AND EXISTS (SELECT * FROM 
+          
+          (SELECT DISTINCT CWBNO,
+                          MAX(REGDATE) AS MAXREGDATE
+          FROM AE_STATUS_HISTORY 
+          WHERE 1 = 1
+            AND BUSINESSCLASS = '02'
+            AND STATUSCD IN ('EB00610', 'EB00620', 'EB00630')
+          GROUP BY CWBNO) OCSM10_SUB
+          
+           WHERE OTED.CWBNO = OCSM10_SUB.CWBNO) 
+          </if>
+          <if test="depPort != ''">
+          AND OTED.DEPPORT = #{depPort}
+          </if>
+          <if test="destination != ''">
+          AND OTED.FLTDESTINATION = #{destination}
+          </if>
+          <if test="cDBre01 == 1 and cDBre02 == 0">
+          AND NOT EXISTS (SELECT * FROM 
+          
+          (SELECT DISTINCT CWBNO,
+                          MAX(REGDATE) AS MAXREGDATE
+          FROM AE_STATUS_HISTORY 
+          WHERE 1 = 1
+            AND BUSINESSCLASS = '01'
+            AND STATUSCD = 'EC00710'
+          GROUP BY CWBNO) OCSM11_SUB
+          
+           WHERE OTED.CWBNO = OCSM11_SUB.CWBNO) 
+          </if>
+          <if test="cDBre01 == 0 and cDBre02 == 1">
+          AND EXISTS (SELECT * FROM 
+          
+          (SELECT DISTINCT CWBNO,
+                          MAX(REGDATE) AS MAXREGDATE
+          FROM AE_STATUS_HISTORY 
+          WHERE 1 = 1
+            AND BUSINESSCLASS = '01'
+            AND STATUSCD = 'EC00710'
+          GROUP BY CWBNO) OCSM11_SUB
+          
+           WHERE OTED.CWBNO = OCSM11_SUB.CWBNO) 
+          </if>
+          <if test="bIL01 == 1 and bIL02 == 0">
+          AND NOT EXISTS (SELECT * FROM 
+          
+          (SELECT DISTINCT CWBNO,
+                          MAX(REGDATE) AS MAXREGDATE
+          FROM AE_STATUS_HISTORY 
+          WHERE 1 = 1
+            AND BUSINESSCLASS = '02'
+            AND STATUSCD = 'EB00210'
+          GROUP BY CWBNO) OCSM12_SUB
+          
+           WHERE OTED.CWBNO = OCSM12_SUB.CWBNO) 
+          </if>
+          <if test="bIL01 == 0 and bIL02 == 1">
+          AND EXISTS (SELECT * FROM 
+          
+          (SELECT DISTINCT CWBNO,
+                          MAX(REGDATE) AS MAXREGDATE
+          FROM AE_STATUS_HISTORY 
+          WHERE 1 = 1
+            AND BUSINESSCLASS = '02'
+            AND STATUSCD = 'EB00210'
+          GROUP BY CWBNO) OCSM12_SUB
+          
+           WHERE OTED.CWBNO = OCSM12_SUB.CWBNO) 
+          </if>
+          <if test="eSAFlg01 == 1 and eSAFlg02 == 0">
+          AND OTED.ESAFLG = '2'
+          </if>
+          <if test="eSAFlg01 == 0 and eSAFlg02 == 1">
+          AND OTED.ESAFLG = '1'
+          </if>
+          <if test="eSAFlg01 == 1 and eSAFlg02 == 0 and largeSmallFlg01 == 1 and largeSmallFlg02 == 0">
+          AND OTED.LARGESMALLFLG = 'L'
+          </if>
+          <if test="eSAFlg01 == 0 and eSAFlg02 == 1 and largeSmallFlg01 == 0 and largeSmallFlg02 == 1">
+          AND OTED.LARGESMALLFLG = 'S'
+          </if>
+          <if test="agent != ''">
+          AND OTED.INHOUSEREFNUMBER = #{agent}
+          </if>
+      </if>
+      AND OTED.DELETEDATE IS NULL
+      AND OTED.SPSDOCCLASSCD IN ('0', '2')
+      ORDER BY OTED.TRUCKNODATE,
+              OTED.LINKTRUCKNO,
+              OTED.AWBNO,
+              OTED.CWBNO,
+              OTED.DESTINATION
+
+    <if test="page != null">
+      <if test="itemPerPage != null">
+        LIMIT
+        #{page},
+        #{itemPerPage}
+      </if>
+    </if>
+  </select>
+  
+   <resultMap id="airExports" type="com.kse.wmsv2.oa_et_002.dto.AirExportDto">
+    <result column="CCheck" jdbcType="VARCHAR" property="chk" />
+    <result column="TRUCKNODATE" jdbcType="VARCHAR" property="truckNoDate" />
+    <result column="LINKTRUCKNO" jdbcType="VARCHAR" property="linkTruckNo" />
+    <result column="LinkTruckNoName" jdbcType="VARCHAR" property="linkTruckNoName" />
+    <result column="AWBNO" jdbcType="VARCHAR" property="aWBNo" />
+    <result column="BWBNO" jdbcType="VARCHAR" property="bWBNo" />
+    <result column="CWBNO" jdbcType="VARCHAR" property="cWBNo" />
+    <result column="DESTINATION" jdbcType="VARCHAR" property="destination" />
+    <result column="CARRYINGPIECE" jdbcType="VARCHAR" property="carryingPiece" />
+    <result column="CARRYINGWEIGHT" jdbcType="VARCHAR" property="carryingWeight" />
+    <result column="ArrivalDate" jdbcType="VARCHAR" property="arrivalDate" />
+    <result column="ARRIVALPIECE" jdbcType="VARCHAR" property="arrivalPiece" />
+    <result column="CDBCreateDate" jdbcType="VARCHAR" property="cDBCreateDate" />
+    <result column="CDBReturnDate" jdbcType="VARCHAR" property="cDBReturnDate" />
+    <result column="BILCreateDate" jdbcType="VARCHAR" property="bILCreateDate" />
+    <result column="EDACreateDate" jdbcType="VARCHAR" property="eDACreateDate" />
+    <result column="Hard" jdbcType="VARCHAR" property="hard" />
+    <result column="MECEDCCreateDate" jdbcType="VARCHAR" property="mECEDCCreateDate" />
+    <result column="ReserveDeclarationDate" jdbcType="VARCHAR" property="reserveDeclarationDate" />
+    <result column="PERMITCLASSCD" jdbcType="VARCHAR" property="permitClassCd" />
+    <result column="DeclarationDate" jdbcType="VARCHAR" property="declarationDate" />
+    <result column="PermissionDate" jdbcType="VARCHAR" property="permissionDate" />
+    <result column="LoadingDate" jdbcType="VARCHAR" property="loadingDate" />
+    <result column="HDFCreateDate" jdbcType="VARCHAR" property="hDFCreationDate" />
+    <result column="ULDNO" jdbcType="VARCHAR" property="uldNo" />
+    <result column="ULMCreateDate" jdbcType="VARCHAR" property="uLMCreateDate" />
+    <result column="ACCFlg" jdbcType="INTEGER" property="aCCFlg" />
+  </resultMap>
+
+<update id="updateAEData" parameterType="com.kse.wmsv2.oa_et_002.dto.request.AEStatusHistoryRequest">
+    UPDATE 
+      AE_DATA 
+    SET 
+      CURRENTCUSTOMSSTATUSCD = (
+        SELECT 
+          MAX(SM.STATUSCD) 
+        FROM 
+          (
+            SELECT 
+              SM3.CWBNO, 
+              SM3.STATUSCD 
+            FROM 
+              (
+                SELECT 
+                  SM1.CWBNO, 
+                  SM1.REGDATE, 
+                  SM1.STATUSCD 
+                FROM 
+                  AE_STATUS_HISTORY AS SM1 
+                  INNER JOIN (
+                    SELECT 
+                      BUSINESSCLASS, 
+                      CWBNO, 
+                      MAX(REGDATE) MAX_REGDATE 
+                    FROM 
+                      AE_STATUS_HISTORY 
+                    WHERE 
+                    <if test="useHeader == false">
+                      BUSINESSCLASS = #{businessClass}
+                    </if>
+                    <if test="useHeader == true">
+                      BUSINESSCLASS = #{headerBusinessClass}
+                    </if>
+                    GROUP BY 
+                      BUSINESSCLASS, 
+                      CWBNO
+                  ) AS SM2 ON SM1.BUSINESSCLASS = SM2.BUSINESSCLASS 
+                  AND SM1.CWBNO = SM2.CWBNO 
+                  AND SM1.REGDATE = SM2.MAX_REGDATE
+              ) AS SM3
+          ) AS SM 
+        WHERE 
+          AE_DATA.CWBNO = SM.CWBNO 
+        GROUP BY 
+          SM.CWBNO
+      ),
+      <if test="updateFlag == true">
+          <if test="deleteFlag == true">
+            CUSTOMSCHECKCLASS = "0",
+            CUSTOMSCHECKUSERCD = null,
+            CUSTOMSCHECKDATE = null,
+          </if>
+          <if test="deleteFlag == false">
+            CUSTOMSCHECKCLASS = "1",
+            CUSTOMSCHECKUSERCD = #{userCd},
+            CUSTOMSCHECKDATE = #{systemDate},
+          </if>
+      </if>
+      UPDATEUSERCD = #{userCd},
+      UPDATEDATE = #{systemDate}
+    WHERE
+       CWBNO = #{cwbNo}
+  </update>
+</mapper>

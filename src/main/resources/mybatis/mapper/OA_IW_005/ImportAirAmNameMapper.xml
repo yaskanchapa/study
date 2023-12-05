@@ -1,0 +1,565 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="com.kse.wmsv2.oa_iw_005.mapper.OAIW005ScreenMapper">
+    <select id="selectSearchAi" resultType="com.kse.wmsv2.oa_iw_005.dao.OAIW005SearchDao" parameterType="com.kse.wmsv2.oa_iw_005.dto.OAIW005SearchDto">
+        <!-- CWBが入力された場合 -->
+        <if test="cwbNo != null and cwbNo != ''">
+            SELECT     T1.AWBNO                                                    AS MAWBNO,
+            CONCAT(T2.CURRENTARRFLT_1, '/', CURRENTARRFLT_2) AS FLT,
+            T2.ORIGIN                                                   AS ORIGIN,
+            T2.CWBNO                                                    AS CWBNO,
+            CASE T2.CWBNODEPTCD
+            WHEN '000' THEN T2.CWBNO
+            ELSE T2.CWBNO + '/' + T2.CWBNODEPTCD
+            END AS CWBNODEPTCD,
+            CASE
+            WHEN T2.IDACREATEFLG = '1' THEN '解除'
+            WHEN T2.IDACREATEFLG = '0' THEN '保留'
+            ELSE '保留'
+            END                 AS HPKSTATUS,
+            T2.CARGOPIECE       AS CARGOPIECE,
+            T2.CARGOINPIECE     AS CARGOINPIECE,
+            T2.CARGOINSCANPIECE AS CARGOINSCANPIECE,
+            T2.CARGOWEIGHT      AS CARGOWEIGHT,
+            (
+            SELECT NAME
+            FROM   AM_NAME
+            WHERE  DEPARTMENTCD = 'ALL'
+            AND    (
+            NAMECLASS = '0014'
+            OR     NAMECLASS = '0052' )
+            AND    NAMECD =
+            (
+            SELECT   STATUSCD
+            FROM     AI_STATUS_HISTORY
+            WHERE    CWBNO = T2.CWBNO
+            AND      CWBNODEPTCD = T2.CWBNODEPTCD
+            AND      BUSINESSCLASS = '02'
+            ORDER BY REGDATE DESC,
+            STATUSCD DESC LIMIT 1)) AS CARGOSTATUS,
+            T1.ARRDATE                                              AS CURRENTARRFLT1,
+            T10.REGDATE                                             AS INFLIGHT,
+            T3.REGDATE                                              AS HPKSTS, (
+            CASE WHEN T4.REGDATE IS NOT NULL THEN T4.REGDATE ELSE NULL
+            END )         AS INVENTORY,
+            T11.REGDATE   AS PERMIT,
+            T12.REGDATE   AS CARRYOUT,
+            T5.REGDATE    AS AIOUT,
+            T2.LOCATIONCD AS LOCATIONCD,
+            T7.NAME       AS AIREPORTCLASS,
+            T8.NAME       AS AIPERMITCLASS, (
+            CASE
+            WHEN T2.PERMITDATE IS NULL THEN T2.INCLASSIFYCLASSNAME
+            ELSE T2.OUTCLASSIFYCLASSNAME
+            END )            AS CLASSIFYCLASS,
+            T2.CWBNODEPTCD   AS HDNCWBNODEPTCD,
+            T2.REMODELINGFLG AS HDNREMODELINGFLG,
+            T2.UPDATEDATE    AS HDNUPDATEDATE
+            FROM       AI_HEAD T1
+            INNER JOIN AI_DATA T2
+            ON         T1.AWBNO = T2.AWBNO
+            AND        T1.ARRFLT_1 = T2.CURRENTARRFLT_1
+            AND        T1.ARRFLT_2 = T2.CURRENTARRFLT_2
+            LEFT JOIN
+            (
+            SELECT   Max(REGDATE) AS REGDATE,
+            CWBNO,
+            CWBNODEPTCD
+            FROM     AI_STATUS_HISTORY
+            WHERE    1 = 1
+            AND      BUSINESSCLASS = '02'
+            AND      STATUSCD = 'IB00200'
+            GROUP BY CWBNO,
+            CWBNODEPTCD ) T3
+            ON         T2.CWBNO = T3.CWBNO
+            AND        T2.CWBNODEPTCD = T3.CWBNODEPTCD
+            LEFT JOIN
+            (
+            SELECT   Max(REGDATE) AS REGDATE,
+            BONDEDWAREHOUSECD,
+            CWBNO,
+            CWBNODEPTCD
+            FROM     AI_INVENTORY
+            WHERE    1 = 1
+            GROUP BY BONDEDWAREHOUSECD,
+            CWBNO,
+            CWBNODEPTCD ) T4
+            ON         T2.BONDEDWAREHOUSECD = T4.BONDEDWAREHOUSECD
+            AND        T2.CWBNO = T4.CWBNO
+            AND        T2.CWBNODEPTCD = T4.CWBNODEPTCD
+            LEFT JOIN
+            (
+            SELECT   Max(REGDATE) AS REGDATE,
+            CWBNO,
+            CWBNODEPTCD
+            FROM     AI_STATUS_HISTORY
+            WHERE    1 = 1
+            AND      BUSINESSCLASS = '02'
+            AND      STATUSCD = 'IB00800'
+            GROUP BY CWBNO,
+            CWBNODEPTCD ) T5
+            ON         T2.CWBNO = T5.CWBNO
+            AND        T2.CWBNODEPTCD = T5.CWBNODEPTCD
+            LEFT JOIN
+            (
+            SELECT    C1.CWBNO,
+            C1.CWBNODEPTCD,
+            C1.STATUSCD,
+            M1.NAME
+            FROM      (
+            SELECT     C2.CWBNO,
+            C2.CWBNODEPTCD,
+            Max(C3.STATUSCD) AS STATUSCD
+            FROM       (
+            SELECT DISTINCT C2.CWBNO,
+            C2.CWBNODEPTCD,
+            Max(C2.REGDATE) AS REGDATE
+            FROM            AI_STATUS_HISTORY C2
+            WHERE           1 = 1
+            AND             C2.BUSINESSCLASS = '02'
+            GROUP BY        C2.CWBNO,
+            C2.CWBNODEPTCD ) C2
+            INNER JOIN
+            (
+            SELECT C3.CWBNO,
+            C3.CWBNODEPTCD,
+            C3.STATUSCD,
+            C3.REGDATE
+            FROM   AI_STATUS_HISTORY C3
+            WHERE  1 = 1
+            AND    C3.BUSINESSCLASS = '02' ) C3
+            ON         C2.CWBNO = C3.CWBNO
+            AND        C2.CWBNODEPTCD = C3.CWBNODEPTCD
+            AND        C2.REGDATE = C3.REGDATE
+            GROUP BY   C2.CWBNO,
+            C2.CWBNODEPTCD ) C1
+            LEFT JOIN AM_NAME M1
+            ON        M1.DEPARTMENTCD = 'ALL'
+            AND       (
+            M1.NAMECLASS = '0014'
+            OR        M1.NAMECLASS = '0052')
+            AND       C1.STATUSCD = M1.NAMECD ) T6
+            ON         T6.CWBNO = T2.CWBNO
+            AND        T6.CWBNODEPTCD = T2.CWBNODEPTCD
+            LEFT JOIN  AM_NAME T7
+            ON         T7.NAMECLASS = '0107'
+            AND        T2.IDAFLG = T7.NAMECD
+            LEFT JOIN  AM_NAME T8
+            ON         T8.NAMECLASS = '0073'
+            AND        Substring(T2.PERMITCLASSCD,1,1) = T8.NAMECD
+            LEFT JOIN
+            (
+            SELECT   Max(REGDATE) AS REGDATE,
+            CWBNO,
+            CWBNODEPTCD
+            FROM     AI_STATUS_HISTORY
+            WHERE    1 = 1
+            AND      BUSINESSCLASS = '02'
+            AND      STATUSCD = 'IB00120'
+            GROUP BY CWBNO,
+            CWBNODEPTCD ) T10
+            ON         T2.CWBNO = T10.CWBNO
+            AND        T2.CWBNODEPTCD = T10.CWBNODEPTCD
+            LEFT JOIN
+            (
+            SELECT   Max(REGDATE) AS REGDATE,
+            CWBNO,
+            CWBNODEPTCD
+            FROM     AI_STATUS_HISTORY
+            WHERE    1 = 1
+            AND      BUSINESSCLASS = '02'
+            AND      STATUSCD = 'IB00600'
+            GROUP BY CWBNO,
+            CWBNODEPTCD ) T11
+            ON         T2.CWBNO = T11.CWBNO
+            AND        T2.CWBNODEPTCD = T11.CWBNODEPTCD
+            LEFT JOIN
+            (
+            SELECT   Max(REGDATE) AS REGDATE,
+            CWBNO,
+            CWBNODEPTCD
+            FROM     AI_STATUS_HISTORY
+            WHERE    1 = 1
+            AND      BUSINESSCLASS = '02'
+            AND      STATUSCD = 'IB00720'
+            GROUP BY CWBNO,
+            CWBNODEPTCD ) T12
+            ON         T2.CWBNO = T12.CWBNO
+            AND        T2.CWBNODEPTCD = T12.CWBNODEPTCD
+            WHERE      1 = 1
+            AND (T1.DELETEDATE IS NULL or T1.DELETEDATE = '')
+            AND (T2.DELETEDATE IS NULL or T2.DELETEDATE = '')
+            AND T2.SPSDOCCLASSCD IN ('0','2')
+        </if>
+        <if test="cwbNo == null or cwbNo == ''">
+            SELECT T1.AWBNO                                    AS MAWBNO
+            , CONCAT(T2.CURRENTARRFLT_1, '/', CURRENTARRFLT_2) AS FLT
+            , T2.ORIGIN                                        AS ORIGIN
+            , T2.CWBNO                                         AS CWBNO
+            , CASE T2.CWBNODEPTCD
+            WHEN '000' THEN T2.CWBNO
+            ELSE T2.CWBNO + '/' + T2.CWBNODEPTCD
+            END                                              AS CWBNODEPTCD
+            , CASE
+            WHEN T2.IDACREATEFLG = '1' THEN '解除'
+            WHEN T2.IDACREATEFLG = '0' THEN '保留'
+            ELSE '保留'
+            END                                              AS HPKSTATUS
+            , T2.CARGOPIECE                                    AS CARGOPIECE
+            , T2.CARGOINPIECE                                  AS CARGOINPIECE
+            , T2.CARGOINSCANPIECE                              AS CARGOINSCANPIECE
+            , T2.CARGOWEIGHT                                   AS CARGOWEIGHT
+            , (SELECT NAME
+            FROM   AM_NAME
+            WHERE  DEPARTMENTCD = 'ALL'
+            AND ( NAMECLASS = '0014'
+            OR NAMECLASS = '0052' )
+            AND NAMECD = (SELECT STATUSCD
+            FROM   AI_STATUS_HISTORY
+            WHERE  CWBNO = T2.CWBNO
+            AND CWBNODEPTCD = T2.CWBNODEPTCD
+            AND BUSINESSCLASS = '02'
+            ORDER  BY REGDATE DESC
+            , STATUSCD DESC
+            LIMIT  1))                 AS CARGOSTATUS
+            , T1.ARRDATE                                       AS CURRENTARRFLT1
+            , T10.REGDATE                                      AS INFLIGHT
+            , T3.REGDATE                                       AS HPKSTS
+            , ( CASE
+            WHEN T4.REGDATE IS NOT NULL THEN T4.REGDATE
+            ELSE T9.REGDATE
+            END )                                          AS INVENTORY
+            , T11.REGDATE                                      AS PERMIT
+            , T12.REGDATE                                      AS CARRYOUT
+            , T5.REGDATE                                       AS AIOUT
+            , T2.LOCATIONCD                                    AS LOCATIONCD
+            , T7.NAME                                          AS REPORTCLASS
+            , T8.NAME                                          AS PERMITCLASS
+            , ( CASE
+            WHEN T2.PERMITDATE IS NULL THEN T2.INCLASSIFYCLASSNAME
+            ELSE T2.OUTCLASSIFYCLASSNAME
+            END )                                          AS CLASSIFYCLASS
+            , T2.CWBNODEPTCD                                   AS HDNCWBNODEPTCD
+            , T2.REMODELINGFLG                                 AS HDNREMODELINGFLG
+            , T2.UPDATEDATE                                    AS HDNUPDATEDATE
+            FROM   AI_HEAD T1
+            INNER JOIN AI_DATA T2
+            ON T1.AWBNO = T2.AWBNO
+            AND T1.ARRFLT_1 = T2.CURRENTARRFLT_1
+            AND T1.ARRFLT_2 = T2.CURRENTARRFLT_2
+            LEFT JOIN (SELECT MAX(REGDATE) AS REGDATE
+            , CWBNO
+            , CWBNODEPTCD
+            FROM   AI_STATUS_HISTORY
+            WHERE  1 = 1
+            AND BUSINESSCLASS = '02'
+            AND STATUSCD = 'IB00200'
+            GROUP  BY CWBNO
+            , CWBNODEPTCD) T3
+            ON T2.CWBNO = T3.CWBNO
+            AND T2.CWBNODEPTCD = T3.CWBNODEPTCD
+            LEFT JOIN (SELECT MAX(REGDATE) AS REGDATE
+            , BONDEDWAREHOUSECD
+            , CWBNO
+            , CWBNODEPTCD
+            FROM   AI_INVENTORY
+            WHERE  1 = 1
+            GROUP  BY BONDEDWAREHOUSECD
+            , CWBNO
+            , CWBNODEPTCD) T4
+            ON T2.BONDEDWAREHOUSECD = T4.BONDEDWAREHOUSECD
+            AND T2.CWBNO = T4.CWBNO
+            AND T2.CWBNODEPTCD = T4.CWBNODEPTCD
+            LEFT JOIN (SELECT MAX(REGDATE) AS REGDATE
+            , CWBNO
+            , CWBNODEPTCD
+            FROM   AI_STATUS_HISTORY
+            WHERE  1 = 1
+            AND BUSINESSCLASS = '02'
+            AND STATUSCD = 'IB00800'
+            GROUP  BY CWBNO
+            , CWBNODEPTCD) T5
+            ON T2.CWBNO = T5.CWBNO
+            AND T2.CWBNODEPTCD = T5.CWBNODEPTCD
+            LEFT JOIN AM_NAME T7
+            ON T7.NAMECLASS = '0107'
+            AND T2.IDAFLG = T7.NAMECD
+            LEFT JOIN AM_NAME T8
+            ON T8.NAMECLASS = '0073'
+            AND SUBSTRING(T2.PERMITCLASSCD, 1, 1) = T8.NAMECD
+            LEFT JOIN (SELECT CWBNO
+            , CWBNODEPTCD
+            , BONDEDWAREHOUSECD
+            , SCANPICEC
+            , REGDATE
+            FROM   AI_INVENTORY T91
+            WHERE  1 = 1
+            AND REGDATE = (SELECT MAX(REGDATE) AS REGDATE
+            FROM   AI_INVENTORY T92
+            WHERE  T91.CWBNO = T92.CWBNO
+            AND T91.CWBNODEPTCD =
+            T92.CWBNODEPTCD
+            AND T91.BONDEDWAREHOUSECD =
+            T92.BONDEDWAREHOUSECD
+            GROUP  BY T92.CWBNO
+            , T92.CWBNODEPTCD
+            , T92.BONDEDWAREHOUSECD)) T9
+            ON T2.BONDEDWAREHOUSECD = T9.BONDEDWAREHOUSECD
+            AND T2.CWBNO = T9.CWBNO
+            AND T2.CWBNODEPTCD = T9.CWBNODEPTCD
+            LEFT JOIN (SELECT MAX(REGDATE) AS REGDATE
+            , CWBNO
+            , CWBNODEPTCD
+            FROM   AI_STATUS_HISTORY
+            WHERE  1 = 1
+            AND BUSINESSCLASS = '02'
+            AND STATUSCD = 'IB00120'
+            GROUP  BY CWBNO
+            , CWBNODEPTCD) T10
+            ON T2.CWBNO = T10.CWBNO
+            AND T2.CWBNODEPTCD = T10.CWBNODEPTCD
+            LEFT JOIN (SELECT MAX(REGDATE) AS REGDATE
+            , CWBNO
+            , CWBNODEPTCD
+            FROM   AI_STATUS_HISTORY
+            WHERE  1 = 1
+            AND BUSINESSCLASS = '02'
+            AND STATUSCD = 'IB00600'
+            GROUP  BY CWBNO
+            , CWBNODEPTCD) T11
+            ON T2.CWBNO = T11.CWBNO
+            AND T2.CWBNODEPTCD = T11.CWBNODEPTCD
+            LEFT JOIN (SELECT MAX(REGDATE) AS REGDATE
+            , CWBNO
+            , CWBNODEPTCD
+            FROM   AI_STATUS_HISTORY
+            WHERE  1 = 1
+            AND BUSINESSCLASS = '02'
+            AND STATUSCD = 'IB00720'
+            GROUP  BY CWBNO
+            , CWBNODEPTCD) T12
+            ON T2.CWBNO = T12.CWBNO
+            AND T2.CWBNODEPTCD = T12.CWBNODEPTCD
+            WHERE  1 = 1
+            <!--        CWBが入力されていない場合-->
+            <if test="awbNo != null and awbNo != ''">
+                AND T2.AWBNO = #{awbNo}
+            </if>
+            <if test="cwbNo != null and cwbNo != ''">
+                AND T2.CWBNO = #{cwbNo}
+            </if>
+            <if test="searchOption == 'searchArr'"> <!-- 到着  -->
+                AND T1.ARRDATE >= #{targetStartDate}
+                AND T1.ARRDATE <![CDATA[<]]> #{targetEndDate}
+
+            </if>
+            <if test="searchOption == 'searchInFlight'"> <!-- 搬入  -->
+                AND T10.REGDATE >= #{targetStartDate}
+                AND T10.REGDATE <![CDATA[<]]> #{targetEndDate}
+            </if>
+            <if test="searchOption == 'searchHPK'"> <!-- HPK  -->
+                AND T3.REGDATE >= #{targetStartDate}
+                AND T3.REGDATE <![CDATA[<]]> #{targetEndDate}
+            </if>
+            <if test="searchOption == 'searchInventory'"> <!-- インベントリー  -->
+                AND (
+                (T9.REGDATE >= #{targetStartDate}
+                AND T9.REGDATE <![CDATA[<]]> #{targetEndDate})
+                OR (T4.REGDATE >= #{targetStartDate}
+                AND T4.REGDATE <![CDATA[<]]> #{targetEndDate})
+                )
+            </if>
+            <if test="searchOption == 'searchPermit'"> <!-- 許可  -->
+                AND T11.REGDATE >= #{targetStartDate}
+                AND T11.REGDATE <![CDATA[<]]> #{targetEndDate}
+            </if>
+            <!---->
+            <if test="searchOption == 'searchCarryout'"> <!-- 搬出  -->
+                AND T12.REGDATE >= #{targetStartDate}
+                AND T12.REGDATE <![CDATA[<]]> #{targetEndDate}
+            </if>
+            <if test="searchOption == 'searchOut'"> <!-- OUT  -->
+                AND T5.REGDATE >= #{targetStartDate}
+                AND T5.REGDATE <![CDATA[<]]> #{targetEndDate}
+            </if>
+            <if test="searchOption =='searchHdnUpdateDate'">  <!--dateComes  -->
+                AND (
+                (T1.CARRYINGDATE >= #{targetStartDate}
+                AND T1.CARRYINGDATE <![CDATA[<]]> #{targetEndDate}
+                OR (T2.CARRYOUTDATE >= #{targetStartDate}
+                AND T2.CARRYOUTDATE <![CDATA[<]]> #{targetEndDate}
+                )
+            </if>
+
+            <if test="cargoName != null and cargoName != ''">
+                AND T2.BONDEDWAREHOUSECD = #{cargoName}
+            </if>
+
+            <if test="cargoStatus != null and cargoStatus != ''">
+                AND (
+                SELECT
+                STATUSCD
+                FROM
+                AI_STATUS_HISTORY
+                WHERE 1 = 1
+                AND BUSINESSCLASS = '02'
+                AND CWBNO = T2.CWBNO
+                AND CWBNODEPTCD = T2.CWBNODEPTCD
+                ORDER BY
+                REGDATE DESC,
+                STATUSCD DESC  LIMIT 1 ) = #{cargoStatus}
+            </if>
+            <if test="currentArrFlt1  != null and currentArrFlt2 != ''">
+                AND T2.CURRENTARRFLT_1 LIKE '#{currentArrFlt2}%'
+            </if>
+            <if test="currentArrFlt2 != null and currentArrFlt1 != ''">
+                AND T2.CURRENTARRFLT_2 LIKE '#{currentArrFlt1}%'
+            </if>
+            <if test="org != null and org != ''">
+                AND T2.ORIGIN = #{org}
+            </if>
+            <!--   仕分条件         -->
+            <if test="inClassifyClassName != null and inClassifyClassName != ''">
+                AND T2.INCLASSIFYCLASSNAME = #{inClassifyClassName}
+            </if>
+            <if test="(invHwbNo != null and invHwbNo != 'false') or (invCargoPiece != null and invCargoPiece != 'false') or (invMatch != null and invMatch != 'false')">
+                AND (1 = 0
+                <if test="invHwbNo != null or invHwbNo == 'true'">
+                    OR T9.CWBNO IS NULL
+                </if>
+                <if test="invCargoPiece != null or invCargoPiece == 'true'">
+                    OR (T9.CWBNO IS NOT NULL AND T2.CARGOPIECE <![CDATA[<>]]> T9.SCANPICEC)
+                </if>
+                <if test="invMatch != null or invMatch == 'true'">
+                    OR (T9.CWBNO IS NOT NULL AND T2.CARGOPIECE = T9.SCANPICEC)
+                </if>
+                )
+            </if>
+            <if test="(locateFrom == null or locateFrom == '') and (locateTo != null and locateTo != '')">
+                AND T2.LOCATIONCD = #{locateTo}
+            </if>
+            <if test="(locateFrom != null and locateFrom != '') and (locateTo == null or locateTo == '')">
+                AND T2.LOCATIONCD = #{locateFrom}
+            </if>
+            <if test="(locateFrom != null and locateFrom != '') and (locateTo != null and locateTo != '')">
+                AND T2.LOCATIONCD BETWEEN #{locateFrom} AND #{locateTo}
+            </if>
+            <if test="(locateFrom == null or locateFrom == '') and (locateTo == null or locateTo == '')">
+                AND 1 = 1
+            </if>
+
+            <if test="permitNormal == null or permitNormal != 'true' and (permitMatch == null or permitMatch == '')">
+                AND T2.IDAFLG = '1'
+            </if>
+            <if test="(permitMatch == null and permitMatch != 'true')  and (permitNormal == null or permitNormal == '')">
+                AND T2.IDAFLG = '0'
+            </if>
+
+
+            <if test="permitClassCd != null and permitClassCd != ''">
+                <choose>
+                    <when test='"0".equals(#{permitClassCd})'>
+                        AND SUBSTRING(T2.PERMITCLASSCD,1,1) > '1'
+                    </when>
+                    <when test='"1".equals(#{permitClassCd})'>
+                        AND SUBSTRING(T2.PERMITCLASSCD,1,1) = '1'
+                    </when>
+                    <when test='"2".equals(#{permitClassCd})'>
+                        AND SUBSTRING(T2.PERMITCLASSCD,1,1) = '2'
+                    </when>
+                    <when test='"3".equals(#{permitClassCd})'>
+                        AND SUBSTRING(T2.PERMITCLASSCD,1,1) = '3'
+                    </when>
+                    <otherwise />
+                </choose>
+            </if>
+        </if>
+        AND (T1.DELETEDATE IS NULL or T1.DELETEDATE = '')
+        AND (T2.DELETEDATE IS NULL or T2.DELETEDATE = '')
+        AND T2.SPSDOCCLASSCD IN ('0','2')
+    </select>
+
+    <resultMap id="statusHistoryResultMap" type="com.kse.wmsv2.oa_iw_005.dto.OAIW005StatusDto">
+        <result property="statusCd" column="STATUSCD" />
+        <result property="regUserCd" column="REGUSERCD" />
+        <result property="regDate" column="REGDATE" />
+        <result property="userName" column="USERNAME" />
+    </resultMap>
+
+
+
+
+    <select id="getStatusHistoryByCwbno" resultMap="statusHistoryResultMap">
+        SELECT
+        AI_STATUS_HISTORY.STATUSCD,
+        AI_STATUS_HISTORY.REGUSERCD,
+        AI_STATUS_HISTORY.REGDATE,
+        CM_USER.USERNAME
+        FROM AI_STATUS_HISTORY
+        LEFT JOIN CM_USER
+        ON AI_STATUS_HISTORY.REGUSERCD = CM_USER.USERCD
+        LEFT JOIN AM_NAME
+        ON AI_STATUS_HISTORY.STATUSCD = AM_NAME.NAMECD
+        AND AM_NAME.NAMECLASS = '13'
+        WHERE AI_STATUS_HISTORY.CWBNO = #{cwbno}
+    </select>
+
+    <select id="selectCargoName" resultType="string">
+        SELECT CONCAT(NAMECD, ' : ', NAME) as cargoName
+        FROM AM_NAME
+        WHERE NAMECLASS = '0029'
+        AND DEPARTMENTCD = #{departmentCd}
+        GROUP BY NAMECLASS, NAME
+        ORDER BY NAMECD ASC
+    </select>
+
+    <select id="selectCargoStatus" resultType="string">
+        SELECT CONCAT(NAMECD, ' : ', NAME) as cargoStatus
+        FROM AM_NAME
+        WHERE NAMECLASS = '0014'
+        AND DEPARTMENTCD = 'ALL'
+        GROUP BY NAMECLASS, NAME
+        ORDER BY NAMECD ASC
+    </select>
+
+    <select id="selectSortCondition" resultType="string">
+        SELECT CONCAT(NAMECD, ' : ', NAME) as inClassifyClassName
+        FROM AM_NAME
+        WHERE NAMECLASS = '0016'
+        AND DEPARTMENTCD = 'ALL'
+        GROUP BY NAMECLASS, NAME
+        ORDER BY NAMECD ASC
+    </select>
+
+    <select id="selectOtherSortCondition" resultType="string">
+        SELECT CONCAT(NAMECD, ' : ', NAME) as permitClassCd
+        FROM AM_NAME
+        WHERE NAMECLASS = '0073'
+        AND DEPARTMENTCD = 'ALL'
+        GROUP BY NAMECLASS, NAME
+        ORDER BY NAMECD ASC
+    </select>
+
+    <select id="cargoStatus" resultType="com.kse.wmsv2.oa_iw_005.dao.OAIW005HistoryStatusDao" parameterType="com.kse.wmsv2.oa_iw_005.dto.OAIW005HistoryStatusDto">
+        SELECT
+        AI_STATUS_HISTORY.STATUSCD AS statusCd,
+        AI_STATUS_HISTORY.REGUSERCD AS regUserCD,
+        AI_STATUS_HISTORY.REGDATE AS regDate,
+        CM_USER.USERNAME AS userName,
+        AM_NAME.NAME AS amName
+        FROM AI_STATUS_HISTORY
+        LEFT JOIN
+        CM_USER ON
+        AI_STATUS_HISTORY.REGUSERCD = CM_USER.USERCD
+        LEFT JOIN
+        AM_NAME ON
+        AI_STATUS_HISTORY.STATUSCD = AM_NAME.NAMECD
+        AND AM_NAME.NAMECLASS = '13'
+        WHERE
+        AI_STATUS_HISTORY.CWBNO = #{cwbNo}
+    </select>
+
+</mapper>
